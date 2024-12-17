@@ -31,17 +31,23 @@
 
 import { SignedOut, SignedIn, SignInButton, UserButton } from '@clerk/clerk-react'
 import { Link } from 'react-router-dom'
+import Home from './Home'
 
 export default function App() {
   return (
     <header>
+      <h1 className="text-3xl font-bold underline">
+        Hello world!
+      </h1>
       <SignedOut>
         <SignInButton />
+        <Home />
       </SignedOut>
       <SignedIn>
         <UserButton />
+        <Home />
         <nav>
-          <Link to="/home">Go to Home</Link>
+          <Link to="/play">play mines</Link>
         </nav>
       </SignedIn>
     </header>

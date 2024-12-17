@@ -5,10 +5,10 @@ import {
   Routes, 
   Navigate 
 } from 'react-router-dom'
-import { SignedIn, SignedOut } from '@clerk/clerk-react'
+import { SignedIn, SignedOut, UserButton } from '@clerk/clerk-react'
 import App from './App'
 import Home from './Home'
-import Loda from './Loda'
+import Play from './play'
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   return (
@@ -34,11 +34,13 @@ const MainApp: React.FC = () => {
             </ProtectedRoute>
           } 
         />
+        
         <Route 
-          path="/loda" 
+          path="/play" 
           element={
             <ProtectedRoute>
-              <Loda />
+              <UserButton />
+              <Play />
             </ProtectedRoute>
           } 
         />

@@ -3,7 +3,7 @@ function Home() {
     return (
       <>
         <p>
-          This is home
+          This is the home route page
         </p>
       </>
     )
