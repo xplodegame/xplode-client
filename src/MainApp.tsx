@@ -1,3 +1,56 @@
+// import React from 'react'
+// import { 
+//   BrowserRouter as Router, 
+//   Route, 
+//   Routes, 
+//   Navigate 
+// } from 'react-router-dom'
+// import { SignedIn, SignedOut, UserButton } from '@clerk/clerk-react'
+// import App from './App'
+// import Home from './Home'
+// import Play from './Play'
+
+// const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+//   return (
+//     <>
+//       <SignedIn>{children}</SignedIn>
+//       <SignedOut>
+//         <Navigate to="/" replace />
+//       </SignedOut>
+//     </>
+//   )
+// }
+
+// const MainApp: React.FC = () => {
+//   return (
+//     <Router>
+//       <Routes>
+//         <Route path="/" element={<App />} />
+//         {/* <Route 
+//           path="/home" 
+//           element={
+//             <ProtectedRoute>
+//               <Home />
+//             </ProtectedRoute>
+//           } 
+//         /> */}
+        
+//         <Route 
+//           path="/play" 
+//           element={
+//             <ProtectedRoute>
+//               <UserButton />
+//               <Play />
+//             </ProtectedRoute>
+//           } 
+//         />
+//       </Routes>
+//     </Router>
+//   )
+// }
+
+// export default MainApp
+
 import React from 'react'
 import { 
   BrowserRouter as Router, 
@@ -5,10 +58,11 @@ import {
   Routes, 
   Navigate 
 } from 'react-router-dom'
-import { SignedIn, SignedOut, UserButton } from '@clerk/clerk-react'
+import { SignedIn, SignedOut } from '@clerk/clerk-react'
+import Navbar from './Navbar'
 import App from './App'
 import Home from './Home'
-import Play from './play'
+import Play from './Play'
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   return (
@@ -24,27 +78,20 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 const MainApp: React.FC = () => {
   return (
     <Router>
-      <Routes>
-        <Route path="/" element={<App />} />
-        <Route 
-          path="/home" 
-          element={
-            <ProtectedRoute>
-              <Home />
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/play" 
-          element={
-            <ProtectedRoute>
-              <UserButton />
-              <Play />
-            </ProtectedRoute>
-          } 
-        />
-      </Routes>
+      <div className="bg-gray-900 min-h-screen">
+        <Navbar />
+        <Routes>
+          <Route path="/" element={<App />} />
+          <Route 
+            path="/play" 
+            element={
+              <ProtectedRoute>
+                <Play />
+              </ProtectedRoute>
+            } 
+          />
+        </Routes>
+      </div>
     </Router>
   )
 }

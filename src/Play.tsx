@@ -1,67 +1,5 @@
-// import { useEffect, useState } from "react";
-
-// function Play() {
-//   const [mines, setMines] = useState<number[][]>([]); // State to store mine coordinates
-//   const [grid, setGrid] = useState<(0 | 1)[][]>(
-//     Array(5)
-//       .fill(0)
-//       .map(() => Array(5).fill(1))
-//   );
-
-//   // Fetch mine data from the server on initial load
-//   useEffect(() => {
-//     const fetchMines = async () => {
-//       try {
-//         const response = await fetch("http://localhost:8080/mines", {
-//           headers: { "Content-Type": "application/json" },
-//         });
-//         const data = await response.json();
-//         console.log("Fetched mines:", data.mines);
-//         setMines(data.mines);
-//       } catch (error) {
-//         console.error("Error fetching mines:", error);
-//       }
-//     };
-
-//     fetchMines();
-//   }, []);
-
-//   // Handle tile click to reveal mine or safe
-//   const handleTileClick = (row: number, col: number) => {
-//     setGrid((prevGrid) => {
-//       const newGrid = prevGrid.map((r) => [...r]); // Copy the grid
-//       newGrid[row][col] = mines.some(([r, c]) => r === row && c === col) ? 0 : 1;
-//       return newGrid;
-//     });
-//   };
-
-//   return (
-//     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900 text-white">
-//       <h1 className="text-2xl font-bold mb-6">5x5 Mines Game</h1>
-//       <div className="grid grid-cols-5 gap-2">
-//         {grid.map((row, rowIndex) =>
-//           row.map((cell, colIndex) => (
-//             <button
-//               key={`${rowIndex}-${colIndex}`}
-//               onClick={() => handleTileClick(rowIndex, colIndex)}
-//               className="w-16 h-16 flex items-center justify-center bg-gray-700 text-lg font-bold rounded-md shadow-md hover:bg-gray-600"
-//             >
-//               {cell === 1 ? "" : cell}
-//             </button>
-//           ))
-//         )}
-//       </div>
-//     </div>
-//   );
-// }
-
-// export default Play;
-
-
-
-
-
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import './index.css';
 
 function Play() {
   // State to store mine coordinates
@@ -75,6 +13,10 @@ function Play() {
   // State to track game over condition
   const [gameOver, setGameOver] = useState(false);
 
+  // Add sound effects
+  const gemSound = new Audio('/gemSound.mp3');
+  const bombSound = new Audio('/bombSound.mp3');
+
   // Fetch mine data from the server on initial load
   useEffect(() => {
     const fetchMines = async () => {
@@ -87,30 +29,11 @@ function Play() {
         setMines(data.mines);
       } catch (error) {
         console.error("Error fetching mines:", error);
-        // Optionally generate random mines if server fetch fails
-        const randomMines = generateRandomMines();
-        setMines(randomMines);
       }
     };
 
     fetchMines();
   }, []);
-
-  // Generate random mines if server fetch fails
-  const generateRandomMines = (): number[][] => {
-    const mineCount = 3; // You can adjust the number of mines
-    const generatedMines: number[][] = [];
-    while (generatedMines.length < mineCount) {
-      const row = Math.floor(Math.random() * 5);
-      const col = Math.floor(Math.random() * 5);
-      
-      // Ensure no duplicate mine locations
-      if (!generatedMines.some(([r, c]) => r === row && c === col)) {
-        generatedMines.push([row, col]);
-      }
-    }
-    return generatedMines;
-  };
 
   // Handle tile click to reveal mine or safe
   const handleTileClick = (row: number, col: number) => {
@@ -128,6 +51,9 @@ function Play() {
         setGameOver(true);
         newGrid[row][col] = 0;
         
+        // Play bomb sound
+        bombSound.play();
+
         // Reveal all mines
         mines.forEach(([mineRow, mineCol]) => {
           newGrid[mineRow][mineCol] = 0;
@@ -135,6 +61,8 @@ function Play() {
       } else {
         // Mark safe tile
         newGrid[row][col] = 0;
+        // Play gem sound
+        gemSound.play();
       }
       
       return newGrid;
@@ -142,18 +70,29 @@ function Play() {
   };
 
   // Reset game functionality
-  const resetGame = () => {
+  const resetGame = async () => {
+    // Fetch mine data from the server again
+    const fetchMines = async () => {
+      try {
+        const response = await fetch("http://localhost:8080/mines", {
+          headers: { "Content-Type": "application/json" },
+        });
+        const data = await response.json();
+        console.log("Fetched mines:", data.mines);
+        setMines(data.mines);
+      } catch (error) {
+        console.error("Error fetching mines:", error);
+      }
+    };
+
+    await fetchMines(); // Fetch mines before resetting the game
     setGrid(Array(5).fill(0).map(() => Array(5).fill(1)));
     setGameOver(false);
-    const randomMines = generateRandomMines();
-    setMines(randomMines);
   };
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900 text-white p-4">
       <h1 className="text-3xl font-bold mb-6">5x5 Mines Game</h1>
-      <h1>5x5 Mines Game</h1>
-      
       {gameOver && (
         <div className="mb-4 text-red-500 text-xl font-semibold">
           Game Over! You hit a mine.
@@ -176,7 +115,9 @@ function Play() {
                 ${gameOver ? 'opacity-50' : ''}
               `}
             >
-              {cell === 0 && '💥'}
+              {cell === 0 && mines.some(([mineRow, mineCol]) => mineRow === rowIndex && mineCol === colIndex) 
+                ? <img src="bomb.png" alt="Bomb" /> 
+                : cell === 0 && <img src="gems.png" alt="Gem" />}
             </button>
           ))
         )}
