@@ -48,6 +48,3 @@ export default tseslint.config({
   },
 })
 ```
-# Basic-clerk-authentication
-# Basic-clerk-authentication
-# Basic-clerk-authentication
