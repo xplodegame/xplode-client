@@ -27,7 +27,15 @@ const Navbar: React.FC = () => {
                 to="/play" 
                 className="bg-green-600 hover:bg-green-700 text-white font-semibold px-3 py-1 rounded transition shadow-lg"
               >
-                Play Mines
+                Single Player
+              </Link>
+            )}
+            {location.pathname !== '/multiplayer' && (
+              <Link 
+                to="/multiplayer" 
+                className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-3 py-1 rounded transition shadow-lg"
+              >
+                Multiplayer
               </Link>
             )}
             <UserButton afterSignOutUrl="/" />

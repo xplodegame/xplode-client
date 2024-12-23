@@ -61,8 +61,10 @@ import {
 import { SignedIn, SignedOut } from '@clerk/clerk-react'
 import Navbar from './Navbar'
 import App from './App'
-import Home from './Home'
+// import Home from './Home'
 import Play from './Play'
+import MultiplayerGame from './MultiplayerGame'
+
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   return (
@@ -87,6 +89,14 @@ const MainApp: React.FC = () => {
             element={
               <ProtectedRoute>
                 <Play />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/multiplayer" 
+            element={
+              <ProtectedRoute>
+                <MultiplayerGame />
               </ProtectedRoute>
             } 
           />

@@ -21,13 +21,11 @@
 // }
 
 import { SignedOut, SignedIn } from '@clerk/clerk-react'
-import Navbar from './Navbar'
 import Home from './Home'
 
 export default function App() {
   return (
     <div className="bg-gray-900 min-h-screen">
-      {/* <Navbar /> */}
       <SignedOut>
         <Home />
       </SignedOut>
