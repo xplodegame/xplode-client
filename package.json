@@ -12,6 +12,7 @@
   "dependencies": {
     "@clerk/clerk-react": "^5.20.2",
     "@clerk/react-router": "^0.1.2",
+    "lucide-react": "^0.469.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^7.0.2"

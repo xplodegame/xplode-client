@@ -1,5 +1,6 @@
-import React, { useEffect, useState, useRef, useCallback } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useUser } from '@clerk/clerk-react';
+import { Loader2 } from 'lucide-react';
 
 // Types matching Rust backend exactly
 type Player = {
@@ -53,37 +54,7 @@ const MultiplayerGame = () => {
         setError('');
       };
 
-    //   ws.onmessage = (event) => {
-    //     try {
-    //       if (event.data instanceof ArrayBuffer) {
-    //         const decoder = new TextDecoder('utf-8');
-    //         const messageStr = decoder.decode(event.data);
-    //         const message = JSON.parse(messageStr);
-    //         console.log('Received message:', message);
 
-    //         if ('GameUpdate' in message) {
-    //           setGameState(message.GameUpdate);
-    //           console.log('Updated game state:', message.GameUpdate);
-
-    //           // If game is finished, reveal all bombs
-    //           if ('FINISHED' in message.GameUpdate) {
-    //             const board = message.GameUpdate.FINISHED.board;
-    //             board.bomb_coordinates.forEach(index => {
-    //               const x = Math.floor(index / 5);
-    //               const y = index % 5;
-    //               setRevealedCells(prev => new Set([...prev, `${x}-${y}`]));
-    //             });
-    //           }
-    //         } else if ('Error' in message) {
-    //           setError(message.Error);
-    //         }
-    //       } else {
-    //         console.error('Received unexpected message type:', event.data);
-    //       }
-    //     } catch (err) {
-    //       console.error('Error parsing message:', err);
-    //     }
-    //   };
     ws.onmessage = (event) => {
         try {
           if (event.data instanceof ArrayBuffer) {
@@ -100,8 +71,8 @@ const MultiplayerGame = () => {
               // Update revealed cells based on the grid state
               if ('RUNNING' in newGameState) {
                 const newRevealedCells = new Set<string>();
-                newGameState.RUNNING.board.grid.forEach((row, x) => {
-                  row.forEach((cell, y) => {
+                newGameState.RUNNING.board.grid.forEach((row: ('Hidden' | 'Revealed' | 'Mined')[], x: number) => {
+                  row.forEach((cell: 'Hidden' | 'Revealed' | 'Mined', y: number) => {
                     if (cell === 'Mined' || cell === 'Revealed') {
                       newRevealedCells.add(`${x}-${y}`);
                       // Play sound for newly revealed cells
@@ -121,7 +92,7 @@ const MultiplayerGame = () => {
               if ('FINISHED' in newGameState) {
                 const board = newGameState.FINISHED.board;
                 const newRevealedCells = new Set<string>();
-                board.bomb_coordinates.forEach(index => {
+                board.bomb_coordinates.forEach((index: number) => {
                   const x = Math.floor(index / 5);
                   const y = index % 5;
                   newRevealedCells.add(`${x}-${y}`);
@@ -168,7 +139,11 @@ const MultiplayerGame = () => {
     };
   }, [connect]);
 
-  const sendMessage = useCallback((message: any) => {
+  const sendMessage = useCallback((message: {
+    CreateGame?: { player_id: string };
+    JoinGame?: { game_id: string; player_id: string };
+    MakeMove?: { game_id: string; x: number; y: number };
+  }) => {
     if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
       console.error('WebSocket is not connected');
       setError('Not connected to server');
@@ -252,6 +227,13 @@ const MultiplayerGame = () => {
     sendMessage(message);
   }, [gameState, sendMessage]);
 
+  const playAgain = useCallback(() => {
+    setGameState(null); // Reset game state
+    setGameId(''); // Clear game ID
+    setRevealedCells(new Set()); // Reset revealed cells
+    setError(''); // Clear any errors
+  }, []);
+
   const renderGameBoard = () => {
     if (!gameState) return null;
 
@@ -261,7 +243,7 @@ const MultiplayerGame = () => {
       gameState.FINISHED.board;
 
     return (
-      <div className="grid grid-cols-5 gap-2 mb-6">
+        <div className="grid grid-cols-5 gap-3 mb-8">
         {Array(5).fill(null).map((_, row) =>
           Array(5).fill(null).map((_, col) => {
             const cellKey = `${row}-${col}`;
@@ -278,22 +260,27 @@ const MultiplayerGame = () => {
                 onClick={() => makeMove(row, col)}
                 disabled={!canMove || isRevealed}
                 className={`
-                  w-16 h-16 flex items-center justify-center rounded-md shadow-md 
-                  transition-colors duration-200
+                  w-16 h-16 flex items-center justify-center rounded-lg
+                  transition-all duration-300 ease-in-out transform
                   ${isRevealed 
-                    ? 'bg-gray-500 cursor-not-allowed' 
+                    ? isBomb
+                      ? 'bg-red-900/30 border border-red-500/50'
+                      : 'bg-emerald-900/30 border border-emerald-500/50'
                     : canMove 
-                      ? 'bg-gray-700 hover:bg-gray-600' 
-                      : 'bg-gray-800 cursor-not-allowed'}
+                      ? 'bg-zinc-900/80 hover:bg-zinc-800 hover:scale-105 border border-zinc-700'
+                      : 'bg-zinc-900/50 border border-zinc-800'}
+                  shadow-lg backdrop-blur-sm
                 `}
               >
                 {isRevealed ? (
                   isBomb ? (
-                    <img src="/bomb.png" alt="Bomb" className="w-16 h-16" />
+                    <div className="text-red-500 text-2xl">💥</div>
                   ) : (
-                    <img src="/gems.png" alt="Gem" className="w-16 h-16" />
+                    <div className="text-emerald-400 text-2xl">💎</div>
                   )
-                ) : null}
+                ) : (
+                  <div className="w-full h-full bg-gradient-to-br from-zinc-800/50 to-zinc-900/50 rounded-lg" />
+                )}
               </button>
             );
           })
@@ -302,14 +289,20 @@ const MultiplayerGame = () => {
     );
   };
 
+
   const renderGameStatus = () => {
     if (!gameState || !user) return null;
 
     if ('WAITING' in gameState) {
       return (
-        <div className="text-xl text-blue-400 mb-4">
-          <div>Waiting for opponent to join</div>
-          <div className="text-sm mt-2">Share this Game ID: {gameState.WAITING.game_id}</div>
+        <div className="flex flex-col items-center space-y-3 mb-8">
+          <div className="text-zinc-400 flex items-center space-x-2">
+            <Loader2 className="animate-spin" size={20} />
+            <span>Waiting for opponent...</span>
+          </div>
+          <div className="text-sm bg-zinc-900/50 px-4 py-2 rounded-lg border border-zinc-800">
+            Game ID: <span className="text-emerald-400 font-mono">{gameState.WAITING.game_id}</span>
+          </div>
         </div>
       );
     }
@@ -328,73 +321,85 @@ const MultiplayerGame = () => {
     }
 
     if ('FINISHED' in gameState) {
-      const winner = gameState.FINISHED.players[gameState.FINISHED.winner_idx];
-      return (
-        <div className="text-xl text-purple-400 mb-4">
-          Game Over! {winner.id === user.id ? 'You won!' : 'Opponent won!'}
-        </div>
+        const winner = gameState.FINISHED.players[gameState.FINISHED.winner_idx];
+        const didWin = winner.id === user.id;
+        return (
+          <div className={`text-xl mb-8 font-medium ${didWin ? 'text-emerald-400' : 'text-red-400'}`}>
+            {didWin ? 'Victory!' : 'Game Over'}
+          </div>
       );
     }
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900 text-white p-4">
-      <h1 className="text-3xl font-bold mb-6">Multiplayer Mines Game</h1>
-      
-      {error && (
-        <div className="text-red-500 mb-4">{error}</div>
-      )}
-
-      {!gameState && (
-        <div className="flex flex-col gap-4 mb-6">
-          <button
-            onClick={createGame}
-            disabled={!isConnected}
-            className={`font-bold py-2 px-4 rounded ${
-              isConnected 
-                ? 'bg-blue-600 hover:bg-blue-700' 
-                : 'bg-gray-600 cursor-not-allowed'
-            }`}
-          >
-            Create New Game
-          </button>
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={gameId}
-              onChange={(e) => setGameId(e.target.value)}
-              placeholder="Enter Game ID"
-              className="px-3 py-2 bg-gray-800 rounded text-white"
-            />
-            <button
-              onClick={joinGame}
-              disabled={!isConnected || !gameId}
-              className={`font-bold py-2 px-4 rounded ${
-                isConnected && gameId
-                  ? 'bg-green-600 hover:bg-green-700' 
-                  : 'bg-gray-600 cursor-not-allowed'
-              }`}
-            >
-              Join Game
-            </button>
+<div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-b from-zinc-900 to-black text-white p-4">
+      <div className="w-full max-w-md">
+        <h1 className="text-3xl font-bold mb-12 text-center bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent">
+          Mines
+        </h1>
+        
+        {error && (
+          <div className="text-red-400 text-sm mb-6 bg-red-950/30 border border-red-900/50 rounded-lg p-3">
+            {error}
           </div>
-        </div>
-      )}
+        )}
 
-      {renderGameStatus()}
-      {renderGameBoard()}
+        {!gameState && (
+          <div className="flex flex-col gap-6 mb-8">
+            <button
+              onClick={createGame}
+              disabled={!isConnected}
+              className={`
+                py-3 px-4 rounded-lg font-medium transition-all duration-200
+                ${isConnected 
+                  ? 'bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 border border-emerald-500/30'
+                  : 'bg-zinc-800/50 text-zinc-500 border border-zinc-800 cursor-not-allowed'}
+              `}
+            >
+              New Game
+            </button>
+            <div className="flex gap-3">
+              <input
+                type="text"
+                value={gameId}
+                onChange={(e) => setGameId(e.target.value)}
+                placeholder="Game ID"
+                className="flex-1 px-4 py-3 bg-zinc-900/50 rounded-lg border border-zinc-800 text-white placeholder-zinc-600 focus:outline-none focus:border-emerald-500/50"
+              />
+              <button
+                onClick={joinGame}
+                disabled={!isConnected || !gameId}
+                className={`
+                  py-3 px-6 rounded-lg font-medium transition-all duration-200
+                  ${isConnected && gameId
+                    ? 'bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 border border-emerald-500/30'
+                    : 'bg-zinc-800/50 text-zinc-500 border border-zinc-800 cursor-not-allowed'}
+                `}
+              >
+                Join
+              </button>
+            </div>
+          </div>
+        )}
 
-      {!isConnected && (
-        <div className="text-red-500 mt-4">
-          Disconnected from server. Attempting to reconnect...
-        </div>
-      )}
+        {renderGameStatus()}
+        {renderGameBoard()}
 
-      {/* Debug State */}
-      <div className="mt-8 p-4 bg-gray-800 rounded w-full max-w-2xl">
-        <pre className="text-xs text-gray-400 overflow-auto">
-          {JSON.stringify({isConnected, gameState, error}, null, 2)}
-        </pre>
+        {!isConnected && (
+          <div className="text-zinc-400 text-sm mt-6 flex items-center justify-center space-x-2">
+            <Loader2 className="animate-spin" size={16} />
+            <span>Reconnecting...</span>
+          </div>
+        )}
+
+        {gameState && 'FINISHED' in gameState && (
+          <button
+            onClick={playAgain}
+            className="py-3 px-6 rounded-lg font-medium transition-all duration-200 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 border border-emerald-500/30"
+          >
+            Play Again
+          </button>
+        )}
       </div>
     </div>
   );

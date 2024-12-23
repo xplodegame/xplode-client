@@ -62,7 +62,7 @@ import { SignedIn, SignedOut } from '@clerk/clerk-react'
 import Navbar from './Navbar'
 import App from './App'
 // import Home from './Home'
-import Play from './Play'
+import SingleplayerGame from './SingleplayerGame'
 import MultiplayerGame from './MultiplayerGame'
 
 
@@ -85,10 +85,10 @@ const MainApp: React.FC = () => {
         <Routes>
           <Route path="/" element={<App />} />
           <Route 
-            path="/play" 
+            path="/singleplayer" 
             element={
               <ProtectedRoute>
-                <Play />
+                <SingleplayerGame />
               </ProtectedRoute>
             } 
           />
