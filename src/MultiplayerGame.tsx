@@ -5,7 +5,6 @@ import { Loader2 } from 'lucide-react';
 // Types matching Rust backend exactly
 type Player = {
   id: string;
-  funds: number;
 };
 
 type Board = {
@@ -19,21 +18,25 @@ type GameState =
   | { RUNNING: { game_id: string; players: Player[]; board: Board; turn_idx: number } }
   | { FINISHED: { game_id: string; winner_idx: number; board: Board; players: Player[] } };
 
+type GameMessage = {
+  Play?: { player_id: string };
+  MakeMove?: { game_id: string; x: number; y: number };
+  GameUpdate?: GameState;
+  Error?: string;
+};
+
 const WEBSOCKET_URL = 'ws://127.0.0.1:3000';
 const RECONNECT_DELAY = 2000;
 
 const MultiplayerGame = () => {
   const { user } = useUser();
   const [gameState, setGameState] = useState<GameState | null>(null);
-  const [gameId, setGameId] = useState<string>('');
   const [error, setError] = useState<string>('');
   const [isConnected, setIsConnected] = useState(false);
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<number>();
-  // Track revealed cells locally
   const [revealedCells, setRevealedCells] = useState<Set<string>>(new Set());
 
-  // Add sound effects
   const gemSound = useRef(new Audio('/gemSound.mp3'));
   const bombSound = useRef(new Audio('/bombSound.mp3'));
 
@@ -54,8 +57,7 @@ const MultiplayerGame = () => {
         setError('');
       };
 
-
-    ws.onmessage = (event) => {
+      ws.onmessage = (event) => {
         try {
           if (event.data instanceof ArrayBuffer) {
             const decoder = new TextDecoder('utf-8');
@@ -88,15 +90,27 @@ const MultiplayerGame = () => {
                 setRevealedCells(newRevealedCells);
               }
       
-              // If game is finished, reveal all bombs
+              // If game is finished, reveal all bombs and diamonds
               if ('FINISHED' in newGameState) {
                 const board = newGameState.FINISHED.board;
                 const newRevealedCells = new Set<string>();
+                
+                // Reveal all bomb coordinates
                 board.bomb_coordinates.forEach((index: number) => {
                   const x = Math.floor(index / 5);
                   const y = index % 5;
                   newRevealedCells.add(`${x}-${y}`);
                 });
+
+                // Reveal all diamond coordinates (assuming diamonds are represented as 'Mined')
+                board.grid.forEach((row: ('Hidden' | 'Revealed' | 'Mined')[], x: number) => {
+                  row.forEach((cell: 'Hidden' | 'Revealed' | 'Mined', y: number) => {
+                    if (cell === 'Mined') {
+                      newRevealedCells.add(`${x}-${y}`);
+                    }
+                  });
+                });
+
                 setRevealedCells(newRevealedCells);
               }
             } else if ('Error' in message) {
@@ -109,7 +123,7 @@ const MultiplayerGame = () => {
           console.error('Error parsing message:', err);
         }
       };
-
+      
       ws.onerror = (event) => {
         console.error('WebSocket error:', event);
         setError('Connection error occurred');
@@ -128,7 +142,6 @@ const MultiplayerGame = () => {
 
   useEffect(() => {
     connect();
-
     return () => {
       if (reconnectTimeoutRef.current) {
         clearTimeout(reconnectTimeoutRef.current);
@@ -139,11 +152,7 @@ const MultiplayerGame = () => {
     };
   }, [connect]);
 
-  const sendMessage = useCallback((message: {
-    CreateGame?: { player_id: string };
-    JoinGame?: { game_id: string; player_id: string };
-    MakeMove?: { game_id: string; x: number; y: number };
-  }) => {
+  const sendMessage = useCallback((message: GameMessage) => {
     if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
       console.error('WebSocket is not connected');
       setError('Not connected to server');
@@ -152,42 +161,29 @@ const MultiplayerGame = () => {
 
     try {
       const messageStr = JSON.stringify(message);
+      const encoder = new TextEncoder();
+      const binaryData = encoder.encode(messageStr);
       console.log('Sending message:', messageStr);
-      wsRef.current.send(messageStr);
+      wsRef.current.send(binaryData);
     } catch (err) {
       console.error('Error sending message:', err);
       setError('Failed to send message');
     }
   }, []);
 
-  const createGame = useCallback(() => {
+  const playGame = useCallback(() => {
     if (!user) return;
-    setRevealedCells(new Set()); // Reset revealed cells
+    setRevealedCells(new Set());
     
-    const message = {
-      CreateGame: {
+    const message: GameMessage = {
+      Play: {
         player_id: user.id
       }
     };
     
-    console.log('Creating game with message:', message);
+    console.log('Starting game with message:', message);
     sendMessage(message);
   }, [user, sendMessage]);
-
-  const joinGame = useCallback(() => {
-    if (!user || !gameId) return;
-    setRevealedCells(new Set()); // Reset revealed cells
-    
-    const message = {
-      JoinGame: {
-        game_id: gameId,
-        player_id: user.id
-      }
-    };
-    
-    console.log('Joining game with message:', message);
-    sendMessage(message);
-  }, [user, gameId, sendMessage]);
 
   const makeMove = useCallback((x: number, y: number) => {
     if (!gameState) return;
@@ -205,17 +201,15 @@ const MultiplayerGame = () => {
     const cellIndex = x * 5 + y;
     const isBomb = board.bomb_coordinates.includes(cellIndex);
 
-    // Play sound and reveal cell
     if (isBomb) {
       bombSound.current.play();
     } else {
       gemSound.current.play();
     }
 
-    // Add to revealed cells
     setRevealedCells(prev => new Set([...prev, `${x}-${y}`]));
 
-    const message = {
+    const message: GameMessage = {
       MakeMove: {
         game_id: currentGameId,
         x,
@@ -228,11 +222,11 @@ const MultiplayerGame = () => {
   }, [gameState, sendMessage]);
 
   const playAgain = useCallback(() => {
-    setGameState(null); // Reset game state
-    setGameId(''); // Clear game ID
-    setRevealedCells(new Set()); // Reset revealed cells
-    setError(''); // Clear any errors
-  }, []);
+    setGameState(null);
+    setRevealedCells(new Set());
+    setError('');
+    playGame();
+  }, [playGame]);
 
   const renderGameBoard = () => {
     if (!gameState) return null;
@@ -243,7 +237,7 @@ const MultiplayerGame = () => {
       gameState.FINISHED.board;
 
     return (
-        <div className="grid grid-cols-5 gap-3 mb-8">
+      <div className="grid grid-cols-5 gap-3 mb-8">
         {Array(5).fill(null).map((_, row) =>
           Array(5).fill(null).map((_, col) => {
             const cellKey = `${row}-${col}`;
@@ -254,15 +248,18 @@ const MultiplayerGame = () => {
             const cellIndex = row * 5 + col;
             const isBomb = board.bomb_coordinates.includes(cellIndex);
 
+            // Determine if we should show the mine/diamond
+            const shouldShowContent = isRevealed || ('FINISHED' in gameState && isBomb);
+
             return (
               <button
                 key={cellKey}
-                onClick={() => makeMove(row, col)}
+                onClick={() => canMove && !isRevealed && makeMove(row, col)}
                 disabled={!canMove || isRevealed}
                 className={`
                   w-16 h-16 flex items-center justify-center rounded-lg
                   transition-all duration-300 ease-in-out transform
-                  ${isRevealed 
+                  ${shouldShowContent 
                     ? isBomb
                       ? 'bg-red-900/30 border border-red-500/50'
                       : 'bg-emerald-900/30 border border-emerald-500/50'
@@ -272,11 +269,11 @@ const MultiplayerGame = () => {
                   shadow-lg backdrop-blur-sm
                 `}
               >
-                {isRevealed ? (
+                {shouldShowContent ? (
                   isBomb ? (
-                    <div className="text-red-500 text-2xl">💥</div>
+                    <div className="text-red-500 text-2xl animate-bounce">💥</div>
                   ) : (
-                    <div className="text-emerald-400 text-2xl">💎</div>
+                    <div className="text-emerald-400 text-2xl animate-pulse">💎</div>
                   )
                 ) : (
                   <div className="w-full h-full bg-gradient-to-br from-zinc-800/50 to-zinc-900/50 rounded-lg" />
@@ -289,7 +286,6 @@ const MultiplayerGame = () => {
     );
   };
 
-
   const renderGameStatus = () => {
     if (!gameState || !user) return null;
 
@@ -298,10 +294,7 @@ const MultiplayerGame = () => {
         <div className="flex flex-col items-center space-y-3 mb-8">
           <div className="text-zinc-400 flex items-center space-x-2">
             <Loader2 className="animate-spin" size={20} />
-            <span>Waiting for opponent...</span>
-          </div>
-          <div className="text-sm bg-zinc-900/50 px-4 py-2 rounded-lg border border-zinc-800">
-            Game ID: <span className="text-emerald-400 font-mono">{gameState.WAITING.game_id}</span>
+            <span>Finding opponent...</span>
           </div>
         </div>
       );
@@ -321,18 +314,18 @@ const MultiplayerGame = () => {
     }
 
     if ('FINISHED' in gameState) {
-        const winner = gameState.FINISHED.players[gameState.FINISHED.winner_idx];
-        const didWin = winner.id === user.id;
-        return (
-          <div className={`text-xl mb-8 font-medium ${didWin ? 'text-emerald-400' : 'text-red-400'}`}>
-            {didWin ? 'Victory!' : 'Game Over'}
-          </div>
+      const winner = gameState.FINISHED.players[gameState.FINISHED.winner_idx];
+      const didWin = winner.id === user.id;
+      return (
+        <div className={`text-xl mb-8 font-medium ${didWin ? 'text-emerald-400' : 'text-red-400'}`}>
+          {didWin ? 'Victory!' : 'Game Over'}
+        </div>
       );
     }
   };
 
   return (
-<div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-b from-zinc-900 to-black text-white p-4">
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-b from-zinc-900 to-black text-white p-4">
       <div className="w-full max-w-md">
         <h1 className="text-3xl font-bold mb-12 text-center bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent">
           Mines
@@ -345,41 +338,18 @@ const MultiplayerGame = () => {
         )}
 
         {!gameState && (
-          <div className="flex flex-col gap-6 mb-8">
-            <button
-              onClick={createGame}
-              disabled={!isConnected}
-              className={`
-                py-3 px-4 rounded-lg font-medium transition-all duration-200
-                ${isConnected 
-                  ? 'bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 border border-emerald-500/30'
-                  : 'bg-zinc-800/50 text-zinc-500 border border-zinc-800 cursor-not-allowed'}
-              `}
-            >
-              New Game
-            </button>
-            <div className="flex gap-3">
-              <input
-                type="text"
-                value={gameId}
-                onChange={(e) => setGameId(e.target.value)}
-                placeholder="Game ID"
-                className="flex-1 px-4 py-3 bg-zinc-900/50 rounded-lg border border-zinc-800 text-white placeholder-zinc-600 focus:outline-none focus:border-emerald-500/50"
-              />
-              <button
-                onClick={joinGame}
-                disabled={!isConnected || !gameId}
-                className={`
-                  py-3 px-6 rounded-lg font-medium transition-all duration-200
-                  ${isConnected && gameId
-                    ? 'bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 border border-emerald-500/30'
-                    : 'bg-zinc-800/50 text-zinc-500 border border-zinc-800 cursor-not-allowed'}
-                `}
-              >
-                Join
-              </button>
-            </div>
-          </div>
+          <button
+            onClick={playGame}
+            disabled={!isConnected}
+            className={`
+              w-full py-3 px-4 rounded-lg font-medium transition-all duration-200
+              ${isConnected 
+                ? 'bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 border border-emerald-500/30'
+                : 'bg-zinc-800/50 text-zinc-500 border border-zinc-800 cursor-not-allowed'}
+            `}
+          >
+            Play Game
+          </button>
         )}
 
         {renderGameStatus()}
@@ -395,7 +365,7 @@ const MultiplayerGame = () => {
         {gameState && 'FINISHED' in gameState && (
           <button
             onClick={playAgain}
-            className="py-3 px-6 rounded-lg font-medium transition-all duration-200 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 border border-emerald-500/30"
+            className="w-full py-3 px-6 rounded-lg font-medium transition-all duration-200 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 border border-emerald-500/30"
           >
             Play Again
           </button>
