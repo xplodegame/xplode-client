@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { SignedOut, SignedIn } from '@clerk/clerk-react';
-import { Sparkles, ChevronRight, Gem, Bomb, Crown } from 'lucide-react';
+import { Sparkles, ChevronRight, Gem, Bomb, Crown, DollarSign } from 'lucide-react';
 
 const FloatingTile = ({ children, delay = 0 }) => (
   <div 
@@ -16,6 +16,108 @@ const FloatingTile = ({ children, delay = 0 }) => (
 
 function Home() {
   const [hoveredMode, setHoveredMode] = useState(null);
+  const [walletBalance, setWalletBalance] = useState(0);
+
+  const handlePayment = async () => {
+
+    const orderResponse = await fetch('http://localhost:8080/deposit', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        amount: parseFloat("50000"),
+        currency: "INR",
+
+      })
+    });
+
+    const orderData = await orderResponse.json();
+    const options = {
+        key: import.meta.env.VITE_RAZORPAY_KEY, // Replace with your Razorpay API key
+        amount: orderData.amount, // Amount in paise (50000 paise = ₹500)
+        currency: "INR",
+        name: "Your Game Name",
+        description: "Deposit Funds",
+        order_id: orderData.id,// Your game logo
+        handler: function (response: any) {
+            // Handle successful payment here
+            console.log("Payment successful:", response);
+
+            // API Call for Verification
+            fetch('http://localhost:8080/verify-payment', { // Replace with your backend URL
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    razorpay_payment_id: response.razorpay_payment_id, // Payment ID from Razorpay
+                    razorpay_order_id: response.razorpay_order_id,
+                    razorpay_signature: response.razorpay_signature,
+                    amount: parseFloat("50000") // Replace with the actual user ID from your app context
+                }),
+            })
+            .then(res => {
+                if (res.ok) { // Check if the response status is OK (200-299)
+                    console.log("Payment verified and database updated.");
+                    // Update the wallet balance in the frontend
+                    setWalletBalance(prevBalance => prevBalance + 500); // Update with the amount added (in rupees)
+                } else {
+                    console.error("Verification failed: Status code", res.status);
+                }
+            })
+            .catch(err => {
+                console.error("Error during verification:", err);
+            });
+        },
+        prefill: {
+          name: "Player Name",
+          email: "player@example.com",
+        },
+        theme: {
+          color: "#3366cc",
+        },
+    };
+
+    const razorpay = new window.Razorpay(options);
+    razorpay.open();
+};
+
+  const handleWithdrawal = () => {
+    // Simulate withdrawal process
+    const withdrawalAmount = 200; // Amount to withdraw (in rupees)
+
+    if (walletBalance >= withdrawalAmount) {
+        // Update the wallet balance
+        setWalletBalance(prevBalance => prevBalance - withdrawalAmount);
+        console.log(`Withdrawal of ₹${withdrawalAmount} successful!`);
+
+        // API Call to log the withdrawal
+        fetch('http://localhost:8080/withdraw', { // Replace with your actual backend URL
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                amount: withdrawalAmount, // Amount to withdraw
+                // Add any other necessary data, like user ID if needed
+            }),
+        })
+        .then(res => {
+            if (res.ok) {
+                console.log("Withdrawal logged successfully.");
+            } else {
+                console.error("Failed to log withdrawal: Status code", res.status);
+            }
+        })
+        .catch(err => {
+            console.error("Error during withdrawal logging:", err);
+        });
+    } else {
+        console.error("Insufficient funds for withdrawal.");
+        // Optionally, notify the user about insufficient funds
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-zinc-900 via-black to-zinc-900 text-white overflow-hidden relative">
@@ -35,6 +137,40 @@ function Home() {
           <Crown size={24} />
         </div>
       </FloatingTile>
+
+      <SignedIn>
+
+        <div className="container mx-auto px-4 py-16 relative z-10">
+          {/* Profile Section */}
+          <div className="bg-zinc-800/50 p-6 rounded-lg mb-12">
+              <h2 className="text-2xl font-semibold text-emerald-400 mb-4 flex items-center gap-2">
+                  <DollarSign size={24} />
+                  Cashier
+              </h2>
+              <p className="text-zinc-400 mb-4">Manage your wallet and funds.</p>
+              <p className="text-lg text-emerald-400 mb-4">Wallet Balance: ₹{walletBalance}</p>
+              <button 
+                  onClick={handlePayment} 
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-200 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 border border-emerald-500/30"
+              >
+                  Add Money to Wallet
+              </button>
+              <button 
+                  onClick={handleWithdrawal} 
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-200 bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/30 mt-4"
+              >
+                  Withdraw Money
+              </button>
+          </div>
+        </div>
+      </SignedIn>
+      <SignedOut>
+        <div className="mt-12 text-center">
+            <p className="text-zinc-400 text-lg mb-6">
+                Ready to test your skills? Sign in to start playing!
+            </p>
+        </div>
+      </SignedOut>
 
       <div className="container mx-auto px-4 py-16 relative z-10">
         <div className="text-center mb-12">
