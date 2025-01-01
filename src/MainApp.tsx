@@ -25,6 +25,7 @@ const MainApp: React.FC = () => {
     name: string;
     profile_picture: string | null;
     wallet_balance?: number;
+    id?: number;
   }>();
 
   useEffect(() => {
@@ -55,6 +56,7 @@ const MainApp: React.FC = () => {
           setUserData(prev => ({
             ...prev!,
             wallet_balance: data.wallet_amount,
+            id: data.id,
           }));
         })
         .catch(error => {

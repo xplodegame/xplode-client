@@ -14,9 +14,19 @@ const FloatingTile = ({ children, delay = 0 }) => (
   </div>
 );
 
-function Home({ userData }: { userData?: { clerk_id: string; email: string; name: string; profile_picture: string | null; wallet_balance?: number } }) {
+function Home({ userData }: { 
+  userData?: { 
+    clerk_id: string; 
+    email: string; 
+    name: string; 
+    profile_picture: string | null; 
+    wallet_balance?: number;
+    id?: number;
+  } 
+}) {
   const [hoveredMode, setHoveredMode] = useState(null);
   const [walletBalance, setWalletBalance] = useState(userData?.wallet_balance || 0);
+  const [userId, setUserId] = useState(userData?.id || null);
 
   // Update wallet balance when the userData prop changes
   useEffect(() => {
@@ -32,6 +42,7 @@ function Home({ userData }: { userData?: { clerk_id: string; email: string; name
       body: JSON.stringify({
         amount: parseFloat("50000"),
         currency: "INR",
+        user_id: userData?.id
       }),
     });
 
@@ -143,6 +154,7 @@ function Home({ userData }: { userData?: { clerk_id: string; email: string; name
             </h2>
             <p className="text-zinc-400 mb-4">Manage your wallet and funds.</p>
             <p className="text-lg text-emerald-400 mb-4">Wallet Balance: ₹{walletBalance}</p>
+            {/* <p className="text-lg text-emerald-400 mb-4">Wallet Balance: ₹{walletBalance * 100} Paise</p> */}
             <button
               onClick={handlePayment}
               className="inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-200 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 border border-emerald-500/30"
