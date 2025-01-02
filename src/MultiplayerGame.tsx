@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
-import { useUser } from '@clerk/clerk-react';
+// import { useUser } from '@clerk/clerk-react';
 import { Loader2 } from 'lucide-react';
 
 // Types matching Rust backend exactly
@@ -38,7 +38,7 @@ const MultiplayerGame = ({ userData }: {
     id?: number;
   } 
 }) => {
-  const { user } = useUser();
+  // const { user } = useUser();
   const [gameState, setGameState] = useState<GameState | null>(null);
   const [error, setError] = useState<string>('');
   const [isConnected, setIsConnected] = useState(false);
@@ -182,20 +182,19 @@ const MultiplayerGame = ({ userData }: {
   }, []);
 
   const playGame = useCallback(() => {
-    if (!user) return;
+    if (!userData?.id) return;
     setRevealedCells(new Set());
     
     const message: GameMessage = {
       Play: {
-        player_id: userData?.id?.toString() || '',
+        player_id: userData.id.toString(),
         single_bet_size: betAmount
       }
     };
-    console.log("################:", userData?.id)
     
     console.log('Starting game with message:', message);
     sendMessage(message);
-  }, [user, betAmount, sendMessage, userData]);
+  }, [userData, betAmount, sendMessage]);
 
   const makeMove = useCallback((x: number, y: number) => {
     if (!gameState) return;
@@ -255,7 +254,7 @@ const MultiplayerGame = ({ userData }: {
             const cellKey = `${row}-${col}`;
             const isRevealed = revealedCells.has(cellKey);
             const canMove = 'RUNNING' in gameState && 
-              gameState.RUNNING.players[gameState.RUNNING.turn_idx].id === user?.id;
+              gameState.RUNNING.players[gameState.RUNNING.turn_idx].id === userData?.id?.toString();
 
             const cellIndex = row * 5 + col;
             const isBomb = board.bomb_coordinates.includes(cellIndex);
@@ -299,7 +298,7 @@ const MultiplayerGame = ({ userData }: {
   };
 
   const renderGameStatus = () => {
-    if (!gameState || !user) return null;
+    if (!gameState || !userData) return null;
 
     if ('WAITING' in gameState) {
       return (
@@ -313,7 +312,7 @@ const MultiplayerGame = ({ userData }: {
     }
 
     if ('RUNNING' in gameState) {
-      const isMyTurn = gameState.RUNNING.players[gameState.RUNNING.turn_idx].id === user.id;
+      const isMyTurn = gameState.RUNNING.players[gameState.RUNNING.turn_idx].id === userData?.id?.toString();
       return (
         <div className="text-xl mb-4">
           {isMyTurn ? (
@@ -327,7 +326,7 @@ const MultiplayerGame = ({ userData }: {
 
     if ('FINISHED' in gameState) {
       const winner = gameState.FINISHED.players[gameState.FINISHED.winner_idx];
-      const didWin = winner.id === user.id;
+      const didWin = winner.id === userData?.id?.toString();
       return (
         <div className={`text-xl mb-8 font-medium ${didWin ? 'text-emerald-400' : 'text-red-400'}`}>
           {didWin ? 'Victory!' : 'Game Over'}
