@@ -47,6 +47,7 @@ function Home({ userData }: {
     });
 
     const orderData = await orderResponse.json();
+    setUserId(orderData.user_id);
     const options = {
       key: import.meta.env.VITE_RAZORPAY_KEY,
       amount: orderData.amount,

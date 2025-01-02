@@ -19,7 +19,7 @@ type GameState =
   | { FINISHED: { game_id: string; winner_idx: number; board: Board; players: Player[]; single_bet_size: number } };
 
 type GameMessage = {
-  Play?: { player_id: string; single_bet_size: number };
+  Play?: { player_id: number; single_bet_size: number };
   MakeMove?: { game_id: string; x: number; y: number };
   GameUpdate?: GameState;
   Error?: string;
@@ -28,7 +28,16 @@ type GameMessage = {
 const WEBSOCKET_URL = 'ws://127.0.0.1:3000';
 const RECONNECT_DELAY = 2000;
 
-const MultiplayerGame = () => {
+const MultiplayerGame = ({ userData }: { 
+  userData?: { 
+    clerk_id: string; 
+    email: string; 
+    name: string; 
+    profile_picture: string | null; 
+    wallet_balance?: number;
+    id?: number;
+  } 
+}) => {
   const { user } = useUser();
   const [gameState, setGameState] = useState<GameState | null>(null);
   const [error, setError] = useState<string>('');
@@ -178,14 +187,15 @@ const MultiplayerGame = () => {
     
     const message: GameMessage = {
       Play: {
-        player_id: user.id,
+        player_id: userData?.id || 0,
         single_bet_size: betAmount
       }
     };
+    console.log("################:", userData?.id);
     
     console.log('Starting game with message:', message);
     sendMessage(message);
-  }, [user, betAmount, sendMessage]);
+  }, [user, betAmount, sendMessage, userData]);
 
   const makeMove = useCallback((x: number, y: number) => {
     if (!gameState) return;
@@ -339,75 +349,45 @@ const MultiplayerGame = () => {
           </div>
         )}
 
-        {/* {!gameState && (
-          <div className="flex flex-col space-y-6 bg-zinc-900/50 p-6 rounded-lg border border-zinc-800">
-            <div className="flex flex-col space-y-2">
-              <label htmlFor="betAmount" className="text-zinc-400 text-sm">
+        {!gameState && (
+          <div className="flex flex-col space-y-6 bg-zinc-900/50 p-8 rounded-xl border border-zinc-800 shadow-lg">
+            <div className="flex flex-col space-y-3">
+              <label htmlFor="betAmount" className="text-zinc-300 text-sm font-medium">
                 Enter Bet Amount
               </label>
-              <input
-                type="number"
-                id="betAmount"
-                value={betAmount}
-                onChange={(e) => setBetAmount(Number(e.target.value))}
-                placeholder="e.g., 100"
-                className="w-full py-3 px-4 rounded-lg font-medium bg-zinc-800/80 border border-zinc-700 text-white placeholder-zinc-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
-              />
+              <div className="relative">
+                <input
+                  type="number"
+                  id="betAmount"
+                  value={betAmount === 0 ? "" : betAmount} // Show empty string if betAmount is 0
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    // Update the betAmount state with the new value (or 0 if empty)
+                    setBetAmount(value === "" ? 0 : Number(value));
+                  }}
+                  placeholder="0" // Placeholder is now "0"
+                  className="w-full py-3 px-4 pl-10 rounded-lg font-medium bg-zinc-800/80 border border-zinc-700 text-white placeholder-zinc-500 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/50 transition-all duration-200"
+                />
+                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-zinc-500">
+                  ₹
+                </span>
+              </div>
             </div>
             <button
               onClick={playGame}
               disabled={!isConnected || betAmount <= 0}
               className={`
-                w-full py-3 px-4 rounded-lg font-medium transition-all duration-200
+                w-full py-3 px-4 rounded-lg font-semibold transition-all duration-200
                 bg-gradient-to-r from-emerald-500 to-teal-500 text-white
-                hover:from-emerald-600 hover:to-teal-600
+                hover:from-emerald-600 hover:to-teal-600 hover:shadow-lg
                 disabled:opacity-50 disabled:cursor-not-allowed
+                focus:outline-none focus:ring-2 focus:ring-emerald-500/50
               `}
             >
-              Play Game
+              Start Game
             </button>
           </div>
-        )} */}
-
-{!gameState && (
-  <div className="flex flex-col space-y-6 bg-zinc-900/50 p-8 rounded-xl border border-zinc-800 shadow-lg">
-    <div className="flex flex-col space-y-3">
-      <label htmlFor="betAmount" className="text-zinc-300 text-sm font-medium">
-        Enter Bet Amount
-      </label>
-      <div className="relative">
-        <input
-          type="number"
-          id="betAmount"
-          value={betAmount === 0 ? "" : betAmount} // Show empty string if betAmount is 0
-          onChange={(e) => {
-            const value = e.target.value;
-            // Update the betAmount state with the new value (or 0 if empty)
-            setBetAmount(value === "" ? 0 : Number(value));
-          }}
-          placeholder="0" // Placeholder is now "0"
-          className="w-full py-3 px-4 pl-10 rounded-lg font-medium bg-zinc-800/80 border border-zinc-700 text-white placeholder-zinc-500 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/50 transition-all duration-200"
-        />
-        <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-zinc-500">
-          ₹
-        </span>
-      </div>
-    </div>
-    <button
-      onClick={playGame}
-      disabled={!isConnected || betAmount <= 0}
-      className={`
-        w-full py-3 px-4 rounded-lg font-semibold transition-all duration-200
-        bg-gradient-to-r from-emerald-500 to-teal-500 text-white
-        hover:from-emerald-600 hover:to-teal-600 hover:shadow-lg
-        disabled:opacity-50 disabled:cursor-not-allowed
-        focus:outline-none focus:ring-2 focus:ring-emerald-500/50
-      `}
-    >
-      Start Game
-    </button>
-  </div>
-)}
+        )}
 
         {renderGameStatus()}
         {renderGameBoard()}

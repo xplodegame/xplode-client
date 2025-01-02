@@ -83,7 +83,7 @@ const MainApp: React.FC = () => {
             path="/multiplayer"
             element={
               <ProtectedRoute>
-                <MultiplayerGame />
+                <MultiplayerGame userData={userData} />
               </ProtectedRoute>
             }
           />
