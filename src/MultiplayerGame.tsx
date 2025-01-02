@@ -19,7 +19,7 @@ type GameState =
   | { FINISHED: { game_id: string; winner_idx: number; board: Board; players: Player[]; single_bet_size: number } };
 
 type GameMessage = {
-  Play?: { player_id: number; single_bet_size: number };
+  Play?: { player_id: string; single_bet_size: number };
   MakeMove?: { game_id: string; x: number; y: number };
   GameUpdate?: GameState;
   Error?: string;
@@ -187,11 +187,11 @@ const MultiplayerGame = ({ userData }: {
     
     const message: GameMessage = {
       Play: {
-        player_id: userData?.id || 0,
+        player_id: userData?.id?.toString() || '',
         single_bet_size: betAmount
       }
     };
-    console.log("################:", userData?.id);
+    console.log("################:", userData?.id)
     
     console.log('Starting game with message:', message);
     sendMessage(message);
