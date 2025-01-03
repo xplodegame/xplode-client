@@ -218,8 +218,6 @@ const MultiplayerGame = ({ userData }: {
       gemSound.current.play();
     }
 
-    setRevealedCells(prev => new Set([...prev, `${x}-${y}`]));
-
     const message: GameMessage = {
       MakeMove: {
         game_id: currentGameId,
@@ -233,11 +231,11 @@ const MultiplayerGame = ({ userData }: {
   }, [gameState, sendMessage]);
 
   const playAgain = useCallback(() => {
-    setGameState(null);
-    setRevealedCells(new Set());
-    setError('');
-    playGame();
-  }, [playGame]);
+    setGameState(null); // Reset game state to show the bet input form
+    setRevealedCells(new Set()); // Reset revealed cells
+    setError(''); // Clear any errors
+    setBetAmount(0); // Reset bet amount to 0
+  }, []);
 
   const renderGameBoard = () => {
     if (!gameState) return null;
