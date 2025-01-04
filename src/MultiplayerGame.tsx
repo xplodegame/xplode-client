@@ -1,5 +1,4 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
-// import { useUser } from '@clerk/clerk-react';
 import { Loader2 } from 'lucide-react';
 
 // Types matching Rust backend exactly
@@ -9,43 +8,47 @@ type Player = {
 
 type Board = {
   n: number;
-  grid: ('Hidden' | 'Revealed')[][];
+  grid: ('Hidden' | 'Revealed' | 'Mined')[][];
   bomb_coordinates: number[];
 };
 
-type GameState = 
+type GameState =
   | { WAITING: { game_id: string; creator: Player; board: Board; single_bet_size: number } }
   | { RUNNING: { game_id: string; players: Player[]; board: Board; turn_idx: number; single_bet_size: number } }
-  | { FINISHED: { game_id: string; winner_idx: number; board: Board; players: Player[]; single_bet_size: number } };
+  | { FINISHED: { game_id: string; winner_idx: number; board: Board; players: Player[]; single_bet_size: number } }
+  | { ABORTED: { game_id: string } }; // Added ABORTED state
 
 type GameMessage = {
   Play?: { player_id: string; single_bet_size: number };
   MakeMove?: { game_id: string; x: number; y: number };
+  Stop?: { game_id: string; abort: boolean };
   GameUpdate?: GameState;
   Error?: string;
 };
 
 const WEBSOCKET_URL = 'ws://127.0.0.1:3000';
 const RECONNECT_DELAY = 2000;
+const MOVE_TIMEOUT = 5000; // 5 seconds
 
-const MultiplayerGame = ({ userData }: { 
-  userData?: { 
-    clerk_id: string; 
-    email: string; 
-    name: string; 
-    profile_picture: string | null; 
+const MultiplayerGame = ({ userData }: {
+  userData?: {
+    clerk_id: string;
+    email: string;
+    name: string;
+    profile_picture: string | null;
     wallet_balance?: number;
     id?: number;
-  } 
+  }
 }) => {
-  // const { user } = useUser();
   const [gameState, setGameState] = useState<GameState | null>(null);
   const [error, setError] = useState<string>('');
   const [isConnected, setIsConnected] = useState(false);
   const [betAmount, setBetAmount] = useState<number>(0);
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<number>();
+  const moveTimeoutRef = useRef<number>();
   const [revealedCells, setRevealedCells] = useState<Set<string>>(new Set());
+  const [turnCount, setTurnCount] = useState<number>(0);
 
   const gemSound = useRef(new Audio('/gemSound.mp3'));
   const bombSound = useRef(new Audio('/bombSound.mp3'));
@@ -72,59 +75,98 @@ const MultiplayerGame = ({ userData }: {
           if (event.data instanceof ArrayBuffer) {
             const decoder = new TextDecoder('utf-8');
             const messageStr = decoder.decode(event.data);
-            const message = JSON.parse(messageStr);
+            const message = JSON.parse(messageStr) as GameMessage;
             console.log('Received message:', message);
-      
+
+            // 
             if ('GameUpdate' in message) {
               const newGameState = message.GameUpdate;
-              setGameState(newGameState);
-              console.log('Updated game state:', newGameState);
-      
-              // Update revealed cells based on the grid state
-              if ('RUNNING' in newGameState) {
-                const newRevealedCells = new Set<string>();
-                newGameState.RUNNING.board.grid.forEach((row: ('Hidden' | 'Revealed' | 'Mined')[], x: number) => {
-                  row.forEach((cell: 'Hidden' | 'Revealed' | 'Mined', y: number) => {
-                    if (cell === 'Mined' || cell === 'Revealed') {
-                      newRevealedCells.add(`${x}-${y}`);
-                      // Play sound for newly revealed cells
-                      const cellIndex = x * 5 + y;
-                      if (newGameState.RUNNING.board.bomb_coordinates.includes(cellIndex)) {
-                        bombSound.current.play();
-                      } else {
-                        gemSound.current.play();
-                      }
-                    }
-                  });
-                });
-                setRevealedCells(newRevealedCells);
-              }
-      
-              // If game is finished, reveal all bombs and diamonds
-              if ('FINISHED' in newGameState) {
-                const board = newGameState.FINISHED.board;
-                const newRevealedCells = new Set<string>();
+              setGameState(newGameState ?? null);
+              
+              if (newGameState) {
+                // console.log('Updated game state:', newGameState);
+                // console.log("gamestateeeeee#####:", message);
+                // console.log("newgamestateeeeee#####:", newGameState);
+                // console.log("### turn count:", turnCount);
                 
-                // Reveal all bomb coordinates
-                board.bomb_coordinates.forEach((index: number) => {
-                  const x = Math.floor(index / 5);
-                  const y = index % 5;
-                  newRevealedCells.add(`${x}-${y}`);
-                });
+                // // Update turnCount when the turn index changes
+                // if ('RUNNING' in newGameState) {
+                //   const newTurnIdx = newGameState.RUNNING.turn_idx;
+                //   if (gameState && 'RUNNING' in gameState) {
+                //     const previousTurnIdx = gameState.RUNNING.turn_idx;
+                //     if (newTurnIdx !== previousTurnIdx) {
+                //       setTurnCount((prevCount) => prevCount + 1);
+                //     }
+                //   } else {
+                //     // If gameState is null or not RUNNING, initialize turnCount
+                //     setTurnCount(1); // Start counting from 1 for the first turn
+                //   }
+                // }
 
-                // Reveal all diamond coordinates (assuming diamonds are represented as 'Mined')
-                board.grid.forEach((row: ('Hidden' | 'Revealed' | 'Mined')[], x: number) => {
-                  row.forEach((cell: 'Hidden' | 'Revealed' | 'Mined', y: number) => {
-                    if (cell === 'Mined') {
-                      newRevealedCells.add(`${x}-${y}`);
-                    }
+                // Clear existing timeout
+                if (moveTimeoutRef.current) {
+                  clearTimeout(moveTimeoutRef.current);
+                }
+
+                if ('RUNNING' in newGameState) {
+                  // Set timeout for move inactivity
+                  moveTimeoutRef.current = window.setTimeout(() => {
+                    setTurnCount((prevCount) => {
+                      let abort = true;
+                      console.log("Prevcount count:", prevCount); 
+                      
+                      if (prevCount > 0) {
+                        abort = false;
+                        console.log("########## turn Counter greater than one now, abort set to false ");
+                      }
+                      const stopMessage: GameMessage = {
+                        Stop: {
+                          game_id: newGameState.RUNNING.game_id,
+                          abort: abort,
+                        },
+                      };
+                      sendMessage(stopMessage);
+                      return prevCount;
+                    });
+                  }, MOVE_TIMEOUT);
+                } else if ('WAITING' in newGameState) {
+                  // Set timeout for game start inactivity
+                  moveTimeoutRef.current = window.setTimeout(() => {
+                    const stopMessage: GameMessage = {
+                      Stop: {
+                        game_id: newGameState.WAITING.game_id,
+                        abort: true, // At the start, set abort: true
+                      },
+                    };
+                    sendMessage(stopMessage);
+                    setGameState(null);
+                    setRevealedCells(new Set());
+                    setError('Game aborted due to inactivity.');
+                  }, MOVE_TIMEOUT);
+                }
+
+                // Update revealed cells based on the grid state
+                if ('RUNNING' in newGameState || 'FINISHED' in newGameState) {
+                  const newRevealedCells = new Set<string>();
+                  const board = 'RUNNING' in newGameState ? newGameState.RUNNING.board : newGameState.FINISHED.board;
+                  board.grid.forEach((row, x) => {
+                    row.forEach((cell, y) => {
+                      if (cell === 'Mined' || cell === 'Revealed') {
+                        newRevealedCells.add(`${x}-${y}`);
+                        const cellIndex = x * 5 + y;
+                        if (board.bomb_coordinates.includes(cellIndex)) {
+                          bombSound.current.play();
+                        } else {
+                          gemSound.current.play();
+                        }
+                      }
+                    });
                   });
-                });
-
-                setRevealedCells(newRevealedCells);
+                  setRevealedCells(newRevealedCells);
+                }
               }
             } else if ('Error' in message) {
-              setError(message.Error);
+              setError(message.Error ?? '');
             }
           } else {
             console.error('Received unexpected message type:', event.data);
@@ -133,7 +175,7 @@ const MultiplayerGame = ({ userData }: {
           console.error('Error parsing message:', err);
         }
       };
-      
+
       ws.onerror = (event) => {
         console.error('WebSocket error:', event);
         setError('Connection error occurred');
@@ -159,8 +201,15 @@ const MultiplayerGame = ({ userData }: {
       if (wsRef.current) {
         wsRef.current.close();
       }
+      if (moveTimeoutRef.current) {
+        clearTimeout(moveTimeoutRef.current);
+      }
     };
   }, [connect]);
+
+  useEffect(() => {
+    console.log("Turn count updated:", turnCount);
+}, [turnCount]);
 
   const sendMessage = useCallback((message: GameMessage) => {
     if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
@@ -184,30 +233,43 @@ const MultiplayerGame = ({ userData }: {
   const playGame = useCallback(() => {
     if (!userData?.id) return;
     setRevealedCells(new Set());
-    
+
     const message: GameMessage = {
       Play: {
         player_id: userData.id.toString(),
-        single_bet_size: betAmount
-      }
+        single_bet_size: betAmount,
+      },
     };
-    
+
     console.log('Starting game with message:', message);
     sendMessage(message);
   }, [userData, betAmount, sendMessage]);
 
   const makeMove = useCallback((x: number, y: number) => {
     if (!gameState) return;
-    
-    const currentGameId = 
-      'RUNNING' in gameState ? gameState.RUNNING.game_id :
-      'WAITING' in gameState ? gameState.WAITING.game_id :
-      gameState.FINISHED.game_id;
 
-    const board = 
-      'RUNNING' in gameState ? gameState.RUNNING.board :
-      'WAITING' in gameState ? gameState.WAITING.board :
-      gameState.FINISHED.board;
+    // Clear existing timeout
+    if (moveTimeoutRef.current) {
+      clearTimeout(moveTimeoutRef.current);
+    }
+
+    let currentGameId: string;
+    let board: Board | undefined;
+
+    if ('RUNNING' in gameState) {
+      currentGameId = gameState.RUNNING.game_id;
+      board = gameState.RUNNING.board;
+    } else if ('WAITING' in gameState) {
+      currentGameId = gameState.WAITING.game_id;
+      board = gameState.WAITING.board;
+    } else if ('FINISHED' in gameState) {
+      currentGameId = gameState.FINISHED.game_id;
+      board = gameState.FINISHED.board;
+    } else {
+      return; // Return early if gameState is invalid
+    }
+
+    if (!board) return; // Return early if board is undefined
 
     const cellIndex = x * 5 + y;
     const isBomb = board.bomb_coordinates.includes(cellIndex);
@@ -222,12 +284,31 @@ const MultiplayerGame = ({ userData }: {
       MakeMove: {
         game_id: currentGameId,
         x,
-        y
-      }
+        y,
+      },
     };
-    
+
     console.log('Making move with message:', message);
     sendMessage(message);
+    console.log("Turn count before:", turnCount);
+    setTurnCount(prev => prev + 1);
+    console.log("Turn count after:", turnCount);
+    
+
+    // Reset move timeout after making a move
+    if ('RUNNING' in gameState) {
+      moveTimeoutRef.current = window.setTimeout(() => {
+        const abort = false; // In the middle of the game, set abort: false
+        const stopMessage: GameMessage = {
+          Stop: {
+            game_id: currentGameId,
+            abort: abort,
+          },
+        };
+        console.log("STOPPPP MESSAAAAGEEE!!!: ",stopMessage);
+        sendMessage(stopMessage);
+      }, MOVE_TIMEOUT);
+    }
   }, [gameState, sendMessage]);
 
   const playAgain = useCallback(() => {
@@ -240,10 +321,16 @@ const MultiplayerGame = ({ userData }: {
   const renderGameBoard = () => {
     if (!gameState) return null;
 
-    const board = 
-      'RUNNING' in gameState ? gameState.RUNNING.board :
-      'WAITING' in gameState ? gameState.WAITING.board :
-      gameState.FINISHED.board;
+    let board: Board | undefined;
+    if ('WAITING' in gameState) {
+      board = gameState.WAITING.board;
+    } else if ('RUNNING' in gameState) {
+      board = gameState.RUNNING.board;
+    } else if ('FINISHED' in gameState) {
+      board = gameState.FINISHED.board;
+    }
+
+    if (!board) return null; // Return early if board is undefined
 
     return (
       <div className="grid grid-cols-5 gap-3 mb-8">
@@ -251,13 +338,12 @@ const MultiplayerGame = ({ userData }: {
           Array(5).fill(null).map((_, col) => {
             const cellKey = `${row}-${col}`;
             const isRevealed = revealedCells.has(cellKey);
-            const canMove = 'RUNNING' in gameState && 
+            const canMove = 'RUNNING' in gameState &&
               gameState.RUNNING.players[gameState.RUNNING.turn_idx].id === userData?.id?.toString();
 
             const cellIndex = row * 5 + col;
             const isBomb = board.bomb_coordinates.includes(cellIndex);
 
-            // Determine if we should show the mine/diamond
             const shouldShowContent = isRevealed || ('FINISHED' in gameState && isBomb);
 
             return (
@@ -268,11 +354,11 @@ const MultiplayerGame = ({ userData }: {
                 className={`
                   w-16 h-16 flex items-center justify-center rounded-lg
                   transition-all duration-300 ease-in-out transform
-                  ${shouldShowContent 
+                  ${shouldShowContent
                     ? isBomb
                       ? 'bg-red-900/30 border border-red-500/50'
                       : 'bg-emerald-900/30 border border-emerald-500/50'
-                    : canMove 
+                    : canMove
                       ? 'bg-zinc-900/80 hover:bg-zinc-800 hover:scale-105 border border-zinc-700'
                       : 'bg-zinc-900/50 border border-zinc-800'}
                   shadow-lg backdrop-blur-sm
@@ -331,6 +417,14 @@ const MultiplayerGame = ({ userData }: {
         </div>
       );
     }
+
+    if ('ABORTED' in gameState) {
+      return (
+        <div className="text-xl mb-8 font-medium text-yellow-400">
+          Game Aborted Due to Inactivity
+        </div>
+      );
+    }
   };
 
   return (
@@ -339,14 +433,14 @@ const MultiplayerGame = ({ userData }: {
         <h1 className="text-3xl font-bold mb-12 text-center bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent">
           Mines
         </h1>
-        
+
         {error && (
           <div className="text-red-400 text-sm mb-6 bg-red-950/30 border border-red-900/50 rounded-lg p-3">
             {error}
           </div>
         )}
 
-        {!gameState && (
+        {(!gameState || 'ABORTED' in gameState) && (
           <div className="flex flex-col space-y-6 bg-zinc-900/50 p-8 rounded-xl border border-zinc-800 shadow-lg">
             <div className="flex flex-col space-y-3">
               <label htmlFor="betAmount" className="text-zinc-300 text-sm font-medium">
@@ -356,13 +450,12 @@ const MultiplayerGame = ({ userData }: {
                 <input
                   type="number"
                   id="betAmount"
-                  value={betAmount === 0 ? "" : betAmount} // Show empty string if betAmount is 0
+                  value={betAmount === 0 ? "" : betAmount}
                   onChange={(e) => {
                     const value = e.target.value;
-                    // Update the betAmount state with the new value (or 0 if empty)
                     setBetAmount(value === "" ? 0 : Number(value));
                   }}
-                  placeholder="0" // Placeholder is now "0"
+                  placeholder="0"
                   className="w-full py-3 px-4 pl-10 rounded-lg font-medium bg-zinc-800/80 border border-zinc-700 text-white placeholder-zinc-500 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/50 transition-all duration-200"
                 />
                 <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-zinc-500">
@@ -396,7 +489,7 @@ const MultiplayerGame = ({ userData }: {
           </div>
         )}
 
-        {gameState && 'FINISHED' in gameState && (
+        {(gameState && ('FINISHED' in gameState || 'ABORTED' in gameState)) && (
           <button
             onClick={playAgain}
             className="w-full py-3 px-6 rounded-lg font-medium transition-all duration-200 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 border border-emerald-500/30"
