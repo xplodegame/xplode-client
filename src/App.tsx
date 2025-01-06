@@ -21,7 +21,7 @@
 // }
 
 import { SignedOut, SignedIn } from '@clerk/clerk-react'
-import Home from './Home'
+import Home from './pages/Home/Home'
 
 export default function App() {
   return (

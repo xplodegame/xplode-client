@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import './index.css';
 import { Sparkles, Crown } from 'lucide-react';
 
 function SingleplayerGame() {
@@ -15,8 +14,8 @@ function SingleplayerGame() {
     return savedScore ? JSON.parse(savedScore) : 0;
   });
 
-  const gemSound = new Audio('/gemSound.mp3');
-  const bombSound = new Audio('/bombSound.mp3');
+  const gemSound = new Audio('/assets/sounds/gemSound.mp3');
+  const bombSound = new Audio('/assets/sounds/bombSound.mp3');
 
   // Your existing game logic
   const generateMines = () => {

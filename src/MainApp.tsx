@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import { SignedIn, SignedOut, useUser } from '@clerk/clerk-react';
-import Navbar from './Navbar';
-import SingleplayerGame from './SingleplayerGame';
-import MultiplayerGame from './MultiplayerGame';
-import Home from './Home';
+import Navbar from './components/Navbar/Navbar';
+import SingleplayerGame from './pages/SinglePlayerGame/SingleplayerGame';
+import MultiplayerGame from './pages/MultiplayerGame/MultiplayerGame';
+import Home from './pages/Home/Home';
+import './index.css';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   return (
