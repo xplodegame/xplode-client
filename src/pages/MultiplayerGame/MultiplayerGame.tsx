@@ -84,6 +84,24 @@ const MultiplayerGame = ({ userData }: {
               setGameState(newGameState ?? null);
               
               if (newGameState) {
+                // console.log('Updated game state:', newGameState);
+                // console.log("gamestateeeeee#####:", message);
+                // console.log("newgamestateeeeee#####:", newGameState);
+                // console.log("### turn count:", turnCount);
+                
+                // // Update turnCount when the turn index changes
+                // if ('RUNNING' in newGameState) {
+                //   const newTurnIdx = newGameState.RUNNING.turn_idx;
+                //   if (gameState && 'RUNNING' in gameState) {
+                //     const previousTurnIdx = gameState.RUNNING.turn_idx;
+                //     if (newTurnIdx !== previousTurnIdx) {
+                //       setTurnCount((prevCount) => prevCount + 1);
+                //     }
+                //   } else {
+                //     // If gameState is null or not RUNNING, initialize turnCount
+                //     setTurnCount(1); // Start counting from 1 for the first turn
+                //   }
+                // }
 
                 // Clear existing timeout
                 if (moveTimeoutRef.current) {
