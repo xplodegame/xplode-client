@@ -1,0 +1,29 @@
+// Types matching Rust backend exactly
+export type Player = {
+    clerk_id: string;
+    email: string;
+    name: string;
+    profile_picture: string | null;
+    wallet_balance?: number;
+    id?: number;
+};
+  
+  export type Board = {
+    n: number;
+    grid: ('Hidden' | 'Revealed' | 'Mined')[][];
+    bomb_coordinates: number[];
+  };
+  
+  export type GameState =
+    | { WAITING: { game_id: string; creator: Player; board: Board; single_bet_size: number } }
+    | { RUNNING: { game_id: string; players: Player[]; board: Board; turn_idx: number; single_bet_size: number } }
+    | { FINISHED: { game_id: string; winner_idx: number; board: Board; players: Player[]; single_bet_size: number } }
+    | { ABORTED: { game_id: string } };
+  
+  export type GameMessage = {
+    Play?: { player_id: string; single_bet_size: number };
+    MakeMove?: { game_id: string; x: number; y: number };
+    Stop?: { game_id: string; abort: boolean };
+    GameUpdate?: GameState;
+    Error?: string;
+  };
