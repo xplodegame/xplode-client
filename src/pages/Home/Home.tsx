@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { SignedIn } from '@clerk/clerk-react';
-import { DollarSign, X } from 'lucide-react'; // Import X icon for closing the modal
+import { DollarSign, X, Copy, CheckCheck } from 'lucide-react';
 import { Connection, PublicKey, Keypair, clusterApiUrl } from '@solana/web3.js';
 import { encodeURL, createQR, findReference, validateTransfer, FindReferenceError } from '@solana/pay';
 import BigNumber from 'bignumber.js';
-import QRCodeStyling from 'qr-code-styling'; // Import QRCodeStyling
+import QRCodeStyling from 'qr-code-styling';
 
 function Home({ userData }: { 
   userData?: { 
@@ -23,7 +23,8 @@ function Home({ userData }: {
   const [solAmount, setSolAmount] = useState('');
   const [processingPayment, setProcessingPayment] = useState(false);
   const [paymentURL, setPaymentURL] = useState<string | null>(null);
-  const [showQRModal, setShowQRModal] = useState(false); // State to control QR modal visibility
+  const [showQRModal, setShowQRModal] = useState(false);
+  const [copied, setCopied] = useState(false);
   const qrRef = useRef<HTMLDivElement>(null);
 
   const MERCHANT_WALLET = new PublicKey("8qE7XdQi5EweM3SBAmqAgNtUD6R9xgpyGt9dfataoqQb");
@@ -57,7 +58,7 @@ function Home({ userData }: {
         setPaymentStatus('validated');
         await verifyTransaction(signatureInfo.signature);
         setProcessingPayment(false);
-        setShowQRModal(false); // Close the modal after payment is validated
+        setShowQRModal(false);
         clearInterval(interval);
       } catch (error) {
         if (error instanceof FindReferenceError) {
@@ -67,7 +68,7 @@ function Home({ userData }: {
         console.error('Payment validation error:', error);
         setPaymentStatus('failed');
         setProcessingPayment(false);
-        setShowQRModal(false); // Close the modal if payment fails
+        setShowQRModal(false);
         clearInterval(interval);
       }
     };
@@ -85,7 +86,6 @@ function Home({ userData }: {
         height: 300,
         type: "svg",
         data: paymentURL,
-        // image: "https://upload.wikimedia.org/wikipedia/en/b/b9/Solana_logo.png",
         image: "/assets/images/sol-logo.svg",
         dotsOptions: {
           color: "#ffffff",
@@ -93,8 +93,8 @@ function Home({ userData }: {
           gradient: {
             type: "radial",
             colorStops: [
-              { offset: 0, color: "#22d3ee" },  // cyan-400
-              { offset: 1, color: "#0ea5e9" }   // sky-500
+              { offset: 0, color: "#22d3ee" },
+              { offset: 1, color: "#0ea5e9" }
             ]
           }
         },
@@ -108,11 +108,11 @@ function Home({ userData }: {
         },
         cornersSquareOptions: {
           type: "extra-rounded",
-          color: "#0ea5e9"  // sky-500
+          color: "#0ea5e9"
         },
         cornersDotOptions: {
           type: "dot",
-          color: "#22d3ee"  // cyan-400
+          color: "#22d3ee"
         }
       });
 
@@ -120,8 +120,15 @@ function Home({ userData }: {
     }
   }, [paymentURL]);
 
-
-
+  const copyToClipboard = async () => {
+    try {
+      await navigator.clipboard.writeText(MERCHANT_WALLET.toString());
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy:', err);
+    }
+  };
 
   const handlePayment = async () => {
     if (!solAmount || Number(solAmount) <= 0) {
@@ -143,9 +150,9 @@ function Home({ userData }: {
         memo: `Game deposit for user ${userId}`
       });
 
-      setPaymentURL(url.toString()); // Ensure the URL is a string
+      setPaymentURL(url.toString());
       setPaymentStatus('pending');
-      setShowQRModal(true); // Show the QR modal
+      setShowQRModal(true);
     } catch (error) {
       console.error("Error generating payment QR:", error);
       setProcessingPayment(false);
@@ -223,65 +230,61 @@ function Home({ userData }: {
               {processingPayment ? 'Processing...' : 'Add Money to Wallet'}
             </button>
 
-            {/* QR Code Modal */}
-
-
             {showQRModal && (
               <div className="fixed inset-0 z-50">
-                {/* Animated backdrop */}
                 <div className="absolute inset-0 backdrop-blur-xl bg-black/30 animate-in fade-in duration-500" />
                 
-                {/* Moving gradient background */}
                 <div className="absolute inset-0 opacity-30">
-                  <div className="absolute inset-0 bg-gradient-conic from-sky-500 via-cyan-300 to-sky-500 animate-spin-slow" style={{ '--tw-gradient-stops': 'var(--tw-gradient-from) 0%, var(--tw-gradient-via) 50%, var(--tw-gradient-to) 100%' } as React.CSSProperties} />
+                  <div className="absolute inset-0 bg-gradient-conic from-sky-500 via-cyan-300 to-sky-500 animate-spin-slow" 
+                       style={{ '--tw-gradient-stops': 'var(--tw-gradient-from) 0%, var(--tw-gradient-via) 50%, var(--tw-gradient-to) 100%' } as React.CSSProperties} />
                 </div>
 
-                {/* Modal container */}
                 <div className="relative h-full flex items-center justify-center p-4">
-                  <div className="relative bg-zinc-900/50 rounded-3xl overflow-hidden backdrop-blur-2xl shadow-2xl 
-                                animate-in zoom-in-95 duration-300 slide-in-from-bottom-4
-                                border border-white/10 group">
-                    
-                    {/* Close button */}
+                  <div className="relative bg-zinc-900/50 rounded-3xl overflow-hidden backdrop-blur-2xl shadow-2xl animate-modal border border-white/10 group">
                     <button
                       onClick={() => {
                         setShowQRModal(false);
                         setPaymentStatus('failed');
                         setProcessingPayment(false);
                       }}
-                      className="absolute right-4 top-4 z-10 p-2 rounded-full 
-                              bg-white/5 hover:bg-white/10 transition-all duration-200
-                              group-hover:opacity-100 opacity-60"
+                      className="absolute right-4 top-4 z-10 p-2 rounded-full bg-white/5 hover:bg-white/10 transition-all duration-200 group-hover:opacity-100 opacity-60"
                     >
                       <X size={20} className="transform transition-transform hover:rotate-90" />
                     </button>
 
-                    {/* Content wrapper */}
-                    <div className="p-8 relative">
-                      {/* Animated gradient orb */}
-                      <div className="absolute -top-1/2 -left-1/2 w-full h-full 
-                                    bg-gradient-to-br from-sky-500/30 via-cyan-300/30 to-transparent 
-                                    blur-2xl rounded-full animate-pulse-slow" />
+                    <div className="p-8 relative flex flex-col items-center justify-center">
+                      <div className="absolute -top-1/2 -left-1/2 w-full h-full bg-gradient-to-br from-sky-500/30 via-cyan-300/30 to-transparent blur-2xl rounded-full animate-pulse-slow" />
                       
-                      {/* QR container */}
-                      <div className="relative">
-                        {/* QR backdrop glow */}
-                        <div className="absolute inset-0 bg-gradient-to-tr from-sky-500/20 to-cyan-300/20 
-                                      blur-xl rounded-2xl transform -rotate-6 scale-105" />
+                      <div className="relative flex flex-col items-center justify-center">
+                        <div className="absolute inset-0 bg-gradient-to-tr from-sky-500/20 to-cyan-300/20 blur-xl rounded-2xl transform -rotate-6 scale-105" />
                         
-                        {/* QR wrapper */}
-                        <div className="relative bg-zinc-900/50 rounded-2xl p-6 backdrop-blur-sm
-                                      transform transition-transform duration-300 hover:scale-102
-                                      border border-white/5">
-                          <div ref={qrRef} 
-                              className="w-[300px] h-[300px] transform transition-all duration-500
-                                        hover:scale-105 hover:rotate-1" />
+                        <div className="relative bg-zinc-900/50 rounded-2xl p-6 backdrop-blur-sm transform transition-transform duration-300 hover:scale-102 border border-white/5 flex flex-col items-center justify-center">
+                          <div ref={qrRef} className="w-[300px] h-[300px] transform transition-all duration-500 hover:scale-105 hover:rotate-1" />
                         </div>
                       </div>
 
-                      {/* Instructions */}
-                      <p className="mt-6 text-center text-sm text-zinc-400/80 font-light">
-                        Scan with your Solana wallet to complete payment
+                      <div className="mt-6 bg-zinc-900/50 rounded-xl p-4 border border-white/5 backdrop-blur-sm">
+                        <p className="text-sm text-zinc-400/80 mb-2">Merchant Address</p>
+                        <div className="flex items-center gap-2 bg-zinc-950/50 rounded-lg p-3 border border-white/5">
+                          <code className="text-xs text-white/70 flex-1 overflow-hidden text-ellipsis">
+                            {MERCHANT_WALLET.toString()}
+                          </code>
+                          <button
+                            onClick={copyToClipboard}
+                            className="p-1.5 hover:bg-white/5 rounded-md transition-colors duration-200"
+                            title="Copy address"
+                          >
+                            {copied ? (
+                              <CheckCheck size={16} className="text-emerald-400" />
+                            ) : (
+                              <Copy size={16} className="text-white/70" />
+                            )}
+                          </button>
+                        </div>
+                      </div>
+
+                      <p className="mt-4 text-center text-sm text-zinc-400/80 font-light">
+                        Scan with your Solana wallet or copy the address to complete payment
                       </p>
                     </div>
                   </div>
