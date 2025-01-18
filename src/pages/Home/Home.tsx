@@ -10,14 +10,13 @@ function Home({ userData }: {
   userData?: { 
     clerk_id: string; 
     email: string; 
-    name: string; 
-    profile_picture: string | null; 
-    wallet_balance?: number;
+    name: string | null; 
+    wallet_balance?: number | null;
     id?: number;
   } 
 }) {
   const [walletBalance, setWalletBalance] = useState(userData?.wallet_balance || 0);
-  const [userId, setUserId] = useState(userData?.id || null);
+  const [userId, setUserId] = useState(userData?.id || undefined);
   const [reference, setReference] = useState<PublicKey | null>(null);
   const [paymentStatus, setPaymentStatus] = useState<string>('');
   const [solAmount, setSolAmount] = useState('');
@@ -27,6 +26,9 @@ function Home({ userData }: {
   const [copied, setCopied] = useState(false);
   const qrRef = useRef<HTMLDivElement>(null);
 
+  const [currency, setCurrency] = useState('SOL');  // Add currency state
+  const [error, setError] = useState<string | null>(null);
+
   const MERCHANT_WALLET = new PublicKey("8qE7XdQi5EweM3SBAmqAgNtUD6R9xgpyGt9dfataoqQb");
 
   useEffect(() => {
@@ -34,6 +36,7 @@ function Home({ userData }: {
   }, [userData]);
 
   useEffect(() => {
+    setUserId(userData?.id);
     if (!reference || paymentStatus !== 'pending') return;
 
     const connection = new Connection(clusterApiUrl('devnet'), 'confirmed');
@@ -164,28 +167,53 @@ function Home({ userData }: {
 
   const verifyTransaction = async (signature: string) => {
     try {
-      const response = await fetch('http://localhost:8080/update-balance', {
+      // First, ensure we have a valid user ID
+      if (!userId) {
+        console.error("No user ID available");
+        setPaymentStatus('failed');
+        return;
+      }
+
+      // Convert userId to string since backend expects TEXT
+      const depositData = {
+        user_id: userId,
+        amount: Number(solAmount),
+        currency: "SOL",
+        tx_type: "DEPOSIT",
+        tx_hash: signature,
+      };
+
+      console.log('Sending deposit request:', depositData);
+
+      const response = await fetch('http://localhost:8080/deposit', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          user_id: userId,
-          amount: Number(solAmount),
-          transaction_signature: signature,
-        }),
+        body: JSON.stringify(depositData),
       });
 
-      if (response.ok) {
-        setWalletBalance(prevBalance => prevBalance + Number(solAmount));
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Deposit failed:', errorText);
+        throw new Error(`Deposit failed: ${errorText}`);
+      }
+
+      const result = await response.json();
+      console.log('Deposit result:', result);
+      
+      // Update balance from the server response
+      if (typeof result.balance === 'number') {
+        setWalletBalance(result.balance);
         setPaymentStatus('completed');
         setSolAmount('');
       } else {
-        setPaymentStatus('failed');
+        throw new Error('Invalid balance received from server');
       }
     } catch (err) {
-      console.error("Error during verification:", err);
+      console.error("Error during deposit verification:", err);
       setPaymentStatus('failed');
+      alert(err instanceof Error ? err.message : 'Failed to process deposit');
     }
   };
 

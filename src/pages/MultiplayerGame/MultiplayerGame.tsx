@@ -12,9 +12,8 @@ interface MultiplayerGameProps {
   userData?: {
     clerk_id: string;
     email: string;
-    name: string;
-    profile_picture: string | null;
-    wallet_balance?: number;
+    name: string | null;
+    // wallet_balance?: number;
     id?: number;
   };
 }
