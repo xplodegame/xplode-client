@@ -61,6 +61,7 @@ const MainApp: React.FC = () => {
         setUserData({
           ...newUserData,
           id: data.id,
+          wallet_balance: data.balance
         });
       } catch (error) {
         console.error('Failed to send/receive user data:', error);
