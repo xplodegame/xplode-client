@@ -10,11 +10,10 @@ const MOVE_TIMEOUT = 5000; // 5 seconds
 
 interface MultiplayerGameProps {
   userData?: {
-    clerk_id: string;
-    email: string;
-    name: string;
-    profile_picture: string | null;
-    wallet_balance?: number;
+    clerk_id: string; 
+    email: string; 
+    name: string | null; 
+    wallet_balance?: number | null;
     id?: number;
   };
 }

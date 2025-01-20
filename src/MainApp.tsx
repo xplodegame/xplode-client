@@ -12,7 +12,7 @@ interface UserData {
   clerk_id: string;
   email: string;
   name: string | null;
-  wallet_balance?: number | null;
+  wallet_balance: number;  // Make this required and non-null
 }
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -28,11 +28,15 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
 const MainApp: React.FC = () => {
   const { user } = useUser();
-  const [userData, setUserData] = useState<UserData>();
+  const [userData, setUserData] = useState<UserData | undefined>();
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const sendUserData = async () => {
-      if (!user || !user.primaryEmailAddress) return;
+      if (!user || !user.primaryEmailAddress) {
+        setIsLoading(false);
+        return;
+      }
 
       try {
         const newUserData = {
@@ -58,18 +62,36 @@ const MainApp: React.FC = () => {
         const data = await response.json();
         console.log('Backend response:', data);
 
+        // Ensure we have the balance from the backend
+        if (typeof data.balance !== 'number') {
+          console.error('Invalid balance received:', data.balance);
+          throw new Error('Invalid balance received from server');
+        }
+
         setUserData({
+          ...newUserData,
+          id: data.id,
+          wallet_balance: data.balance
+        });
+
+        console.log('Updated user data:', {
           ...newUserData,
           id: data.id,
           wallet_balance: data.balance
         });
       } catch (error) {
         console.error('Failed to send/receive user data:', error);
+      } finally {
+        setIsLoading(false);
       }
     };
 
     sendUserData();
   }, [user]);
+
+  if (isLoading) {
+    return <div>Loading...</div>; // Or your loading component
+  }
 
   return (
     <Router>

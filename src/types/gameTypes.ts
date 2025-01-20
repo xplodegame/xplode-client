@@ -3,7 +3,6 @@ export type Player = {
   clerk_id: string;
   email: string;
   name: string;
-  profile_picture: string | null;
   wallet_balance?: number;
   id?: number;
 };
