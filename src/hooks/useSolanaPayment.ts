@@ -2,21 +2,25 @@ import { useState, useEffect } from 'react';
 import { PublicKey, Connection, Keypair, clusterApiUrl } from '@solana/web3.js';
 import { encodeURL, findReference, validateTransfer, FindReferenceError } from '@solana/pay';
 import BigNumber from 'bignumber.js';
-import { MERCHANT_WALLET, PAYMENT_CONFIG } from '../config/payment.config';
+import { getPaymentConfig } from '../config/payment.config';
 
 interface UseSolanaPaymentProps {
   userId?: number;
   solAmount: string;
   onPaymentComplete: (balance: number) => void;
   onPaymentFailed: (error: string) => void;
+  depositAddress?: string;
 }
 
 export const useSolanaPayment = ({
   userId,
   solAmount,
   onPaymentComplete,
-  onPaymentFailed
+  onPaymentFailed,
+  depositAddress
 }: UseSolanaPaymentProps) => {
+  const paymentConfig = getPaymentConfig(depositAddress);
+  
   const [reference, setReference] = useState<PublicKey | null>(null);
   const [paymentStatus, setPaymentStatus] = useState<string>('');
   const [paymentURL, setPaymentURL] = useState<string | null>(null);
@@ -28,7 +32,7 @@ export const useSolanaPayment = ({
   }, [solAmount]);
 
   useEffect(() => {
-    if (!reference || paymentStatus !== 'pending') return;
+    if (!reference || paymentStatus !== 'pending' || !paymentConfig) return;
 
     const connection = new Connection(clusterApiUrl('devnet'), 'confirmed');
     let interval: NodeJS.Timeout;
@@ -42,7 +46,7 @@ export const useSolanaPayment = ({
           connection,
           signatureInfo.signature,
           {
-            recipient: MERCHANT_WALLET,
+            recipient: paymentConfig.MERCHANT_WALLET,
             amount: new BigNumber(currentAmount),
             reference
           },
@@ -66,9 +70,9 @@ export const useSolanaPayment = ({
       }
     };
 
-    interval = setInterval(checkPayment, PAYMENT_CONFIG.PAYMENT_CHECK_INTERVAL);
+    interval = setInterval(checkPayment, paymentConfig.PAYMENT_CHECK_INTERVAL);
     return () => clearInterval(interval);
-  }, [reference, paymentStatus, currentAmount]);
+  }, [reference, paymentStatus, currentAmount, paymentConfig]);
 
   const verifyTransaction = async (signature: string) => {
     try {
@@ -118,6 +122,10 @@ export const useSolanaPayment = ({
       throw new Error("Please enter a valid amount");
     }
 
+    if (!paymentConfig) {
+      throw new Error("Payment configuration not available");
+    }
+
     try {
       setProcessingPayment(true);
       const newReference = Keypair.generate().publicKey;
@@ -125,11 +133,11 @@ export const useSolanaPayment = ({
       setCurrentAmount(amount);
 
       const url = encodeURL({
-        recipient: MERCHANT_WALLET,
+        recipient: paymentConfig.MERCHANT_WALLET,
         amount: new BigNumber(amount),
         reference: newReference,
-        label: PAYMENT_CONFIG.LABELS.GAME_DEPOSIT,
-        message: PAYMENT_CONFIG.LABELS.DEPOSIT_MESSAGE,
+        label: paymentConfig.LABELS.GAME_DEPOSIT,
+        message: paymentConfig.LABELS.DEPOSIT_MESSAGE,
         memo: `Game deposit for user ${userId}`
       });
 

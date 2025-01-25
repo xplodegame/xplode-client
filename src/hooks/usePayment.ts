@@ -4,9 +4,10 @@ import { useSolanaPayment } from './useSolanaPayment';
 interface UsePaymentProps {
   userId?: number;
   onBalanceUpdate: (balance: number) => void;
+  depositAddress?: string;
 }
 
-export const usePayment = ({ userId, onBalanceUpdate }: UsePaymentProps) => {
+export const usePayment = ({ userId, onBalanceUpdate, depositAddress }: UsePaymentProps) => {
   const [solAmount, setSolAmount] = useState('');
   const [showQRModal, setShowQRModal] = useState(false);
 
@@ -19,6 +20,7 @@ export const usePayment = ({ userId, onBalanceUpdate }: UsePaymentProps) => {
   } = useSolanaPayment({
     userId,
     solAmount,
+    depositAddress,
     onPaymentComplete: (balance) => {
       onBalanceUpdate(balance);
       setSolAmount('');
@@ -29,6 +31,8 @@ export const usePayment = ({ userId, onBalanceUpdate }: UsePaymentProps) => {
       setShowQRModal(false);
     },
   });
+
+  // console.log("##################, %v", depositAddress)
 
   const handlePayment = async () => {
     if (!solAmount || Number(solAmount) <= 0) {

@@ -7,12 +7,15 @@ import MultiplayerGame from './pages/MultiplayerGame/MultiplayerGame';
 import Home from './pages/Home/Home';
 import './index.css';
 
+import { DepositProvider } from './contexts/DepositContext';
+
 interface UserData {
   id?: number;
   clerk_id: string;
   email: string;
   name: string | null;
-  wallet_balance: number;  // Make this required and non-null
+  wallet_balance: number;
+  deposit_address?: string;
 }
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -45,9 +48,8 @@ const MainApp: React.FC = () => {
           name: user.fullName,
         };
 
-        console.log('Sending user data:', newUserData);
-
-        const response = await fetch('http://127.0.0.1:8080/user-details', {
+        // First, send user details
+        const userDetailsResponse = await fetch('http://127.0.0.1:8080/user-details', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -55,29 +57,45 @@ const MainApp: React.FC = () => {
           body: JSON.stringify(newUserData),
         });
 
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
+        if (!userDetailsResponse.ok) {
+          throw new Error(`HTTP error! status: ${userDetailsResponse.status}`);
         }
 
-        const data = await response.json();
-        console.log('Backend response:', data);
+        const userDetailsData = await userDetailsResponse.json();
+
+        // Generate deposit address using the backend user ID
+        const depositAddressResponse = await fetch('http://127.0.0.1:3001/generate-deposit-address', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ userId: userDetailsData.id }),
+        });
+
+        if (!depositAddressResponse.ok) {
+          throw new Error(`HTTP error! status: ${depositAddressResponse.status}`);
+        }
+
+        const depositAddressData = await depositAddressResponse.json();
 
         // Ensure we have the balance from the backend
-        if (typeof data.balance !== 'number') {
-          console.error('Invalid balance received:', data.balance);
+        if (typeof userDetailsData.balance !== 'number') {
+          console.error('Invalid balance received:', userDetailsData.balance);
           throw new Error('Invalid balance received from server');
         }
 
         setUserData({
           ...newUserData,
-          id: data.id,
-          wallet_balance: data.balance
+          id: userDetailsData.id,
+          wallet_balance: userDetailsData.balance,
+          deposit_address: depositAddressData.depositAddress
         });
 
         console.log('Updated user data:', {
           ...newUserData,
-          id: data.id,
-          wallet_balance: data.balance
+          id: userDetailsData.id,
+          wallet_balance: userDetailsData.balance,
+          deposit_address: depositAddressData.depositAddress
         });
       } catch (error) {
         console.error('Failed to send/receive user data:', error);
@@ -90,11 +108,12 @@ const MainApp: React.FC = () => {
   }, [user]);
 
   if (isLoading) {
-    return <div>Loading...</div>; // Or your loading component
+    return <div>Loading...</div>;
   }
 
   return (
     <Router>
+      <DepositProvider depositAddress={userData?.deposit_address}>
       <div className="bg-gray-900 min-h-screen">
         <Navbar />
         <Routes>
@@ -117,6 +136,7 @@ const MainApp: React.FC = () => {
           />
         </Routes>
       </div>
+      </DepositProvider>
     </Router>
   );
 };

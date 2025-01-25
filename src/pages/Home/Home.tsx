@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { SignedIn } from '@clerk/clerk-react';
 import { WalletBalance } from '../../components/PaymentUI/WalletBalance';
 import { PaymentForm } from '../../components/PaymentUI/PaymentForm';
@@ -13,6 +13,7 @@ interface HomeProps {
     name: string | null; 
     wallet_balance: number;
     id?: number;
+    deposit_address?: string;
   } 
 }
 
@@ -39,6 +40,7 @@ function Home({ userData }: HomeProps) {
     processingPayment,
   } = usePayment({
     userId: userData?.id,
+    depositAddress: userData?.deposit_address, // Add this line
     onBalanceUpdate: (newBalance) => {
       console.log('Updating balance to:', newBalance);
       setWalletBalance(newBalance);
@@ -69,6 +71,7 @@ function Home({ userData }: HomeProps) {
                 paymentURL={paymentURL}
                 onClose={handleCloseModal}
                 onCancel={handleCancelPayment}
+                userData={userData}
               />
             )}
 

@@ -1,75 +1,96 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { X, Copy, CheckCheck } from 'lucide-react';
 import QRCodeStyling from 'qr-code-styling';
-import { MERCHANT_WALLET, PAYMENT_CONFIG } from '../../config/payment.config';
+import { getPaymentConfig } from '../../config/payment.config';
 
 interface QRModalProps {
   paymentURL: string;
   onClose: () => void;
-  onCancel: () => void;  // Added new prop for cancellation
+  onCancel: () => void;
+  userData?: { 
+    deposit_address?: string;
+    id?: number;
+    clerk_id: string; 
+    email: string; 
+    name: string | null; 
+    wallet_balance: number;
+  };
 }
 
-export const QRModal: React.FC<QRModalProps> = ({ paymentURL, onClose, onCancel }) => {
+export const QRModal: React.FC<QRModalProps> = ({ 
+  paymentURL, 
+  onClose, 
+  onCancel, 
+  userData 
+}) => {
   const [copied, setCopied] = useState(false);
   const qrRef = useRef<HTMLDivElement>(null);
+  
+  const paymentConfig = userData?.deposit_address 
+    ? getPaymentConfig(userData.deposit_address) 
+    : null;
 
   useEffect(() => {
-    if (paymentURL && qrRef.current) {
-      qrRef.current.innerHTML = '';
+    if (!paymentURL || !qrRef.current || !paymentConfig) return;
+    
+    qrRef.current.innerHTML = '';
 
-      const qrCode = new QRCodeStyling({
-        width: PAYMENT_CONFIG.QR_WIDTH,
-        height: PAYMENT_CONFIG.QR_HEIGHT,
-        type: "svg",
-        data: paymentURL,
-        image: "/assets/images/sol-logo.svg",
-        dotsOptions: {
-          color: "#ffffff",
-          type: "dots",
-          gradient: {
-            type: "radial",
-            colorStops: [
-              { offset: 0, color: "#22d3ee" },
-              { offset: 1, color: "#0ea5e9" }
-            ]
-          }
-        },
-        backgroundOptions: {
-          color: "transparent",
-        },
-        imageOptions: {
-          crossOrigin: "anonymous",
-          margin: 0,
-          imageSize: 0.2
-        },
-        cornersSquareOptions: {
-          type: "extra-rounded",
-          color: "#0ea5e9"
-        },
-        cornersDotOptions: {
-          type: "dot",
-          color: "#22d3ee"
+    const qrCode = new QRCodeStyling({
+      width: paymentConfig.QR_WIDTH,
+      height: paymentConfig.QR_HEIGHT,
+      type: "svg",
+      data: paymentURL,
+      image: "/assets/images/sol-logo.svg",
+      dotsOptions: {
+        color: "#ffffff",
+        type: "dots",
+        gradient: {
+          type: "radial",
+          colorStops: [
+            { offset: 0, color: "#22d3ee" },
+            { offset: 1, color: "#0ea5e9" }
+          ]
         }
-      });
+      },
+      backgroundOptions: {
+        color: "transparent",
+      },
+      imageOptions: {
+        crossOrigin: "anonymous",
+        margin: 0,
+        imageSize: 0.2
+      },
+      cornersSquareOptions: {
+        type: "extra-rounded",
+        color: "#0ea5e9"
+      },
+      cornersDotOptions: {
+        type: "dot",
+        color: "#22d3ee"
+      }
+    });
 
-      qrCode.append(qrRef.current);
-    }
-  }, [paymentURL]);
+    qrCode.append(qrRef.current);
+  }, [paymentURL, paymentConfig]);
 
   const copyToClipboard = async () => {
+    if (!paymentConfig) return;
+    
     try {
-      await navigator.clipboard.writeText(MERCHANT_WALLET.toString());
+      await navigator.clipboard.writeText(paymentConfig.MERCHANT_WALLET.toString());
       setCopied(true);
-      setTimeout(() => setCopied(false), PAYMENT_CONFIG.COPY_TIMEOUT);
+      setTimeout(() => setCopied(false), paymentConfig.COPY_TIMEOUT);
     } catch (err) {
       console.error('Failed to copy:', err);
     }
   };
 
   const handleClose = () => {
-    onCancel(); // Call onCancel first to update payment status
-    onClose(); // Then close the modal
+    onCancel();
+    onClose();
   };
+
+  if (!paymentConfig) return null;
 
   return (
     <div className="fixed inset-0 z-50">
@@ -104,7 +125,7 @@ export const QRModal: React.FC<QRModalProps> = ({ paymentURL, onClose, onCancel 
               <p className="text-sm text-zinc-400/80 mb-2">Merchant Address</p>
               <div className="flex items-center gap-2 bg-zinc-950/50 rounded-lg p-3 border border-white/5">
                 <code className="text-xs text-white/70 flex-1 overflow-hidden text-ellipsis">
-                  {MERCHANT_WALLET.toString()}
+                  {paymentConfig.MERCHANT_WALLET.toString()}
                 </code>
                 <button
                   onClick={copyToClipboard}
