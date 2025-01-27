@@ -63,21 +63,6 @@ const MainApp: React.FC = () => {
 
         const userDetailsData = await userDetailsResponse.json();
 
-        // Generate deposit address using the backend user ID
-        const depositAddressResponse = await fetch('http://127.0.0.1:3001/generate-deposit-address', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ userId: userDetailsData.id }),
-        });
-
-        if (!depositAddressResponse.ok) {
-          throw new Error(`HTTP error! status: ${depositAddressResponse.status}`);
-        }
-
-        const depositAddressData = await depositAddressResponse.json();
-
         // Ensure we have the balance from the backend
         if (typeof userDetailsData.balance !== 'number') {
           console.error('Invalid balance received:', userDetailsData.balance);
@@ -88,14 +73,14 @@ const MainApp: React.FC = () => {
           ...newUserData,
           id: userDetailsData.id,
           wallet_balance: userDetailsData.balance,
-          deposit_address: depositAddressData.depositAddress
+          deposit_address: userDetailsData.user_pda
         });
 
         console.log('Updated user data:', {
           ...newUserData,
           id: userDetailsData.id,
           wallet_balance: userDetailsData.balance,
-          deposit_address: depositAddressData.depositAddress
+          deposit_address: userDetailsData.user_pda
         });
       } catch (error) {
         console.error('Failed to send/receive user data:', error);
