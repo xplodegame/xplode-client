@@ -1,5 +1,7 @@
+// Modified usePayment.ts
 import { useState } from 'react';
 import { useSolanaPayment } from './useSolanaPayment';
+import { useWithdraw } from './useWithdraw';
 
 interface UsePaymentProps {
   userId?: number;
@@ -32,7 +34,19 @@ export const usePayment = ({ userId, onBalanceUpdate, depositAddress }: UsePayme
     },
   });
 
-  // console.log("##################, %v", depositAddress)
+  const {
+    withdrawStatus,
+    processingWithdraw,
+    initiateWithdraw,
+  } = useWithdraw({
+    userId,
+    onWithdrawComplete: (balance) => {
+      onBalanceUpdate(balance);
+    },
+    onWithdrawFailed: (error) => {
+      console.error('Withdrawal failed:', error);
+    },
+  });
 
   const handlePayment = async () => {
     if (!solAmount || Number(solAmount) <= 0) {
@@ -45,6 +59,17 @@ export const usePayment = ({ userId, onBalanceUpdate, depositAddress }: UsePayme
       setShowQRModal(true);
     } catch (error) {
       console.error("Error initiating payment:", error);
+      if (error instanceof Error) {
+        alert(`Error: ${error.message}`);
+      }
+    }
+  };
+
+  const handleWithdraw = async (amount: string, withdrawAddress: string) => {
+    try {
+      await initiateWithdraw(amount, withdrawAddress);
+    } catch (error) {
+      console.error("Error initiating withdrawal:", error);
       if (error instanceof Error) {
         alert(`Error: ${error.message}`);
       }
@@ -67,8 +92,11 @@ export const usePayment = ({ userId, onBalanceUpdate, depositAddress }: UsePayme
     handleCloseModal,
     handleCancelPayment,
     handlePayment,
+    handleWithdraw,
     paymentStatus,
+    withdrawStatus,
     paymentURL,
     processingPayment,
+    processingWithdraw,
   };
 };

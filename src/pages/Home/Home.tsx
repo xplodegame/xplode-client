@@ -4,6 +4,7 @@ import { WalletBalance } from '../../components/PaymentUI/WalletBalance';
 import { PaymentForm } from '../../components/PaymentUI/PaymentForm';
 import { PaymentStatus } from '../../components/PaymentUI/PaymentStatus';
 import { QRModal } from '../../components/PaymentUI/QRModal';
+import { WithdrawForm } from '../../components/PaymentUI/WithdrawForm';
 import { usePayment } from '../../hooks/usePayment';
 
 interface HomeProps {
@@ -35,12 +36,15 @@ function Home({ userData }: HomeProps) {
     handleCloseModal,
     handleCancelPayment,
     handlePayment,
+    handleWithdraw,
     paymentStatus,
+    withdrawStatus,
     paymentURL,
     processingPayment,
+    processingWithdraw,
   } = usePayment({
     userId: userData?.id,
-    depositAddress: userData?.deposit_address, // Add this line
+    depositAddress: userData?.deposit_address,
     onBalanceUpdate: (newBalance) => {
       console.log('Updating balance to:', newBalance);
       setWalletBalance(newBalance);
@@ -66,6 +70,11 @@ function Home({ userData }: HomeProps) {
               processingPayment={processingPayment}
             />
 
+            <WithdrawForm
+              onSubmit={handleWithdraw}
+              processingWithdraw={processingWithdraw}
+            />
+
             {showQRModal && paymentURL && (
               <QRModal
                 paymentURL={paymentURL}
@@ -75,7 +84,7 @@ function Home({ userData }: HomeProps) {
               />
             )}
 
-            <PaymentStatus status={paymentStatus} />
+            <PaymentStatus status={paymentStatus || withdrawStatus} />
           </div>
         </div>
       </SignedIn>
