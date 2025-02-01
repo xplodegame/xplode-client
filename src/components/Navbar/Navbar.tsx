@@ -2,10 +2,22 @@ import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { SignedIn, SignedOut, SignInButton, UserButton } from '@clerk/clerk-react';
 import { GamepadIcon, Users, User, Sparkles } from 'lucide-react';
+import { WalletDropdown } from '../../components/PaymentUI/WalletDropdown';
 
-const Navbar: React.FC = () => {
+interface NavbarProps {
+  userData?: { 
+    clerk_id: string; 
+    email: string; 
+    name: string | null; 
+    wallet_balance: number;
+    id?: number;
+    deposit_address?: string;
+  } 
+}
+
+const Navbar: React.FC<NavbarProps> = ({ userData }) => {
   const location = useLocation();
-
+  
   return (
     <div className="sticky top-0 z-50">
       <nav className="backdrop-blur-md bg-zinc-900/70 border-b border-zinc-800/50 text-white">
@@ -68,6 +80,10 @@ const Navbar: React.FC = () => {
                   </Link>
                 )}
 
+                {/* Wallet Dropdown */}
+                <WalletDropdown userData={userData} />
+
+                {/* User Button */}
                 <div className="relative ml-2 transform hover:scale-105 transition-transform duration-300">
                   <UserButton
                     afterSignOutUrl="/"

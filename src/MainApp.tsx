@@ -73,14 +73,14 @@ const MainApp: React.FC = () => {
           ...newUserData,
           id: userDetailsData.id,
           wallet_balance: userDetailsData.balance,
-          deposit_address: userDetailsData.user_pda
+          deposit_address: userDetailsData.user_pda,
         });
 
         console.log('Updated user data:', {
           ...newUserData,
           id: userDetailsData.id,
           wallet_balance: userDetailsData.balance,
-          deposit_address: userDetailsData.user_pda
+          deposit_address: userDetailsData.user_pda,
         });
       } catch (error) {
         console.error('Failed to send/receive user data:', error);
@@ -99,31 +99,34 @@ const MainApp: React.FC = () => {
   return (
     <Router>
       <DepositProvider depositAddress={userData?.deposit_address}>
-      <div className="bg-gray-900 min-h-screen">
-        <Navbar />
-        <Routes>
-          <Route path="/" element={<Home userData={userData} />} />
-          <Route
-            path="/singleplayer"
-            element={
-              <ProtectedRoute>
-                <SingleplayerGame />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/multiplayer"
-            element={
-              <ProtectedRoute>
-                <MultiplayerGame userData={userData} />
-              </ProtectedRoute>
-            }
-          />
-        </Routes>
-      </div>
+        <div className="bg-gray-900 min-h-screen">
+          <Navbar userData={userData} />
+          <Routes>
+            <Route path="/" element={<Home userData={userData} />} />
+            <Route
+              path="/singleplayer"
+              element={
+                <ProtectedRoute>
+                  <SingleplayerGame />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/multiplayer"
+              element={
+                <ProtectedRoute>
+                  <MultiplayerGame userData={userData} />
+                </ProtectedRoute>
+              }
+            />
+          </Routes>
+          {/* Add this div for modal mounting */}
+          <div id="modal-root" />
+        </div>
       </DepositProvider>
     </Router>
   );
 };
+
 
 export default MainApp;
