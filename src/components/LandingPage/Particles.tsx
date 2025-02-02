@@ -205,7 +205,7 @@ export const useParticles = () => {
         opacity: 0.6,
         width: 1.2,
         triangles: {
-          enable: false,
+          enable: true,
         },
       },
       collisions: {
