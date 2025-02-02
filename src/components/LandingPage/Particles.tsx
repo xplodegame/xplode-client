@@ -141,7 +141,7 @@ export const useParticles = () => {
       detectsOn: "window",
       events: {
         onHover: {
-          enable: false,
+          enable: true,
           mode: ["grab", "bubble"],
           parallax: {
             enable: true,
@@ -205,7 +205,7 @@ export const useParticles = () => {
         opacity: 0.6,
         width: 1.2,
         triangles: {
-          enable: true,
+          enable: false,
         },
       },
       collisions: {
@@ -263,7 +263,7 @@ export const useParticles = () => {
     interactivity: {
       events: {
         onHover: {
-          enable: false,
+          enable: true,
           mode: "grab",
           parallax: {
             enable: false,
