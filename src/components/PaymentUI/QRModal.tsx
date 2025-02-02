@@ -1,6 +1,5 @@
-// Updated QRModal.tsx
 import React, { useEffect, useRef, useState } from 'react';
-import { X, Copy, CheckCheck } from 'lucide-react';
+import { X, Copy, CheckCheck, Diamond } from 'lucide-react';
 import QRCodeStyling from 'qr-code-styling';
 import { getPaymentConfig } from '../../config/payment.config';
 import { ModalPortal } from './ModalPortal';
@@ -38,19 +37,19 @@ export const QRModal: React.FC<QRModalProps> = ({
     qrRef.current.innerHTML = '';
 
     const qrCode = new QRCodeStyling({
-      width: paymentConfig.QR_WIDTH,
-      height: paymentConfig.QR_HEIGHT,
+      width: 300,
+      height: 300,
       type: "svg",
       data: paymentURL,
       image: "/assets/images/sol-logo.svg",
       dotsOptions: {
-        color: "#ffffff",
-        type: "dots",
+        color: "#34d399",
+        type: "rounded",
         gradient: {
           type: "radial",
           colorStops: [
-            { offset: 0, color: "#22d3ee" },
-            { offset: 1, color: "#0ea5e9" }
+            { offset: 0, color: "#34d399" },
+            { offset: 1, color: "#059669" }
           ]
         }
       },
@@ -59,16 +58,15 @@ export const QRModal: React.FC<QRModalProps> = ({
       },
       imageOptions: {
         crossOrigin: "anonymous",
-        margin: 0,
-        imageSize: 0.2
+        margin: 0
       },
       cornersSquareOptions: {
         type: "extra-rounded",
-        color: "#0ea5e9"
+        color: "#059669"
       },
       cornersDotOptions: {
         type: "dot",
-        color: "#22d3ee"
+        color: "#34d399"
       }
     });
 
@@ -97,55 +95,70 @@ export const QRModal: React.FC<QRModalProps> = ({
   return (
     <ModalPortal>
       <div className="fixed inset-0 z-[9999]">
-        <div className="fixed inset-0 backdrop-blur-xl bg-black/30 animate-in fade-in duration-500" />
+        {/* Cosmic backdrop */}
+        <div className="fixed inset-0 backdrop-blur-xl bg-black/40 animate-in fade-in duration-500" />
         
-        <div className="fixed inset-0 opacity-30">
-          <div className="absolute inset-0 bg-gradient-conic from-sky-500 via-cyan-300 to-sky-500 animate-spin-slow" 
-               style={{ '--tw-gradient-stops': 'var(--tw-gradient-from) 0%, var(--tw-gradient-via) 50%, var(--tw-gradient-to) 100%' } as React.CSSProperties} />
+        {/* Animated background elements */}
+        <div className="fixed inset-0">
+          <div className="absolute top-1/4 right-1/4 w-[800px] h-[800px] bg-emerald-500/10 blur-[150px] rounded-full animate-pulse-slow" />
+          <div className="absolute bottom-1/4 left-1/4 w-[600px] h-[600px] bg-emerald-500/15 blur-[120px] rounded-full animate-pulse-slow" />
         </div>
 
         <div className="fixed inset-0 flex items-center justify-center p-4">
-          <div className="relative bg-zinc-900/50 rounded-3xl overflow-hidden backdrop-blur-2xl shadow-2xl animate-modal border border-white/10 group">
+          <div className="relative w-full max-w-lg bg-black/60 rounded-3xl overflow-hidden backdrop-blur-2xl animate-modal border border-emerald-500/20">
+            {/* Close button */}
             <button
               onClick={handleClose}
-              className="absolute right-4 top-4 z-10 p-2 rounded-full bg-white/5 hover:bg-white/10 transition-all duration-200 group-hover:opacity-100 opacity-60"
+              className="absolute right-4 top-4 z-10 p-2 rounded-full 
+                       bg-emerald-500/10 hover:bg-emerald-500/20 
+                       transition-all duration-200"
             >
-              <X size={20} className="transform transition-transform hover:rotate-90" />
+              <X size={20} className="text-emerald-400" />
             </button>
 
-            <div className="p-8 relative flex flex-col items-center justify-center">
-              <div className="absolute -top-1/2 -left-1/2 w-full h-full bg-gradient-to-br from-sky-500/30 via-cyan-300/30 to-transparent blur-2xl rounded-full animate-pulse-slow" />
-              
-              <div className="relative flex flex-col items-center justify-center">
-                <div className="absolute inset-0 bg-gradient-to-tr from-sky-500/20 to-cyan-300/20 blur-xl rounded-2xl transform -rotate-6 scale-105" />
-                
-                <div className="relative bg-zinc-900/50 rounded-2xl p-6 backdrop-blur-sm transform transition-transform duration-300 hover:scale-102 border border-white/5 flex flex-col items-center justify-center">
-                  <div ref={qrRef} className="w-[300px] h-[300px] transform transition-all duration-500 hover:scale-105 hover:rotate-1" />
+            <div className="p-8 relative">
+              {/* Header */}
+              <div className="flex items-center gap-2 mb-6">
+                <Diamond className="w-5 h-5 text-emerald-400" />
+                <h3 className="text-xl font-bold text-white">Cosmic Payment Portal</h3>
+              </div>
+
+              {/* QR Code Container */}
+              <div className="relative mb-6">
+                <div className="absolute -inset-4 bg-gradient-to-r from-emerald-500/30 to-emerald-500/0 rounded-3xl blur-2xl" />
+                <div className="relative bg-black/40 backdrop-blur-xl rounded-2xl p-6 border border-emerald-500/20">
+                  <div ref={qrRef} className="w-[300px] h-[300px] mx-auto transform transition-all duration-500 hover:scale-105" />
                 </div>
               </div>
 
-              <div className="mt-6 bg-zinc-900/50 rounded-xl p-4 border border-white/5 backdrop-blur-sm">
-                <p className="text-sm text-zinc-400/80 mb-2">Merchant Address</p>
-                <div className="flex items-center gap-2 bg-zinc-950/50 rounded-lg p-3 border border-white/5">
-                  <code className="text-xs text-white/70 flex-1 overflow-hidden text-ellipsis">
+              {/* Wallet Address Section */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-emerald-400">Merchant Address</span>
+                  <div className="flex-1 h-px bg-gradient-to-r from-emerald-500/50 to-transparent" />
+                </div>
+                
+                <div className="flex items-center gap-2 bg-black/40 rounded-xl p-3 border border-emerald-500/20">
+                  <code className="text-sm text-zinc-300 flex-1 overflow-hidden text-ellipsis">
                     {paymentConfig.MERCHANT_WALLET.toString()}
                   </code>
                   <button
                     onClick={copyToClipboard}
-                    className="p-1.5 hover:bg-white/5 rounded-md transition-colors duration-200"
+                    className="p-1.5 hover:bg-emerald-500/10 rounded-lg transition-colors duration-200"
                     title="Copy address"
                   >
                     {copied ? (
                       <CheckCheck size={16} className="text-emerald-400" />
                     ) : (
-                      <Copy size={16} className="text-white/70" />
+                      <Copy size={16} className="text-emerald-400/70" />
                     )}
                   </button>
                 </div>
               </div>
 
-              <p className="mt-4 text-center text-sm text-zinc-400/80 font-light">
-                Scan with your Solana wallet or copy the address to complete payment
+              {/* Footer Text */}
+              <p className="mt-4 text-center text-sm text-emerald-400/60">
+                Scan with your Solana wallet or copy the address to complete your cosmic transaction
               </p>
             </div>
           </div>

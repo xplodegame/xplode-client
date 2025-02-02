@@ -1,3 +1,32 @@
+/* @tailwind base;
+@tailwind components;
+@tailwind utilities; */
+
+
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-game-dark text-white font-game antialiased;
+  }
+}
+
+.glass {
+  @apply bg-white/10 backdrop-blur-lg border border-white/20;
+}
+
+.neon-border {
+  @apply border border-neon-blue/50 shadow-[0_0_15px_rgba(0,243,255,0.5)];
+}
+
+.neon-text {
+  @apply text-neon-blue animate-glow;
+}
+
+.neon-text {
+    text-shadow: 0 0 10px rgba(74, 222, 128, 0.5);
+  }

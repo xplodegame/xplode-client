@@ -1,12 +1,5 @@
-// PaymentForm.tsx
 import React from 'react';
-
-interface PaymentFormProps {
-  solAmount: string;
-  onAmountChange: (amount: string) => void;
-  onSubmit: () => void;
-  processingPayment: boolean;
-}
+import { motion } from 'framer-motion';
 
 export const PaymentForm: React.FC<PaymentFormProps> = ({
   solAmount,
@@ -15,9 +8,14 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
   processingPayment,
 }) => {
   return (
-    <div className="space-y-4">
+    <motion.div
+      initial={{ opacity: 0, x: -20 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: 20 }}
+      className="space-y-4"
+    >
       <div>
-        <label htmlFor="solAmount" className="block text-zinc-400 text-sm font-medium mb-2">
+        <label htmlFor="solAmount" className="block text-emerald-400 text-sm font-medium mb-2">
           Amount (SOL)
         </label>
         <div className="relative">
@@ -31,40 +29,32 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
             step="0.01"
             disabled={processingPayment}
             className="w-full py-3 px-4 rounded-lg font-medium
-                     bg-zinc-800/50 border border-zinc-700
+                     bg-black/40 border border-emerald-500/20
                      text-emerald-400 placeholder-zinc-500
                      focus:outline-none focus:border-emerald-500
                      focus:ring-2 focus:ring-emerald-500/20
-                     transition-all duration-200
+                     transition-all duration-200 backdrop-blur-sm
                      appearance-none"
           />
-          <style>
-            {`
-              /* Hide the default number input spinners */
-              input[type=number]::-webkit-inner-spin-button,
-              input[type=number]::-webkit-outer-spin-button {
-                -webkit-appearance: none;
-                margin: 0;
-              }
-            `}
-          </style>
-          <span className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500">
-            SOL
+          <span className="absolute right-4 top-1/2 -translate-y-1/2 text-emerald-400/50">
+            {/* SOL */}
           </span>
         </div>
       </div>
 
-      <button
+      <motion.button
+        whileHover={{ scale: 1.02 }}
+        whileTap={{ scale: 0.98 }}
         onClick={onSubmit}
         disabled={processingPayment}
         className={`w-full py-3 rounded-lg font-medium transition-all duration-200
                    ${processingPayment
-                     ? 'bg-zinc-700 text-zinc-400 cursor-not-allowed'
-                     : 'bg-gradient-to-r from-emerald-500/10 to-teal-500/10 text-emerald-400 ' +
-                       'hover:from-emerald-500/20 hover:to-teal-500/20 border border-emerald-500/30'}`}
+                     ? 'bg-zinc-800/50 text-zinc-500 cursor-not-allowed'
+                     : 'bg-gradient-to-r from-emerald-500/20 to-emerald-500/10 text-emerald-400 ' +
+                       'hover:from-emerald-500/30 hover:to-emerald-500/20 border border-emerald-500/30'}`}
       >
         {processingPayment ? 'Processing...' : 'Add Funds'}
-      </button>
-    </div>
+      </motion.button>
+    </motion.div>
   );
 };
