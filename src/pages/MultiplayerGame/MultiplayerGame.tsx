@@ -189,6 +189,7 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
             setBetAmount={setBetAmount}
             playGame={playGame}
             isConnected={isConnected}
+            walletBalance={userData?.wallet_balance ?? 0}
           />
         )}
 

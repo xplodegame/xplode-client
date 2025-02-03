@@ -5,17 +5,24 @@ interface BetInputProps {
   setBetAmount: (amount: number) => void;
   playGame: () => void;
   isConnected: boolean;
+  walletBalance: number;
 }
 
 const BetInput: React.FC<BetInputProps> = ({ 
   betAmount, 
   setBetAmount, 
   playGame, 
-  isConnected 
+  isConnected,
+  walletBalance 
 }) => {
   const handleBetChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    setBetAmount(value === "" ? 0 : Number(value));
+    const numValue = value === "" ? 0 : Number(value);
+    
+    // Ensure bet doesn't exceed wallet balance
+    const sanitizedValue = Math.min(numValue, walletBalance);
+    
+    setBetAmount(sanitizedValue);
   };
 
   return (
@@ -32,6 +39,7 @@ const BetInput: React.FC<BetInputProps> = ({
             onChange={handleBetChange}
             placeholder="0"
             min="0"
+            max={walletBalance}
             step="1"
             className="w-full py-3 px-4 pl-10 rounded-lg font-medium bg-zinc-800/80 border border-zinc-700 text-white placeholder-zinc-500 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/50 transition-all duration-200"
           />
@@ -39,10 +47,13 @@ const BetInput: React.FC<BetInputProps> = ({
             ₹
           </span>
         </div>
+        <p className="text-zinc-400 text-xs">
+          Available Balance: ₹{walletBalance.toLocaleString()}
+        </p>
       </div>
       <button
         onClick={playGame}
-        disabled={!isConnected || betAmount <= 0}
+        disabled={!isConnected || betAmount <= 0 || betAmount > walletBalance}
         className={`
           w-full py-3 px-4 rounded-lg font-semibold transition-all duration-200
           bg-gradient-to-r from-emerald-500 to-teal-500 text-white
