@@ -1,13 +1,46 @@
-// WithdrawForm.tsx
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
+import { debounce } from 'lodash';
 
 export const WithdrawForm: React.FC<WithdrawFormProps> = ({
   onSubmit,
   processingWithdraw,
 }) => {
+  // Local states for immediate updates
+  const [localAmount, setLocalAmount] = useState('');
+  const [localAddress, setLocalAddress] = useState('');
+  
+  // Parent state updates
   const [amount, setAmount] = useState('');
   const [address, setAddress] = useState('');
+
+  // Debounced handlers for parent state updates
+  const debouncedSetAmount = useCallback(
+    debounce((value: string) => {
+      setAmount(value);
+    }, 300),
+    []
+  );
+
+  const debouncedSetAddress = useCallback(
+    debounce((value: string) => {
+      setAddress(value);
+    }, 300),
+    []
+  );
+
+  // Handle input changes
+  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setLocalAmount(value); // Update local state immediately
+    debouncedSetAmount(value); // Debounce the parent update
+  };
+
+  const handleAddressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setLocalAddress(value); // Update local state immediately
+    debouncedSetAddress(value); // Debounce the parent update
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,8 +66,8 @@ export const WithdrawForm: React.FC<WithdrawFormProps> = ({
           type="number"
           step="0.000001"
           min="0"
-          value={amount}
-          onChange={(e) => setAmount(e.target.value)}
+          value={localAmount}
+          onChange={handleAmountChange}
           disabled={processingWithdraw}
           className="w-full py-3 px-4 rounded-lg font-medium 
                    bg-black/40 border border-emerald-500/20
@@ -54,8 +87,8 @@ export const WithdrawForm: React.FC<WithdrawFormProps> = ({
         <input
           id="withdraw-address"
           type="text"
-          value={address}
-          onChange={(e) => setAddress(e.target.value)}
+          value={localAddress}
+          onChange={handleAddressChange}
           disabled={processingWithdraw}
           className="w-full py-3 px-4 rounded-lg font-medium 
                    bg-black/40 border border-emerald-500/20

@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
+import { debounce } from 'lodash';
 
 export const PaymentForm: React.FC<PaymentFormProps> = ({
   solAmount,
@@ -7,13 +8,26 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
   onSubmit,
   processingPayment,
 }) => {
+  // Local state for immediate updates
+  const [localAmount, setLocalAmount] = useState(solAmount);
+
+  // Debounce the parent state update
+  const debouncedAmountChange = useCallback(
+    debounce((value: string) => {
+      onAmountChange(value);
+    }, 300),
+    [onAmountChange]
+  );
+
+  // Handle input change
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setLocalAmount(value); // Update local state immediately
+    debouncedAmountChange(value); // Debounce the parent update
+  };
+
   return (
-    <motion.div
-      initial={{ opacity: 0, x: -20 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: 20 }}
-      className="space-y-4"
-    >
+    <div className="space-y-4">
       <div>
         <label htmlFor="solAmount" className="block text-emerald-400 text-sm font-medium mb-2">
           Amount (SOL)
@@ -22,8 +36,8 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
           <input
             type="number"
             id="solAmount"
-            value={solAmount}
-            onChange={(e) => onAmountChange(e.target.value)}
+            value={localAmount} // Use controlled input with local state
+            onChange={handleInputChange}
             placeholder="0.00"
             min="0"
             step="0.01"
@@ -55,6 +69,6 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
       >
         {processingPayment ? 'Processing...' : 'Add Funds'}
       </motion.button>
-    </motion.div>
+    </div>
   );
 };
