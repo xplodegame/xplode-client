@@ -1,5 +1,4 @@
 import React, { useCallback, useMemo, useRef, useEffect, useState } from 'react';
-import { Diamond } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const GRID_SIZE = 5;
@@ -132,7 +131,7 @@ export default function GameGrid() {
 
   return (
     <div className="relative p-6">
-      <style jsx global>{`
+      <style>{`
         @keyframes fadeIn {
           from { opacity: 0; transform: scale(0.8); }
           to { opacity: 1; transform: scale(1); }
