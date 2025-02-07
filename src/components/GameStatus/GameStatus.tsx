@@ -15,7 +15,7 @@ const GameStatus: React.FC<GameStatusProps> = ({ gameState, userData }) => {
       <div className="flex flex-col items-center space-y-3 mb-8">
         <div className="text-zinc-400 flex items-center space-x-2">
           <Loader2 className="animate-spin" size={20} />
-          <span>Finding opponent...</span>
+          <span>Finding opponents...</span>
         </div>
       </div>
     );
@@ -35,11 +35,10 @@ const GameStatus: React.FC<GameStatusProps> = ({ gameState, userData }) => {
   }
 
   if ('FINISHED' in gameState) {
-    const winner = gameState.FINISHED.players[gameState.FINISHED.winner_idx];
-    const didWin = winner.id === userData.id?.toString();
+    const isLoser = gameState.FINISHED.players[gameState.FINISHED.loser_idx].id === userData.id?.toString();
     return (
-      <div className={`text-xl mb-8 font-medium ${didWin ? 'text-emerald-400' : 'text-red-400'}`}>
-        {didWin ? 'Victory!' : 'Game Over'}
+      <div className={`text-xl mb-8 font-medium ${isLoser ? 'text-red-400' : 'text-emerald-400'}`}>
+        {isLoser ? 'Game Over' : 'Victory!'}
       </div>
     );
   }
