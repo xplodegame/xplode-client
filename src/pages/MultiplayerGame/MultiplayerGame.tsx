@@ -6,13 +6,13 @@ import GameStatus from '../../components/GameStatus/GameStatus';
 import BetInput from '../../components/BetInput/BetInput';
 import { GameState, GameMessage } from '../../types/gameTypes';
 
-const MOVE_TIMEOUT = 5000; // 5 seconds
+const MOVE_TIMEOUT = 20000; // 5 seconds
 
 interface MultiplayerGameProps {
   userData?: {
     clerk_id: string; 
     email: string; 
-    name: string | null; 
+    name: string;
     wallet_balance?: number | null;
     id?: number;
   };
@@ -156,6 +156,7 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
 
     sendMessage({
       Play: {
+        min_players: 3,
         player_id: userData.id.toString(),
         single_bet_size: betAmount,
       },
