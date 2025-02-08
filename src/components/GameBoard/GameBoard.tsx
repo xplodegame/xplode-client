@@ -26,8 +26,10 @@ const GameBoard: React.FC<GameBoardProps> = ({
 
   if (!board) return null;
 
+  const gridSize = board.grid.length;
+
   const handleCellClick = (row: number, col: number) => {
-    const cellIndex = row * 5 + col;
+    const cellIndex = row * gridSize + col;
     const isBomb = board.bomb_coordinates.includes(cellIndex);
 
     if (isBomb) {
@@ -40,50 +42,58 @@ const GameBoard: React.FC<GameBoardProps> = ({
   };
 
   return (
-    <div className="grid grid-cols-5 gap-3 mb-8">
-      {Array(5).fill(null).map((_, row) =>
-        Array(5).fill(null).map((_, col) => {
-          const cellKey = `${row}-${col}`;
-          const isRevealed = revealedCells.has(cellKey);
-          const canMove = 'RUNNING' in gameState &&
-            gameState.RUNNING.players[gameState.RUNNING.turn_idx].id === userData?.id?.toString();
+    <div className="flex justify-center w-full mb-8 overflow-x-auto">
+      <div 
+        className="grid gap-4 p-4"
+        style={{ 
+          gridTemplateColumns: `repeat(${gridSize}, minmax(0, 1fr))`,
+          width: 'fit-content'
+        }}
+      >
+        {Array(gridSize).fill(null).map((_, row) =>
+          Array(gridSize).fill(null).map((_, col) => {
+            const cellKey = `${row}-${col}`;
+            const isRevealed = revealedCells.has(cellKey);
+            const canMove = 'RUNNING' in gameState &&
+              gameState.RUNNING.players[gameState.RUNNING.turn_idx].id === userData?.id?.toString();
 
-          const cellIndex = row * 5 + col;
-          const isBomb = board.bomb_coordinates.includes(cellIndex);
+            const cellIndex = row * gridSize + col;
+            const isBomb = board.bomb_coordinates.includes(cellIndex);
 
-          const shouldShowContent = isRevealed || ('FINISHED' in gameState && isBomb);
+            const shouldShowContent = isRevealed || ('FINISHED' in gameState && isBomb);
 
-          return (
-            <button
-              key={cellKey}
-              onClick={() => canMove && !isRevealed && handleCellClick(row, col)}
-              disabled={!canMove || isRevealed}
-              className={`
-                w-16 h-16 flex items-center justify-center rounded-lg
-                transition-all duration-300 ease-in-out transform
-                ${shouldShowContent
-                  ? isBomb
-                    ? 'bg-red-900/30 border border-red-500/50'
-                    : 'bg-emerald-900/30 border border-emerald-500/50'
-                  : canMove
-                    ? 'bg-zinc-900/80 hover:bg-zinc-800 hover:scale-105 border border-zinc-700'
-                    : 'bg-zinc-900/50 border border-zinc-800'}
-                shadow-lg backdrop-blur-sm
-              `}
-            >
-              {shouldShowContent ? (
-                isBomb ? (
-                  <div className="text-red-500 text-2xl animate-bounce">💥</div>
+            return (
+              <button
+                key={cellKey}
+                onClick={() => canMove && !isRevealed && handleCellClick(row, col)}
+                disabled={!canMove || isRevealed}
+                className={`
+                  w-14 h-14 flex items-center justify-center rounded-lg
+                  transition-all duration-300 ease-in-out transform
+                  ${shouldShowContent
+                    ? isBomb
+                      ? 'bg-red-900/30 border border-red-500/50'
+                      : 'bg-emerald-900/30 border border-emerald-500/50'
+                    : canMove
+                      ? 'bg-zinc-900/80 hover:bg-zinc-800 hover:scale-105 border border-zinc-700'
+                      : 'bg-zinc-900/50 border border-zinc-800'}
+                  shadow-lg backdrop-blur-sm
+                `}
+              >
+                {shouldShowContent ? (
+                  isBomb ? (
+                    <div className="text-xl animate-bounce">💥</div>
+                  ) : (
+                    <div className="text-xl animate-pulse">💎</div>
+                  )
                 ) : (
-                  <div className="text-emerald-400 text-2xl animate-pulse">💎</div>
-                )
-              ) : (
-                <div className="w-full h-full bg-gradient-to-br from-zinc-800/50 to-zinc-900/50 rounded-lg" />
-              )}
-            </button>
-          );
-        })
-      )}
+                  <div className="w-full h-full bg-gradient-to-br from-zinc-800/50 to-zinc-900/50 rounded-lg" />
+                )}
+              </button>
+            );
+          })
+        )}
+      </div>
     </div>
   );
 };

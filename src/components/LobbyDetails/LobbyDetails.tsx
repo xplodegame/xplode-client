@@ -4,7 +4,7 @@ import { Coins, Grid, Bomb, Users } from 'lucide-react';
 interface LobbyDetailsProps {
   betAmount: number;
   setBetAmount: (amount: number) => void;
-  playGame: (gridSize: number, mineCount: number, minPlayers: number) => void;
+  playGame: (gridSize: number, bombs: number, minPlayers: number) => void;
   isConnected: boolean;
   walletBalance: number;
 }
@@ -17,7 +17,7 @@ const LobbyDetails: React.FC<LobbyDetailsProps> = ({
   walletBalance
 }) => {
   const [gridSize, setGridSize] = useState<number>(5);
-  const [mineCount, setMineCount] = useState<number>(3);
+  const [bombs, setBombs] = useState<number>(3);
   const [minPlayers, setMinPlayers] = useState<number>(2);
 
   const handleBetChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -27,7 +27,7 @@ const LobbyDetails: React.FC<LobbyDetailsProps> = ({
   };
 
   const quickBets = [0.05, 0.1, 0.25, 0.5, 1, 2];
-  const gridSizes = [3, 5, 7, 10, 12, 15];
+  const gridSizes = [3, 4, 5, 6, 7, 8];
 
   const clickSound = useRef(new Audio('/assets/sounds/click.wav'));
   const startGameSound = useRef(new Audio('/assets/sounds/start_game.wav'));
@@ -121,10 +121,10 @@ const LobbyDetails: React.FC<LobbyDetailsProps> = ({
                   key={mines}
                   onClick={() => {
                     playClickSound();
-                    setMineCount(mines);
+                    setBombs(mines);
                   }}
                   className={`p-3 rounded-lg font-mono text-sm border transition-colors ${
-                    mineCount === mines
+                    bombs === mines
                       ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
                       : 'bg-zinc-900/50 border-zinc-800 text-zinc-400 hover:bg-emerald-500/5 hover:text-emerald-400'
                   }`}
@@ -167,7 +167,7 @@ const LobbyDetails: React.FC<LobbyDetailsProps> = ({
           <button
             onClick={() => {
               startGameSound.current.play();
-              playGame(gridSize, mineCount, minPlayers);
+              playGame(gridSize, bombs, minPlayers);
             }}
             disabled={!isConnected || betAmount <= 0 || betAmount > walletBalance}
             className="w-full bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 disabled:hover:bg-emerald-500

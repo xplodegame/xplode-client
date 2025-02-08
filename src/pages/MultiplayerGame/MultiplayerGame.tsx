@@ -6,7 +6,7 @@ import GameStatus from '../../components/GameStatus/GameStatus';
 import LobbyDetails from '../../components/LobbyDetails/LobbyDetails';
 import { GameState, GameMessage } from '../../types/gameTypes';
 
-const MOVE_TIMEOUT = 20000; // 5 seconds
+const MOVE_TIMEOUT = 600000; // 5 seconds
 
 interface MultiplayerGameProps {
   userData?: {
@@ -149,7 +149,7 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
     }
   }, [gameState, sendMessage]);
 
-  const playGame = useCallback((gridSize: number, mineCount: number, minPlayers: number) => {
+  const playGame = useCallback((grid: number, bombs: number, minPlayers: number) => {
     if (!userData?.id) return;
     setRevealedCells(new Set());
     setTurnCount(0);
@@ -158,8 +158,8 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
       Play: {
         player_id: userData.id.toString(),
         single_bet_size: betAmount,
-        grid_size: gridSize,
-        mine_count: mineCount,
+        grid: grid,
+        bombs : bombs,
         min_players: minPlayers
       },
     });
@@ -200,7 +200,9 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
           gameState={gameState} 
           userData={userData} 
         />
+      </div>
 
+      <div className="w-auto">
         <GameBoard
           gameState={gameState}
           userData={userData}
@@ -209,7 +211,9 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
           gemSound={gemSound}
           bombSound={bombSound}
         />
+      </div>
 
+      <div className="w-full max-w-md">
         {!isConnected && (
           <div className="text-zinc-400 text-sm mt-6 flex items-center justify-center space-x-2">
             <Loader2 className="animate-spin" size={16} />
