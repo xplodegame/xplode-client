@@ -3,10 +3,10 @@ import { Loader2 } from 'lucide-react';
 import useWebSocket from '../../hooks/useWebSocket';
 import GameBoard from '../../components/GameBoard/GameBoard';
 import GameStatus from '../../components/GameStatus/GameStatus';
-import BetInput from '../../components/BetInput/BetInput';
+import LobbyDetails from '../../components/LobbyDetails/LobbyDetails';
 import { GameState, GameMessage } from '../../types/gameTypes';
 
-const MOVE_TIMEOUT = 5000; // 5 seconds
+const MOVE_TIMEOUT = 20000; // 5 seconds
 
 interface MultiplayerGameProps {
   userData?: {
@@ -149,15 +149,18 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
     }
   }, [gameState, sendMessage]);
 
-  const playGame = useCallback(() => {
+  const playGame = useCallback((gridSize: number, mineCount: number, minPlayers: number) => {
     if (!userData?.id) return;
     setRevealedCells(new Set());
     setTurnCount(0);
-
+  
     sendMessage({
       Play: {
         player_id: userData.id.toString(),
         single_bet_size: betAmount,
+        grid_size: gridSize,
+        mine_count: mineCount,
+        min_players: minPlayers
       },
     });
   }, [userData, betAmount, sendMessage]);
@@ -184,7 +187,7 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
         )}
 
         {(!gameState || 'ABORTED' in gameState) && (
-          <BetInput
+          <LobbyDetails
             betAmount={betAmount}
             setBetAmount={setBetAmount}
             playGame={playGame}
