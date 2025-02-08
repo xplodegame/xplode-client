@@ -15,11 +15,11 @@ const useWebSocket = ({ onMessage, onError }: WebSocketHookProps) => {
   const [isConnected, setIsConnected] = useState(false);
 
   const connect = useCallback(() => {
-    try {
-      if (wsRef.current?.readyState === WebSocket.OPEN) {
-        return;
-      }
+    if (wsRef.current?.readyState === WebSocket.OPEN || wsRef.current?.readyState === WebSocket.CONNECTING) {
+      return; // Avoid reconnecting if already connected or connecting
+    }
 
+    try {
       const ws = new WebSocket(WEBSOCKET_URL);
       wsRef.current = ws;
 
@@ -29,6 +29,12 @@ const useWebSocket = ({ onMessage, onError }: WebSocketHookProps) => {
         console.log('WebSocket connected');
         setIsConnected(true);
         onError('');
+
+        // Clear any pending reconnection timeout
+        if (reconnectTimeoutRef.current) {
+          clearTimeout(reconnectTimeoutRef.current);
+          reconnectTimeoutRef.current = undefined;
+        }
       };
 
       ws.onmessage = (event) => {
@@ -51,11 +57,17 @@ const useWebSocket = ({ onMessage, onError }: WebSocketHookProps) => {
         console.error('WebSocket error:', event);
         setIsConnected(false);
         onError('Connection error occurred');
+
+        // Attempt to reconnect immediately
+        if (!reconnectTimeoutRef.current) {
+          reconnectTimeoutRef.current = setTimeout(connect, RECONNECT_DELAY);
+        }
       };
 
       ws.onclose = () => {
         console.log('WebSocket disconnected');
         setIsConnected(false);
+        wsRef.current = null; // Reset the WebSocket reference
         reconnectTimeoutRef.current = setTimeout(connect, RECONNECT_DELAY);
       };
     } catch (err) {
@@ -66,8 +78,13 @@ const useWebSocket = ({ onMessage, onError }: WebSocketHookProps) => {
   }, [onMessage, onError]);
 
   useEffect(() => {
-    connect();
+    // Add a delay before the initial connection attempt
+    const initialDelay = setTimeout(() => {
+      connect();
+    }, 1000); // Delay the initial connection by 1 second
+
     return () => {
+      clearTimeout(initialDelay); // Clear the timeout on cleanup
       if (reconnectTimeoutRef.current) {
         clearTimeout(reconnectTimeoutRef.current);
       }
