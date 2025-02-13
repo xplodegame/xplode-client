@@ -19,10 +19,15 @@ export type GameState =
   | { FINISHED: { game_id: string; loser_idx: number; board: Board; players: Player[]; single_bet_size: number } }
   | { ABORTED: { game_id: string } };
 
-export type GameMessage = {
-  Play?: { player_id: string; single_bet_size: number, min_players: number };
-  MakeMove?: { game_id: string; x: number; y: number };
-  Stop?: { game_id: string; abort: boolean };
-  GameUpdate?: GameState;
-  Error?: string;
-};
+export type GameMessage =
+  | "Ping"  // Changed to string literal type for unit variant
+  | "Pong"  // Added Pong response type
+  | { Play: { 
+      player_id: string; 
+      single_bet_size: number;
+      min_players: number;
+    }}
+  | { MakeMove: { game_id: string; x: number; y: number }}
+  | { Stop: { game_id: string; abort: boolean }}
+  | { GameUpdate: GameState }
+  | { Error: string };

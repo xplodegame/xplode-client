@@ -31,6 +31,16 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
 
   // Handle game message updates
   const handleGameMessage = useCallback((message: GameMessage) => {
+    // Handle string messages (Ping/Pong)
+    if (typeof message === "string") {
+      if (message === "Pong") {
+        console.log("Received pong from server");
+        return;
+      }
+      return;
+    }
+  
+    // Handle object messages
     if ('GameUpdate' in message) {
       const newGameState = message.GameUpdate;
       setGameState(newGameState ?? null);
@@ -40,7 +50,7 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
         if (moveTimeoutRef.current) {
           clearTimeout(moveTimeoutRef.current);
         }
-
+  
         // Set timeouts based on game state
         if ('RUNNING' in newGameState) {
           moveTimeoutRef.current = window.setTimeout(() => {
@@ -71,7 +81,7 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
             setError('Game aborted due to inactivity.');
           }, MOVE_TIMEOUT);
         }
-
+  
         // Update revealed cells
         if ('RUNNING' in newGameState || 'FINISHED' in newGameState) {
           const newRevealedCells = new Set<string>();

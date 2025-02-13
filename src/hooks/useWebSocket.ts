@@ -35,6 +35,9 @@ const useWebSocket = ({ onMessage, onError }: WebSocketHookProps) => {
           clearTimeout(reconnectTimeoutRef.current);
           reconnectTimeoutRef.current = undefined;
         }
+
+        // Send a ping message to the server as soon as the WebSocket is connected
+        ws.send(JSON.stringify("Ping"));
       };
 
       ws.onmessage = (event) => {
