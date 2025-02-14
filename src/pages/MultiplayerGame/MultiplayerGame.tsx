@@ -110,6 +110,7 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
   const { sendMessage, isConnected } = useWebSocket({
     onMessage: handleGameMessage,
     onError: setError,
+    gameState  // Add this line
   });
 
   useEffect(() => {
@@ -166,7 +167,6 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
   
     sendMessage({
       Play: {
-        min_players: 3,
         player_id: userData.id.toString(),
         single_bet_size: betAmount,
         grid: grid,

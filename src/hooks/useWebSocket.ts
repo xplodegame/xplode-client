@@ -10,14 +10,21 @@ const MAX_RETRIES = 10;
 interface WebSocketHookProps {
   onMessage: (message: GameMessage) => void;
   onError: (error: string) => void;
+  gameState?: any;
 }
 
-const useWebSocket = ({ onMessage, onError }: WebSocketHookProps) => {
+const useWebSocket = ({ onMessage, onError, gameState }: WebSocketHookProps) => {
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout>();
   const reconnectAttemptsRef = useRef<number>(0);
   const isConnectingRef = useRef<boolean>(false);
+  const gameStateRef = useRef(gameState);  // Add this line
   const [isConnected, setIsConnected] = useState(false);
+
+  // Update gameStateRef whenever gameState changes
+  useEffect(() => {
+    gameStateRef.current = gameState;
+  }, [gameState]);
 
   const getNextReconnectDelay = useCallback(() => {
     const delay = INITIAL_RECONNECT_DELAY * Math.pow(BACKOFF_MULTIPLIER, reconnectAttemptsRef.current);
@@ -65,19 +72,31 @@ const useWebSocket = ({ onMessage, onError }: WebSocketHookProps) => {
         onError('');
         reconnectAttemptsRef.current = 0;
         
+        // Use gameStateRef.current instead of gameState
         try {
-          ws.send(JSON.stringify("Ping"));
+          const currentGameState = gameStateRef.current;
+          const pingMessage = currentGameState && 'RUNNING' in currentGameState 
+            ? { Ping: { game_id: currentGameState.RUNNING.game_id } }
+            : "Ping";
+          
+          const messageStr = JSON.stringify(pingMessage);
+          console.log(messageStr);
+          const encoder = new TextEncoder();
+          const binaryData = encoder.encode(messageStr);
+          ws.send(binaryData);
         } catch (err) {
           console.error('Error sending initial ping:', err);
         }
       };
 
+      // Rest of the WebSocket implementation remains the same
       ws.onmessage = (event) => {
         try {
           if (event.data instanceof ArrayBuffer) {
             const decoder = new TextDecoder('utf-8');
             const messageStr = decoder.decode(event.data);
             const message = JSON.parse(messageStr) as GameMessage;
+            console.log('Received message:', message);
             onMessage(message);
           } else {
             console.warn('Received non-binary message:', event.data);
@@ -126,7 +145,7 @@ const useWebSocket = ({ onMessage, onError }: WebSocketHookProps) => {
         }, nextDelay);
       }
     }
-  }, [cleanup, getNextReconnectDelay, onMessage, onError]);
+  }, [cleanup, getNextReconnectDelay, onMessage, onError]); // Remove gameState from dependencies
 
   useEffect(() => {
     connect();
@@ -144,6 +163,7 @@ const useWebSocket = ({ onMessage, onError }: WebSocketHookProps) => {
       const messageStr = JSON.stringify(message);
       const encoder = new TextEncoder();
       const binaryData = encoder.encode(messageStr);
+      console.log('Sending message:', messageStr);
       wsRef.current.send(binaryData);
     } catch (err) {
       console.error('Error sending message:', err);

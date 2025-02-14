@@ -23,10 +23,12 @@ export type GameMessage =
   | "Ping"  // Changed to string literal type for unit variant
   | "Pong"  // Added Pong response type
   | { Play: { 
-      player_id: string; 
-      single_bet_size: number;
-      min_players: number;
-    }}
+    player_id: string; 
+    single_bet_size: number;
+    min_players: number;
+    bombs: number;
+    grid: number;
+  }}
   | { MakeMove: { game_id: string; x: number; y: number }}
   | { Stop: { game_id: string; abort: boolean }}
   | { GameUpdate: GameState }
