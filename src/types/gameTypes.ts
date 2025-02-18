@@ -15,7 +15,7 @@ export type Board = {
 
 export type GameState =
   | { WAITING: { game_id: string; creator: Player; board: Board; single_bet_size: number } }
-  | { RUNNING: { game_id: string; players: Player[]; board: Board; turn_idx: number; single_bet_size: number } }
+  | { RUNNING: { game_id: string; players: Player[]; board: Board; turn_idx: number; single_bet_size: number; locks: [number, number][] } }
   | { FINISHED: { game_id: string; loser_idx: number; board: Board; players: Player[]; single_bet_size: number } }
   | { ABORTED: { game_id: string } };
 
@@ -32,4 +32,6 @@ export type GameMessage =
   | { MakeMove: { game_id: string; x: number; y: number }}
   | { Stop: { game_id: string; abort: boolean }}
   | { GameUpdate: GameState }
-  | { Error: string };
+  | { Error: string }
+  | { Lock: { game_id: string; x: number; y: number }}
+  | { LockComplete: { game_id: string }};
