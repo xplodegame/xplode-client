@@ -16,8 +16,6 @@ interface GameBoardProps {
   currentPlayerLockedCells: Set<string>;
   onMove: (x: number, y: number) => void;
   onLock: (x: number, y: number) => void;
-  gemSound: React.RefObject<HTMLAudioElement>;
-  bombSound: React.RefObject<HTMLAudioElement>;
   isLockPhase: boolean;
   locksRemaining: number;
 }
@@ -30,8 +28,6 @@ const GameBoard: React.FC<GameBoardProps> = ({
   currentPlayerLockedCells, 
   onMove,
   onLock,
-  gemSound,
-  bombSound,
   isLockPhase,
   locksRemaining
 }) => {

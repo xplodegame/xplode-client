@@ -1,13 +1,10 @@
 import { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
 import { useParticles } from '../../components/LandingPage/Particles';
 import Hero from '../../components/LandingPage/Hero';
 import GameMechanics from '../../components/LandingPage/GameMechanics';
 import Features from '../../components/LandingPage/Features';
 import Statistics from '../../components/LandingPage/Statistics';
 import Footer from '../../components/LandingPage/Footer';
-import { Moon, Sun } from 'lucide-react';
-// import useSound from 'use-sound';
 
 function Home() {
 
