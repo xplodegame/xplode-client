@@ -39,30 +39,30 @@ const LobbyDetails: React.FC<LobbyDetailsProps> = ({
   return (
     <div className="relative w-full max-w-3xl mx-auto space-y-8">
       {/* Status Bar */}
-      <div className="flex justify-between items-center px-4 py-2 bg-zinc-900/30 rounded-lg border border-zinc-800/50">
+      <div className="flex justify-between items-center px-4 py-2 bg-black/40 rounded-lg border border-emerald-500/20 shadow-lg shadow-emerald-500/5">
         <div className="flex items-center gap-2">
           <Coins className="w-4 h-4 text-emerald-400" />
-          <span className="text-zinc-400">Balance:</span>
+          <span className="text-zinc-300">Balance:</span>
           <span className="text-emerald-400 font-mono">{walletBalance.toFixed(3)} SOL</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-emerald-400' : 'bg-red-400'}`} />
-          <span className="text-zinc-400">{isConnected ? 'Connected' : 'Connecting...'}</span>
+          <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-emerald-400 animate-pulse' : 'bg-red-400'}`} />
+          <span className="text-zinc-300">{isConnected ? 'Connected' : 'Connecting...'}</span>
         </div>
       </div>
 
       {/* Main Panel */}
-      <div className="bg-black/40 backdrop-blur-sm border border-zinc-800/50 rounded-lg overflow-hidden">
+      <div className="bg-black/60 backdrop-blur-sm border border-emerald-500/10 rounded-lg overflow-hidden shadow-xl shadow-emerald-500/5">
         {/* Bet Amount Section */}
-        <div className="p-6 border-b border-zinc-800/50">
-          <h3 className="text-zinc-400 text-sm font-medium mb-4">PLACE YOUR BET</h3>
+        <div className="p-6 border-b border-emerald-500/10">
+          <h3 className="text-emerald-400/80 text-sm font-medium mb-4 tracking-wider">PLACE YOUR BET</h3>
           <div className="space-y-4">
             <input
               type="number"
               value={betAmount || ''}
               onChange={handleBetChange}
               placeholder="Enter bet amount"
-              className="w-full bg-zinc-900/50 px-4 py-3 rounded-lg font-mono text-emerald-400 border border-zinc-800 focus:outline-none focus:border-emerald-500/50"
+              className="w-full bg-black/40 px-4 py-3 rounded-lg font-mono text-emerald-400 border border-emerald-500/20 focus:outline-none focus:border-emerald-500/50 focus:ring-2 focus:ring-emerald-500/10 transition-all"
             />
             <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
               {quickBets.map(bet => (
@@ -72,7 +72,7 @@ const LobbyDetails: React.FC<LobbyDetailsProps> = ({
                     playClickSound();
                     setBetAmount(Math.min(bet, walletBalance));
                   }}
-                  className="py-2 font-mono text-sm bg-zinc-900/50 text-zinc-400 border border-zinc-800 rounded-lg hover:bg-emerald-500/10 hover:text-emerald-400 hover:border-emerald-500/30 transition-all"
+                  className="py-2 font-mono text-sm bg-black/40 text-emerald-400/80 border border-emerald-500/20 rounded-lg hover:bg-emerald-500/10 hover:border-emerald-500/40 transition-all duration-300"
                 >
                   {bet}
                 </button>
@@ -85,9 +85,9 @@ const LobbyDetails: React.FC<LobbyDetailsProps> = ({
         <div className="p-6 space-y-6">
           {/* Grid Size */}
           <div>
-            <div className="flex items-center gap-2 text-zinc-400 text-sm mb-3">
+            <div className="flex items-center gap-2 text-emerald-400/80 text-sm mb-3">
               <Grid className="w-4 h-4" />
-              <h3 className="font-medium">GRID SIZE</h3>
+              <h3 className="font-medium tracking-wider">GRID SIZE</h3>
             </div>
             <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
               {gridSizes.map(size => (
@@ -97,10 +97,10 @@ const LobbyDetails: React.FC<LobbyDetailsProps> = ({
                     playClickSound();
                     setGridSize(size);
                   }}
-                  className={`p-3 rounded-lg font-mono text-sm border transition-colors ${
+                  className={`p-3 rounded-lg font-mono text-sm border transition-all duration-300 ${
                     gridSize === size
-                      ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
-                      : 'bg-zinc-900/50 border-zinc-800 text-zinc-400 hover:bg-emerald-500/5 hover:text-emerald-400'
+                      ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400 shadow-lg shadow-emerald-500/10'
+                      : 'bg-black/40 border-emerald-500/20 text-emerald-400/70 hover:bg-emerald-500/10'
                   }`}
                 >
                   {size}×{size}
@@ -111,9 +111,9 @@ const LobbyDetails: React.FC<LobbyDetailsProps> = ({
 
           {/* Mines */}
           <div>
-            <div className="flex items-center gap-2 text-zinc-400 text-sm mb-3">
+            <div className="flex items-center gap-2 text-emerald-400/80 text-sm mb-3">
               <Bomb className="w-4 h-4" />
-              <h3 className="font-medium">NUMBER OF MINES</h3>
+              <h3 className="font-medium tracking-wider">NUMBER OF MINES</h3>
             </div>
             <div className="grid grid-cols-4 sm:grid-cols-8 gap-2">
               {Array.from({ length: 8 }, (_, i) => i + 1).map(mines => (
@@ -123,10 +123,10 @@ const LobbyDetails: React.FC<LobbyDetailsProps> = ({
                     playClickSound();
                     setBombs(mines);
                   }}
-                  className={`p-3 rounded-lg font-mono text-sm border transition-colors ${
+                  className={`p-3 rounded-lg font-mono text-sm border transition-all duration-300 ${
                     bombs === mines
-                      ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
-                      : 'bg-zinc-900/50 border-zinc-800 text-zinc-400 hover:bg-emerald-500/5 hover:text-emerald-400'
+                      ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400 shadow-lg shadow-emerald-500/10'
+                      : 'bg-black/40 border-emerald-500/20 text-emerald-400/70 hover:bg-emerald-500/10'
                   }`}
                 >
                   {mines}
@@ -137,9 +137,9 @@ const LobbyDetails: React.FC<LobbyDetailsProps> = ({
 
           {/* Players */}
           <div>
-            <div className="flex items-center gap-2 text-zinc-400 text-sm mb-3">
+            <div className="flex items-center gap-2 text-emerald-400/80 text-sm mb-3">
               <Users className="w-4 h-4" />
-              <h3 className="font-medium">MINIMUM PLAYERS</h3>
+              <h3 className="font-medium tracking-wider">MINIMUM PLAYERS</h3>
             </div>
             <div className="grid grid-cols-4 sm:grid-cols-7 gap-2">
               {Array.from({ length: 7 }, (_, i) => i + 2).map(players => (
@@ -149,10 +149,10 @@ const LobbyDetails: React.FC<LobbyDetailsProps> = ({
                     playClickSound();
                     setMinPlayers(players);
                   }}
-                  className={`p-3 rounded-lg font-mono text-sm border transition-colors ${
+                  className={`p-3 rounded-lg font-mono text-sm border transition-all duration-300 ${
                     minPlayers === players
-                      ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
-                      : 'bg-zinc-900/50 border-zinc-800 text-zinc-400 hover:bg-emerald-500/5 hover:text-emerald-400'
+                      ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400 shadow-lg shadow-emerald-500/10'
+                      : 'bg-black/40 border-emerald-500/20 text-emerald-400/70 hover:bg-emerald-500/10'
                   }`}
                 >
                   {players}
@@ -163,7 +163,7 @@ const LobbyDetails: React.FC<LobbyDetailsProps> = ({
         </div>
 
         {/* Start Button */}
-        <div className="p-6 border-t border-zinc-800/50">
+        <div className="p-6 border-t border-emerald-500/10">
           <button
             onClick={() => {
               startGameSound.current.play();
@@ -171,7 +171,7 @@ const LobbyDetails: React.FC<LobbyDetailsProps> = ({
             }}
             disabled={!isConnected || betAmount <= 0 || betAmount > walletBalance}
             className="w-full bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 disabled:hover:bg-emerald-500
-              text-black font-bold py-3 rounded-lg transition-colors"
+              text-black font-bold py-3 rounded-lg transition-all duration-300 transform hover:scale-[1.02] shadow-lg shadow-emerald-500/20"
           >
             START GAME
           </button>

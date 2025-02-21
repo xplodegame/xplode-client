@@ -1,4 +1,3 @@
-// GameBoard.tsx
 import React from 'react';
 import { GameState } from '../../../types/gameTypes';
 
@@ -59,21 +58,14 @@ const GameBoard: React.FC<GameBoardProps> = ({
 
   return (
     <div className="flex flex-col items-center w-full mb-8">
-      {isLockPhase && isMyTurn && (
-        <div className="mb-4 flex items-center justify-center space-x-2 font-medium">
-          <span className="px-4 py-2 rounded-lg bg-zinc-900/80 border border-yellow-500/30 text-yellow-400/90 backdrop-blur-sm shadow-lg">
-            {locksRemaining} Locks
-          </span>
-      </div>
-      )}
-      <div className="flex justify-center w-full overflow-x-auto">
-        <div 
-          className="grid gap-4 p-4"
-          style={{ 
-            gridTemplateColumns: `repeat(${gridSize}, minmax(0, 1fr))`,
-            width: 'fit-content'
-          }}
-        >
+    <div className="flex justify-center w-full overflow-x-auto">
+      <div 
+        className="grid gap-4 p-4"
+        style={{ 
+          gridTemplateColumns: `repeat(${gridSize}, minmax(0, 1fr))`,
+          width: 'fit-content'
+        }}
+      >
           {board.grid.map((row, rowIndex) =>
             row.map((cell, colIndex) => {
               const cellKey = `${rowIndex}-${colIndex}`;
@@ -84,7 +76,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
               const isBomb = board.bomb_coordinates.includes(cellIndex);
               const shouldShowContent = isRevealed || ('FINISHED' in gameState && isBomb);
               const canInteract = isMyTurn && !isRevealed && !isLocked && !isCurrentPlayerLocking;
-
+  
               return (
                 <button
                   key={cellKey}
@@ -94,21 +86,21 @@ const GameBoard: React.FC<GameBoardProps> = ({
                     w-14 h-14 flex items-center justify-center rounded-lg
                     transition-all duration-300 ease-in-out transform
                     ${isLocked 
-                      ? 'bg-yellow-900/30 border border-yellow-500/50'
+                      ? 'bg-yellow-900/30 border border-yellow-500/50 shadow-lg shadow-yellow-500/10'
                       : isCurrentPlayerLocking
-                        ? 'bg-orange-900/30 border border-orange-500/50'
+                        ? 'bg-orange-900/30 border border-orange-500/50 shadow-lg shadow-orange-500/10'
                         : shouldShowContent
                           ? isBomb
-                            ? 'bg-red-900/30 border border-red-500/50'
-                            : 'bg-emerald-900/30 border border-emerald-500/50'
+                            ? 'bg-red-900/30 border border-red-500/50 shadow-lg shadow-red-500/10'
+                            : 'bg-emerald-900/30 border border-emerald-500/50 shadow-lg shadow-emerald-500/10'
                           : canInteract
-                            ? 'bg-zinc-900/80 hover:bg-zinc-800 hover:scale-105 border border-zinc-700'
-                            : 'bg-zinc-900/50 border border-zinc-800'}
-                    shadow-lg backdrop-blur-sm
+                            ? 'bg-black/40 hover:bg-black/50 hover:scale-105 border border-emerald-500/20 shadow-lg shadow-emerald-500/10'
+                            : 'bg-black/30 border border-emerald-500/10 shadow-lg shadow-emerald-500/5'}
+                    backdrop-blur-sm
                   `}
                 >
                   {isLocked ? (
-                    <div className="text-xl">🔒</div>
+                    <div className="text-xl text-yellow-400">🔒</div>
                   ) : isCurrentPlayerLocking ? (
                     <div className="text-xl text-orange-400">🔒</div>
                   ) : shouldShowContent ? (
@@ -118,7 +110,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
                       <div className="text-xl animate-pulse">💎</div>
                     )
                   ) : (
-                    <div className="w-full h-full bg-gradient-to-br from-zinc-800/50 to-zinc-900/50 rounded-lg" />
+                    <div className="w-full h-full bg-gradient-to-br from-black/40 to-black/50 rounded-lg" />
                   )}
                 </button>
               );
@@ -126,6 +118,18 @@ const GameBoard: React.FC<GameBoardProps> = ({
           )}
         </div>
       </div>
+      
+      {/* Message container with consistent height and visibility */}
+      <div className="h-12 mt-4 flex items-center justify-center">
+  <div 
+    className={`h-8 min-w-[150px] flex items-center justify-center transition-opacity duration-300 ${isLockPhase && isMyTurn ? 'opacity-100' : 'opacity-0'}`}
+  >
+    <span className="px-4 py-2 rounded-lg bg-black/40 border border-emerald-500/20 text-emerald-400/90 backdrop-blur-sm shadow-lg shadow-emerald-500/10">
+      {locksRemaining} Locks Remaining
+    </span>
+  </div>
+</div>
+
     </div>
   );
 };

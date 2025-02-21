@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
 import useWebSocket from '../../hooks/useWebSocket';
+import { useParticles } from '../../components/GameComponents/Background/GameBackgroundParticles';
 import GameBoard from '../../components/GameComponents/GameBoard/GameBoard';
 import GameStatus from '../../components/GameComponents/GameStatus/GameStatus';
 import LobbyDetails from '../../components/GameComponents/LobbyDetails/LobbyDetails';
@@ -39,6 +40,8 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
   const gemSound = useRef(new Audio('/assets/sounds/gemSound.mp3'));
   const bombSound = useRef(new Audio('/assets/sounds/bombSound.mp3'));
   const lockSound = useRef(new Audio('/assets/sounds/lockSound.wav'));
+
+  const ParticlesComponent = useParticles();
 
   const handleGameMessage = useCallback((message: GameMessage) => {
     if (typeof message === "string") {
@@ -261,9 +264,11 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
   }, [userData, betAmount, sendMessage, resetGameState]);
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-b from-zinc-900 to-black text-white p-4">
-      <div className="w-full max-w-md">
-        <h1 className="text-3xl font-bold mb-12 text-center bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent"></h1>
+    <div className="relative flex flex-col items-center justify-center min-h-screen bg-gradient-to-b from-zinc-900 to-black text-white p-4">
+      {ParticlesComponent}
+      
+      <div className="relative w-full max-w-md z-10">
+        <h1 className="text-3xl font-bold mb-12 text-center bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent invisible">Diamond Hunters</h1>
 
         {error && (
           <div className="text-red-400 text-sm mb-6 bg-red-950/30 border border-red-900/50 rounded-lg p-3">
@@ -304,7 +309,7 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
         />
       </div>
 
-      <div className="w-auto">
+      <div className="relative w-auto z-10">
         <GameBoard
           gameState={gameState}
           userData={userData}
@@ -318,7 +323,7 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
         />
       </div>
 
-      <div className="w-full max-w-md">
+      <div className="relative w-full max-w-md z-10">
         {!isConnected && (
           <div className="text-zinc-400 text-sm mt-6 flex items-center justify-center space-x-2">
             <Loader2 className="animate-spin" size={16} />
