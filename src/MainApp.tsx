@@ -6,6 +6,7 @@ import SingleplayerGame from './pages/SinglePlayerGame/SingleplayerGame';
 import MultiplayerGame from './pages/MultiplayerGame/MultiplayerGame';
 import Home from './pages/Home/Home';
 import './index.css';
+import { useWalletStore } from './stores/walletStore';
 
 import { DepositProvider } from './contexts/DepositContext';
 
@@ -33,6 +34,7 @@ const MainApp: React.FC = () => {
   const { user } = useUser();
   const [userData, setUserData] = useState<UserData | undefined>();
   const [isLoading, setIsLoading] = useState(true);
+  const setBalance = useWalletStore(state => state.setBalance);
 
   useEffect(() => {
     const sendUserData = async () => {
@@ -68,6 +70,10 @@ const MainApp: React.FC = () => {
           console.error('Invalid balance received:', userDetailsData.balance);
           throw new Error('Invalid balance received from server');
         }
+        console.log("########: ",userDetailsData.balance)
+
+        // Update the global store
+        setBalance(userDetailsData.balance);
 
         setUserData({
           ...newUserData,
@@ -90,7 +96,7 @@ const MainApp: React.FC = () => {
     };
 
     sendUserData();
-  }, [user]);
+  }, [user, setBalance]);
 
   if (isLoading) {
     return <div>Loading...</div>;

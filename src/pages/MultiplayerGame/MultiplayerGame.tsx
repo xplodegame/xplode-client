@@ -7,6 +7,7 @@ import GameStatus from '../../components/GameComponents/GameStatus/GameStatus';
 import LobbyDetails from '../../components/GameComponents/LobbyDetails/LobbyDetails';
 import CountdownTimer from '../../components/GameComponents/CountdownTimer/CountdownTimer';
 import { GameState, GameMessage } from '../../types/gameTypes';
+import { useWalletStore } from '../../stores/WalletStore';
 
 const MOVE_TIMEOUT = 10000; // 10 minutes
 const MAX_LOCKS = 3;
@@ -17,7 +18,7 @@ interface MultiplayerGameProps {
     clerk_id: string; 
     email: string; 
     name: string;
-    wallet_balance?: number | null;
+    wallet_balance: number;
     id?: number;
   };
 }
@@ -34,6 +35,7 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
   const [currentPlayerLockedCells, setCurrentPlayerLockedCells] = useState<Set<string>>(new Set());
   const [moveEndTime, setMoveEndTime] = useState<number>(0);
   const [lockEndTime, setLockEndTime] = useState<number>(0);
+  const setBalance = useWalletStore(state => state.setBalance);
 
   const moveTimeoutRef = useRef<number>();
   const lockTimeoutRef = useRef<number>();
@@ -138,10 +140,44 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
             });
           });
           setRevealedCells(newRevealedCells);
+
+          // Create a separate async function for the API call
+          const updateUserBalance = async () => {
+            try {
+              const newUserData = {
+                clerk_id: userData?.clerk_id,
+                email: userData?.email,
+                name: userData?.name,
+              };
+
+              const userDetailsResponse = await fetch('http://127.0.0.1:8080/user-details', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(newUserData),
+              });
+
+              if (!userDetailsResponse.ok) {
+                throw new Error(`HTTP error! status: ${userDetailsResponse.status}`);
+              }
+
+              const userDetailsData = await userDetailsResponse.json();
+              console.log("########: ", userDetailsData.balance);
+
+              // Update the global store
+              setBalance(userDetailsData.balance);
+            } catch (error) {
+              console.error('Failed to update user balance:', error);
+            }
+          };
+
+          // Call the async function
+          updateUserBalance();
         }
       }
     } else if ('Error' in message) {
-      setError(message.Error ?? '');
+      setError(typeof message.Error === 'string' ? message.Error : 'An error occurred');
     }
   }, [userData?.id]);
 
@@ -282,7 +318,7 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
             setBetAmount={setBetAmount}
             playGame={playGame}
             isConnected={isConnected}
-            walletBalance={userData?.wallet_balance ?? 0}
+            userData={userData}
           />
         )}
 

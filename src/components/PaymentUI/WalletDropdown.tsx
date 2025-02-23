@@ -5,6 +5,7 @@ import { WithdrawForm } from './WithdrawForm';
 import { QRModal } from './QRModal';
 import { usePayment } from '../../hooks/usePayment';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useWalletStore } from '../../stores/walletStore';
 
 type StatusType = 'success' | 'error' | 'processing' | null;
 interface StatusMessage {
@@ -26,15 +27,9 @@ interface WalletDropdownProps {
 export const WalletDropdown: React.FC<WalletDropdownProps> = ({ userData }) => {
   const [showDropdown, setShowDropdown] = useState(false);
   const [activeTab, setActiveTab] = useState('deposit');
-  const [walletBalance, setWalletBalance] = useState<number>(userData?.wallet_balance || 0);
   const [status, setStatus] = useState<StatusMessage | null>(null);
   const dropdownRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    if (userData?.wallet_balance !== undefined) {
-      setWalletBalance(userData.wallet_balance);
-    }
-  }, [userData?.wallet_balance]);
+  const walletBalance = useWalletStore(state => state.balance);
 
   const {
     solAmount,
@@ -51,8 +46,7 @@ export const WalletDropdown: React.FC<WalletDropdownProps> = ({ userData }) => {
     processingWithdraw,
   } = usePayment({
     userId: userData?.id,
-    depositAddress: userData?.deposit_address,
-    onBalanceUpdate: (newBalance) => setWalletBalance(newBalance),
+    depositAddress: userData?.deposit_address
   });
 
   useEffect(() => {

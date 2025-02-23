@@ -1,12 +1,12 @@
 import React, { useState, useRef } from 'react';
 import { Coins, Grid, Bomb, Users } from 'lucide-react';
+import { useWalletStore } from '../../../stores/walletStore';
 
 interface LobbyDetailsProps {
   betAmount: number;
   setBetAmount: (amount: number) => void;
   playGame: (gridSize: number, bombs: number, minPlayers: number) => void;
   isConnected: boolean;
-  walletBalance: number;
 }
 
 const LobbyDetails: React.FC<LobbyDetailsProps> = ({
@@ -14,8 +14,8 @@ const LobbyDetails: React.FC<LobbyDetailsProps> = ({
   setBetAmount,
   playGame,
   isConnected,
-  walletBalance
 }) => {
+  const walletBalance = useWalletStore(state => state.balance);
   const [gridSize, setGridSize] = useState<number>(5);
   const [bombs, setBombs] = useState<number>(3);
   const [minPlayers, setMinPlayers] = useState<number>(2);
