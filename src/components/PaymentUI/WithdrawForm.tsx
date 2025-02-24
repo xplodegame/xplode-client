@@ -2,9 +2,16 @@ import React, { useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { debounce } from 'lodash';
 
+interface WithdrawFormProps {
+  onSubmit: (amount: string, address: string) => void;
+  processingWithdraw: boolean;
+  wallet_balance: number;
+}
+
 export const WithdrawForm: React.FC<WithdrawFormProps> = ({
   onSubmit,
   processingWithdraw,
+  wallet_balance
 }) => {
   // Local states for immediate updates
   const [localAmount, setLocalAmount] = useState('');
@@ -42,6 +49,13 @@ export const WithdrawForm: React.FC<WithdrawFormProps> = ({
     debouncedSetAddress(value); // Debounce the parent update
   };
 
+  // Handle max button click
+  const handleMaxButtonClick = () => {
+    const maxAmount = wallet_balance.toString();
+    setLocalAmount(maxAmount); // Update local state immediately
+    setAmount(maxAmount); // Update parent state directly (no need for debounce here)
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (amount && address) {
@@ -61,23 +75,41 @@ export const WithdrawForm: React.FC<WithdrawFormProps> = ({
         <label htmlFor="withdraw-amount" className="text-emerald-400 text-sm font-medium">
           Withdraw Amount (SOL)
         </label>
-        <input
-          id="withdraw-amount"
-          type="number"
-          step="0.000001"
-          min="0"
-          value={localAmount}
-          onChange={handleAmountChange}
-          disabled={processingWithdraw}
-          className="w-full py-3 px-4 rounded-lg font-medium 
-                   bg-black/40 border border-emerald-500/20
-                   text-emerald-400 placeholder-zinc-500
-                   focus:outline-none focus:border-emerald-500
-                   focus:ring-2 focus:ring-emerald-500/20
-                   transition-all duration-200 backdrop-blur-sm"
-          placeholder="0.00"
-          required
-        />
+        <div className="relative">
+          <input
+            id="withdraw-amount"
+            type="number"
+            step="0.000001"
+            min="0"
+            value={localAmount}
+            onChange={handleAmountChange}
+            disabled={processingWithdraw}
+            className="w-full py-3 px-4 rounded-lg font-medium 
+                    bg-black/40 border border-emerald-500/20
+                    text-emerald-400 placeholder-zinc-500
+                    focus:outline-none focus:border-emerald-500
+                    focus:ring-2 focus:ring-emerald-500/20
+                    transition-all duration-200 backdrop-blur-sm
+                    [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+            placeholder="0.00"
+            required
+          />
+          <button
+            type="button"
+            onClick={handleMaxButtonClick}
+            disabled={processingWithdraw}
+            className="absolute right-3 top-1/2 transform -translate-y-1/2
+                    px-2 py-1 text-xs font-medium rounded
+                    bg-emerald-500/20 text-emerald-400
+                    hover:bg-emerald-500/30 transition-colors duration-200
+                    border border-emerald-500/30 focus:outline-none"
+          >
+            MAX
+          </button>
+        </div>
+        <div className="text-emerald-400/60 text-xs mt-1">
+          Available: {wallet_balance} SOL
+        </div>
       </div>
 
       <div>

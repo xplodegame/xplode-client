@@ -7,7 +7,7 @@ import GameStatus from '../../components/GameComponents/GameStatus/GameStatus';
 import LobbyDetails from '../../components/GameComponents/LobbyDetails/LobbyDetails';
 import CountdownTimer from '../../components/GameComponents/CountdownTimer/CountdownTimer';
 import { GameState, GameMessage } from '../../types/gameTypes';
-import { useWalletStore } from '../../stores/WalletStore';
+import { useWalletStore } from '../../stores/walletStore';
 
 const MOVE_TIMEOUT = 10000; // 10 minutes
 const MAX_LOCKS = 3;

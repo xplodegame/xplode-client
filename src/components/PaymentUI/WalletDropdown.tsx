@@ -218,6 +218,7 @@ export const WalletDropdown: React.FC<WalletDropdownProps> = ({ userData }) => {
                       <WithdrawForm
                         onSubmit={handleWithdraw}
                         processingWithdraw={processingWithdraw}
+                        wallet_balance={walletBalance}
                       />
                     )}
                   </AnimatePresence>
