@@ -31,37 +31,207 @@ const Navbar: React.FC<NavbarProps> = ({ userData }) => {
     >
       <nav className="backdrop-blur-xl bg-gradient-to-b from-black/80 to-transparent border-b border-white/5">
         <div className="container mx-auto px-4 lg:px-6">
-          <div className="hidden md:grid md:grid-cols-3 items-center h-20">
-            {/* Logo Section */}
-            <div className="flex items-center">
-              <Link to="/" className="flex items-center gap-3 group">
-                <motion.div 
-                  whileHover={{ scale: 1.1, rotate: 180 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <Diamond className="w-8 h-8 text-emerald-400" />
-                </motion.div>
-                <span className="text-2xl font-bold bg-gradient-to-r from-emerald-300 to-emerald-500 bg-clip-text text-transparent">
-                  Diamond Hunter
-                </span>
-              </Link>
-            </div>
-
-            {/* Center Section */}
-            <SignedIn>
-              <div className="flex justify-center items-center">
-                <motion.div whileHover={{ scale: 1.02 }}>
-                  <WalletDropdown userData={userData} />
-                </motion.div>
+          {/* Desktop and Tablet Navigation */}
+          <div className="hidden md:block">
+            <div className="flex items-center h-20">
+              {/* Logo Section - Fixed Width */}
+              <div className="w-1/4">
+                <Link to="/" className="flex items-center gap-3 group">
+                  <motion.div 
+                    whileHover={{ scale: 1.1, rotate: 180 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <Diamond className="w-8 h-8 text-emerald-400" />
+                  </motion.div>
+                  <span className="text-2xl font-bold bg-gradient-to-r from-emerald-300 to-emerald-500 bg-clip-text text-transparent">
+                    Diamond Hunter
+                  </span>
+                </Link>
               </div>
-            </SignedIn>
 
-            {/* Navigation Links and User Section */}
-            <div className="flex items-center justify-end gap-4">
-              <SignedIn>
-                <div className="flex items-center gap-3">
-                  {/* Custom Rainbow Kit Connect Button */}
-                  <motion.div whileHover={{ scale: 1.05 }} className="mr-2">
+              {/* Wallet Section - Always Centered */}
+              <div className="flex-1 flex justify-center items-center">
+                <SignedIn>
+                  <motion.div whileHover={{ scale: 1.02 }}>
+                    <WalletDropdown userData={userData} />
+                  </motion.div>
+                </SignedIn>
+              </div>
+
+              {/* Navigation Links and User Section - Fixed Width */}
+              <div className="w-1/4 flex items-center justify-end gap-4">
+                <SignedIn>
+                  <div className="flex items-center gap-3">
+                    {/* Full Connect Button that will only show at larger screens */}
+                    <motion.div whileHover={{ scale: 1.05 }} className="hidden xl:block">
+                      <ConnectButton.Custom>
+                        {({
+                          account,
+                          chain,
+                          openAccountModal,
+                          openChainModal,
+                          openConnectModal,
+                          mounted,
+                        }) => {
+                          const ready = mounted;
+                          const connected = ready && account && chain;
+
+                          return (
+                            <div
+                              {...(!ready && {
+                                'aria-hidden': true,
+                                style: {
+                                  opacity: 0,
+                                  pointerEvents: 'none',
+                                  userSelect: 'none',
+                                },
+                              })}
+                            >
+                              {(() => {
+                                if (!connected) {
+                                  return (
+                                    <button
+                                      onClick={openConnectModal}
+                                      className="px-4 py-2.5 rounded-xl font-medium
+                                               bg-gradient-to-r from-emerald-500/10 to-emerald-500/5
+                                               text-emerald-400 border border-emerald-500/20
+                                               hover:border-emerald-500/40 hover:from-emerald-500/20 hover:to-emerald-500/10
+                                               transition-all duration-300 flex items-center gap-2"
+                                    >
+                                      <Diamond size={18} />
+                                      Connect Wallet
+                                    </button>
+                                  );
+                                }
+
+                                return (
+                                  <div className="flex items-center gap-2">
+                                    <button
+                                      onClick={openChainModal}
+                                      className="px-3 py-2.5 rounded-xl font-medium
+                                               bg-gradient-to-r from-emerald-500/10 to-emerald-500/5
+                                               text-emerald-400 border border-emerald-500/20
+                                               hover:border-emerald-500/40 transition-all duration-300 flex items-center gap-2"
+                                    >
+                                      {chain.hasIcon && (
+                                        <div
+                                          style={{
+                                            background: chain.iconBackground,
+                                            width: 16,
+                                            height: 16,
+                                            borderRadius: 999,
+                                            overflow: 'hidden',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                          }}
+                                        >
+                                          {chain.iconUrl && (
+                                            <img
+                                              alt={chain.name ?? 'Chain icon'}
+                                              src={chain.iconUrl}
+                                              style={{ width: 16, height: 16 }}
+                                            />
+                                          )}
+                                        </div>
+                                      )}
+                                      {chain.name}
+                                    </button>
+
+                                    <button
+                                      onClick={openAccountModal}
+                                      className="px-3 py-2.5 rounded-xl font-medium whitespace-nowrap overflow-hidden
+                                               bg-gradient-to-r from-emerald-500/10 to-emerald-500/5
+                                               text-emerald-400 border border-emerald-500/20
+                                               hover:border-emerald-500/40 transition-all duration-300 flex items-center gap-2"
+                                      style={{ maxWidth: '120px' }}
+                                    >
+                                      <span className="truncate">
+                                        {account.address.substring(0, 5)}...{account.address.substring(account.address.length - 3)}
+                                      </span>
+                                    </button>
+                                  </div>
+                                );
+                              })()}
+                            </div>
+                          );
+                        }}
+                      </ConnectButton.Custom>
+                    </motion.div>
+
+                    {/* Compact Connect Button for narrower screens */}
+                    <motion.div whileHover={{ scale: 1.05 }} className="xl:hidden">
+                      <ConnectButton.Custom>
+                        {({
+                          account,
+                          chain,
+                          openAccountModal,
+                          openChainModal,
+                          openConnectModal,
+                          mounted,
+                        }) => {
+                          const ready = mounted;
+                          const connected = ready && account && chain;
+
+                          return (
+                            <div
+                              {...(!ready && {
+                                'aria-hidden': true,
+                                style: {
+                                  opacity: 0,
+                                  pointerEvents: 'none',
+                                  userSelect: 'none',
+                                },
+                              })}
+                            >
+                              {!connected ? (
+                                <button
+                                  onClick={openConnectModal}
+                                  className="px-3 py-2.5 rounded-xl font-medium
+                                         bg-gradient-to-r from-emerald-500/10 to-emerald-500/5
+                                         text-emerald-400 border border-emerald-500/20
+                                         hover:border-emerald-500/40 transition-all duration-300 flex items-center gap-2"
+                                >
+                                  <Diamond size={18} className="md:mr-0 lg:mr-1" />
+                                  <span className="hidden lg:inline">Connect</span>
+                                </button>
+                              ) : (
+                                <button
+                                  onClick={openAccountModal}
+                                  className="px-3 py-2.5 rounded-xl font-medium
+                                         bg-gradient-to-r from-emerald-500/10 to-emerald-500/5
+                                         text-emerald-400 border border-emerald-500/20
+                                         hover:border-emerald-500/40 transition-all duration-300"
+                                >
+                                  {account.address.substring(0, 4)}...
+                                </button>
+                              )}
+                            </div>
+                          );
+                        }}
+                      </ConnectButton.Custom>
+                    </motion.div>
+
+                    {location.pathname !== '/multiplayer' && (
+                      <motion.div whileHover={{ scale: 1.05 }}>
+                        <Link
+                          to="/multiplayer"
+                          className="px-4 py-2.5 rounded-xl font-medium
+                                   bg-gradient-to-r from-emerald-500/10 to-emerald-500/5
+                                   text-emerald-400 border border-emerald-500/20
+                                   hover:border-emerald-500/40 hover:from-emerald-500/20 hover:to-emerald-500/10
+                                   transition-all duration-300 flex items-center gap-2"
+                        >
+                          <Users size={18} />
+                          <span className="hidden lg:inline">Multiplayer</span>
+                        </Link>
+                      </motion.div>
+                    )}
+                  </div>
+                </SignedIn>
+
+                <SignedOut>
+                  <motion.div whileHover={{ scale: 1.05 }} className="hidden xl:block mr-2">
                     <ConnectButton.Custom>
                       {({
                         account,
@@ -85,171 +255,100 @@ const Navbar: React.FC<NavbarProps> = ({ userData }) => {
                               },
                             })}
                           >
-                            {(() => {
-                              if (!connected) {
-                                return (
-                                  <button
-                                    onClick={openConnectModal}
-                                    className="px-4 py-2.5 rounded-xl font-medium
-                                             bg-gradient-to-r from-emerald-500/10 to-emerald-500/5
-                                             text-emerald-400 border border-emerald-500/20
-                                             hover:border-emerald-500/40 hover:from-emerald-500/20 hover:to-emerald-500/10
-                                             transition-all duration-300 flex items-center gap-2"
-                                  >
-                                    <Diamond size={18} />
-                                    Connect Wallet
-                                  </button>
-                                );
-                              }
-
-                              return (
-                                <div className="flex items-center gap-2">
-                                  <button
-                                    onClick={openChainModal}
-                                    className="px-3 py-2.5 rounded-xl font-medium
-                                             bg-gradient-to-r from-emerald-500/10 to-emerald-500/5
-                                             text-emerald-400 border border-emerald-500/20
-                                             hover:border-emerald-500/40 transition-all duration-300 flex items-center gap-2"
-                                  >
-                                    {chain.hasIcon && (
-                                      <div
-                                        style={{
-                                          background: chain.iconBackground,
-                                          width: 16,
-                                          height: 16,
-                                          borderRadius: 999,
-                                          overflow: 'hidden',
-                                          display: 'flex',
-                                          alignItems: 'center',
-                                          justifyContent: 'center',
-                                        }}
-                                      >
-                                        {chain.iconUrl && (
-                                          <img
-                                            alt={chain.name ?? 'Chain icon'}
-                                            src={chain.iconUrl}
-                                            style={{ width: 16, height: 16 }}
-                                          />
-                                        )}
-                                      </div>
-                                    )}
-                                    {chain.name}
-                                  </button>
-
-                                  <button
-                                    onClick={openAccountModal}
-                                    className="px-3 py-2.5 rounded-xl font-medium whitespace-nowrap overflow-hidden
-                                             bg-gradient-to-r from-emerald-500/10 to-emerald-500/5
-                                             text-emerald-400 border border-emerald-500/20
-                                             hover:border-emerald-500/40 transition-all duration-300 flex items-center gap-2"
-                                    style={{ maxWidth: '120px' }}
-                                  >
-                                    <span className="truncate">
-                                      {account.address.substring(0, 5)}...{account.address.substring(account.address.length - 3)}
-                                    </span>
-                                  </button>
-                                </div>
-                              );
-                            })()}
+                            {!connected && (
+                              <button
+                                onClick={openConnectModal}
+                                className="px-4 py-2.5 rounded-xl font-medium
+                                         bg-gradient-to-r from-emerald-500/10 to-emerald-500/5
+                                         text-emerald-400 border border-emerald-500/20
+                                         hover:border-emerald-500/40 hover:from-emerald-500/20 hover:to-emerald-500/10
+                                         transition-all duration-300 flex items-center gap-2"
+                              >
+                                <Diamond size={18} />
+                                Connect Wallet
+                              </button>
+                            )}
                           </div>
                         );
                       }}
                     </ConnectButton.Custom>
                   </motion.div>
+                  
+                  {/* Compact Connect Button for medium screens */}
+                  <motion.div whileHover={{ scale: 1.05 }} className="xl:hidden">
+                    <ConnectButton.Custom>
+                      {({
+                        account,
+                        chain,
+                        openAccountModal,
+                        openChainModal,
+                        openConnectModal,
+                        mounted,
+                      }) => {
+                        const ready = mounted;
+                        const connected = ready && account && chain;
 
-                  {location.pathname !== '/multiplayer' && (
-                    <motion.div whileHover={{ scale: 1.05 }}>
-                      <Link
-                        to="/multiplayer"
-                        className="px-4 py-2.5 rounded-xl font-medium
-                                 bg-gradient-to-r from-emerald-500/10 to-emerald-500/5
-                                 text-emerald-400 border border-emerald-500/20
-                                 hover:border-emerald-500/40 hover:from-emerald-500/20 hover:to-emerald-500/10
-                                 transition-all duration-300 flex items-center gap-2"
-                      >
-                        <Users size={18} />
-                        <span>Multiplayer</span>
-                      </Link>
-                    </motion.div>
-                  )}
-                </div>
-              </SignedIn>
+                        return (
+                          <div
+                            {...(!ready && {
+                              'aria-hidden': true,
+                              style: {
+                                opacity: 0,
+                                pointerEvents: 'none',
+                                userSelect: 'none',
+                              },
+                            })}
+                          >
+                            {!connected && (
+                              <button
+                                onClick={openConnectModal}
+                                className="px-3 py-2.5 rounded-xl font-medium
+                                         bg-gradient-to-r from-emerald-500/10 to-emerald-500/5
+                                         text-emerald-400 border border-emerald-500/20
+                                         hover:border-emerald-500/40 transition-all duration-300 flex items-center gap-2"
+                              >
+                                <Diamond size={18} className="md:mr-0 lg:mr-1" />
+                                <span className="hidden lg:inline">Connect</span>
+                              </button>
+                            )}
+                          </div>
+                        );
+                      }}
+                    </ConnectButton.Custom>
+                  </motion.div>
+                  
+                  <motion.div whileHover={{ scale: 1.05 }}>
+                    <SignInButton mode="modal">
+                      <button className="px-6 py-2.5 rounded-xl font-medium
+                                     bg-gradient-to-r from-emerald-400 to-emerald-500
+                                     text-black hover:shadow-lg hover:shadow-emerald-500/20
+                                     transition-all duration-300">
+                        <span className="flex items-center gap-2">
+                          <User size={18} />
+                          <span className="hidden lg:inline">Sign In</span>
+                        </span>
+                      </button>
+                    </SignInButton>
+                  </motion.div>
+                </SignedOut>
 
-              <SignedOut>
-                <motion.div whileHover={{ scale: 1.05 }} className="mr-2">
-                  <ConnectButton.Custom>
-                    {({
-                      account,
-                      chain,
-                      openAccountModal,
-                      openChainModal,
-                      openConnectModal,
-                      mounted,
-                    }) => {
-                      const ready = mounted;
-                      const connected = ready && account && chain;
-
-                      return (
-                        <div
-                          {...(!ready && {
-                            'aria-hidden': true,
-                            style: {
-                              opacity: 0,
-                              pointerEvents: 'none',
-                              userSelect: 'none',
-                            },
-                          })}
-                        >
-                          {!connected && (
-                            <button
-                              onClick={openConnectModal}
-                              className="px-4 py-2.5 rounded-xl font-medium
-                                       bg-gradient-to-r from-emerald-500/10 to-emerald-500/5
-                                       text-emerald-400 border border-emerald-500/20
-                                       hover:border-emerald-500/40 hover:from-emerald-500/20 hover:to-emerald-500/10
-                                       transition-all duration-300 flex items-center gap-2"
-                            >
-                              <Diamond size={18} />
-                              Connect Wallet
-                            </button>
-                          )}
-                        </div>
-                      );
-                    }}
-                  </ConnectButton.Custom>
-                </motion.div>
-                
-                <motion.div whileHover={{ scale: 1.05 }}>
-                  <SignInButton mode="modal">
-                    <button className="px-6 py-2.5 rounded-xl font-medium
-                                   bg-gradient-to-r from-emerald-400 to-emerald-500
-                                   text-black hover:shadow-lg hover:shadow-emerald-500/20
-                                   transition-all duration-300">
-                      <span className="flex items-center gap-2">
-                        <User size={18} />
-                        Sign In
-                      </span>
-                    </button>
-                  </SignInButton>
-                </motion.div>
-              </SignedOut>
-
-              <SignedIn>
-                <motion.div whileHover={{ scale: 1.05 }}>
-                  <UserButton
-                    afterSignOutUrl="/"
-                    appearance={{
-                      elements: {
-                        avatarBox: "w-10 h-10 rounded-xl ring-2 ring-emerald-500/30 hover:ring-emerald-500/50",
-                        userButtonPopoverCard: "bg-black/90 backdrop-blur-xl border border-emerald-500/20 rounded-xl shadow-xl",
-                        userButtonPopoverActionButton: "hover:bg-emerald-500/10 text-emerald-400",
-                        userButtonPopoverActionButtonText: "text-emerald-400",
-                        userButtonPopoverFooter: "hidden",
-                      }
-                    }}
-                  />
-                </motion.div>
-              </SignedIn>
+                <SignedIn>
+                  <motion.div whileHover={{ scale: 1.05 }}>
+                    <UserButton
+                      afterSignOutUrl="/"
+                      appearance={{
+                        elements: {
+                          avatarBox: "w-10 h-10 rounded-xl ring-2 ring-emerald-500/30 hover:ring-emerald-500/50",
+                          userButtonPopoverCard: "bg-black/90 backdrop-blur-xl border border-emerald-500/20 rounded-xl shadow-xl",
+                          userButtonPopoverActionButton: "hover:bg-emerald-500/10 text-emerald-400",
+                          userButtonPopoverActionButtonText: "text-emerald-400",
+                          userButtonPopoverFooter: "hidden",
+                        }
+                      }}
+                    />
+                  </motion.div>
+                </SignedIn>
+              </div>
             </div>
           </div>
 
