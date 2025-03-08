@@ -92,14 +92,14 @@ const Navbar: React.FC<NavbarProps> = ({ userData }) => {
                                   return (
                                     <button
                                       onClick={openConnectModal}
-                                      className="px-4 py-2.5 rounded-xl font-medium
-                                               bg-gradient-to-r from-emerald-500/10 to-emerald-500/5
-                                               text-emerald-400 border border-emerald-500/20
-                                               hover:border-emerald-500/40 hover:from-emerald-500/20 hover:to-emerald-500/10
-                                               transition-all duration-300 flex items-center gap-2"
+                                      className="px-3 py-2.5 rounded-xl font-medium whitespace-nowrap
+                                              bg-gradient-to-r from-emerald-500/10 to-emerald-500/5
+                                              text-emerald-400 border border-emerald-500/20
+                                              hover:border-emerald-500/40 hover:from-emerald-500/20 hover:to-emerald-500/10
+                                              transition-all duration-300 flex items-center gap-2"
                                     >
                                       <Diamond size={18} />
-                                      Connect Wallet
+                                      <span className="hidden sm:inline">Connect Wallet</span>
                                     </button>
                                   );
                                 }
@@ -108,10 +108,10 @@ const Navbar: React.FC<NavbarProps> = ({ userData }) => {
                                   <div className="flex items-center gap-2">
                                     <button
                                       onClick={openChainModal}
-                                      className="px-3 py-2.5 rounded-xl font-medium
-                                               bg-gradient-to-r from-emerald-500/10 to-emerald-500/5
-                                               text-emerald-400 border border-emerald-500/20
-                                               hover:border-emerald-500/40 transition-all duration-300 flex items-center gap-2"
+                                      className="px-3 py-2.5 rounded-xl font-medium whitespace-nowrap
+                                              bg-gradient-to-r from-emerald-500/10 to-emerald-500/5
+                                              text-emerald-400 border border-emerald-500/20
+                                              hover:border-emerald-500/40 transition-all duration-300 flex items-center gap-2"
                                     >
                                       {chain.hasIcon && (
                                         <div
@@ -135,19 +135,18 @@ const Navbar: React.FC<NavbarProps> = ({ userData }) => {
                                           )}
                                         </div>
                                       )}
-                                      {chain.name}
+                                      <span className="max-w-[60px] truncate">{chain.name}</span>
                                     </button>
 
                                     <button
                                       onClick={openAccountModal}
-                                      className="px-3 py-2.5 rounded-xl font-medium whitespace-nowrap overflow-hidden
-                                               bg-gradient-to-r from-emerald-500/10 to-emerald-500/5
-                                               text-emerald-400 border border-emerald-500/20
-                                               hover:border-emerald-500/40 transition-all duration-300 flex items-center gap-2"
-                                      style={{ maxWidth: '120px' }}
+                                      className="px-3 py-2.5 rounded-xl font-medium whitespace-nowrap
+                                              bg-gradient-to-r from-emerald-500/10 to-emerald-500/5
+                                              text-emerald-400 border border-emerald-500/20
+                                              hover:border-emerald-500/40 transition-all duration-300 flex items-center gap-2"
                                     >
-                                      <span className="truncate">
-                                        {account.address.substring(0, 5)}...{account.address.substring(account.address.length - 3)}
+                                      <span className="truncate max-w-[80px]">
+                                        {account.address.substring(0, 4)}...{account.address.substring(account.address.length - 2)}
                                       </span>
                                     </button>
                                   </div>
