@@ -14,14 +14,16 @@ const MAX_LOCKS = 3;
 const LOCK_PHASE_TIMEOUT = 5000; // 5 seconds
 
 interface MultiplayerGameProps {
-  userData?: {
+  userData?: { 
     clerk_id: string; 
     email: string; 
-    name: string;
+    name: string | null; 
     wallet_balance: number;
     id?: number;
+    deposit_address?: string;
   };
 }
+
 
 const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
   const [gameState, setGameState] = useState<GameState | null>(null);
@@ -318,7 +320,6 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
             setBetAmount={setBetAmount}
             playGame={playGame}
             isConnected={isConnected}
-            userData={userData}
           />
         )}
 
