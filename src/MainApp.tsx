@@ -8,7 +8,26 @@ import Home from './pages/Home/Home';
 import './index.css';
 import { useWalletStore } from './stores/walletStore';
 
-import { DepositProvider } from './contexts/DepositContext';
+import { WagmiProvider, http } from 'wagmi';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { RainbowKitProvider } from '@rainbow-me/rainbowkit';
+import '@rainbow-me/rainbowkit/styles.css';
+import { createConfig } from 'wagmi';
+import { monadNetwork } from './chains';
+
+// Create wallet connect project ID
+// const projectId = 'afbf5cba0993a8447e19af62ce001115';
+
+// Create wagmi config with Monad
+const config = createConfig({
+  chains: [monadNetwork],
+  transports: {
+    [monadNetwork.id]: http('https://testnet-rpc.monad.xyz/'),
+  }
+});
+
+// Create React Query client
+const queryClient = new QueryClient();
 
 interface UserData {
   id?: number;
@@ -104,32 +123,36 @@ const MainApp: React.FC = () => {
 
   return (
     <Router>
-      <DepositProvider depositAddress={userData?.deposit_address}>
-        <div className="bg-gray-900 min-h-screen">
-          <Navbar userData={userData} />
-          <Routes>
-            <Route path="/" element={<Home userData={userData} />} />
-            <Route
-              path="/singleplayer"
-              element={
-                <ProtectedRoute>
-                  <SingleplayerGame />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/multiplayer"
-              element={
-                <ProtectedRoute>
-                  <MultiplayerGame userData={userData} />
-                </ProtectedRoute>
-              }
-            />
-          </Routes>
-          {/* Add this div for modal mounting */}
-          <div id="modal-root" />
-        </div>
-      </DepositProvider>
+      <WagmiProvider config={config}>
+        <QueryClientProvider client={queryClient}>
+          <RainbowKitProvider>
+              <div className="bg-gray-900 min-h-screen">
+                <Navbar userData={userData} />
+                <Routes>
+                  <Route path="/" element={<Home userData={userData} />} />
+                  <Route
+                    path="/singleplayer"
+                    element={
+                      <ProtectedRoute>
+                        <SingleplayerGame />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/multiplayer"
+                    element={
+                      <ProtectedRoute>
+                        <MultiplayerGame userData={userData} />
+                      </ProtectedRoute>
+                    }
+                  />
+                </Routes>
+                {/* Add this div for modal mounting */}
+                <div id="modal-root" />
+              </div>
+          </RainbowKitProvider>
+        </QueryClientProvider>
+      </WagmiProvider>
     </Router>
   );
 };

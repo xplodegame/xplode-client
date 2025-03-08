@@ -1,9 +1,7 @@
-// Modified usePayment.ts
 import { useState } from 'react';
-import { useSolanaPayment } from './useSolanaPayment';
+import { useMonadPayment } from './useMonadPayment';
 import { useWithdraw } from './useWithdraw';
 import { useWalletStore } from '../stores/walletStore';
-
 
 interface UsePaymentProps {
   userId?: number;
@@ -11,28 +9,23 @@ interface UsePaymentProps {
 }
 
 export const usePayment = ({ userId, depositAddress }: UsePaymentProps) => {
-  const [solAmount, setSolAmount] = useState('');
-  const [showQRModal, setShowQRModal] = useState(false);
+  const [monadAmount, setMonadAmount] = useState('');
   const setBalance = useWalletStore(state => state.setBalance);
 
   const {
     paymentStatus,
-    paymentURL,
     processingPayment,
     initiatePayment,
     cancelPayment,
-  } = useSolanaPayment({
+    isWalletConnected,
+  } = useMonadPayment({
     userId,
-    solAmount,
-    depositAddress,
     onPaymentComplete: (balance) => {
-      setBalance(balance); // Update global store instead of local state
-      setSolAmount('');
-      setShowQRModal(false);
+      setBalance(balance); // Update global store
+      setMonadAmount('');
     },
     onPaymentFailed: (error) => {
       console.error('Payment failed:', error);
-      setShowQRModal(false);
     },
   });
 
@@ -43,7 +36,7 @@ export const usePayment = ({ userId, depositAddress }: UsePaymentProps) => {
   } = useWithdraw({
     userId,
     onWithdrawComplete: (balance) => {
-      setBalance(balance); // Update global store instead of local state
+      setBalance(balance); // Update global store
     },
     onWithdrawFailed: (error) => {
       console.error('Withdrawal failed:', error);
@@ -51,14 +44,18 @@ export const usePayment = ({ userId, depositAddress }: UsePaymentProps) => {
   });
 
   const handlePayment = async () => {
-    if (!solAmount || Number(solAmount) <= 0) {
+    if (!monadAmount || Number(monadAmount) <= 0) {
       alert("Please enter a valid amount");
       return;
     }
 
+    if (!isWalletConnected) {
+      alert("Please connect your wallet first");
+      return;
+    }
+
     try {
-      await initiatePayment(solAmount);
-      setShowQRModal(true);
+      await initiatePayment(monadAmount);
     } catch (error) {
       console.error("Error initiating payment:", error);
       if (error instanceof Error) {
@@ -78,27 +75,20 @@ export const usePayment = ({ userId, depositAddress }: UsePaymentProps) => {
     }
   };
 
-  const handleCloseModal = () => {
-    setShowQRModal(false);
-  };
-
   const handleCancelPayment = () => {
     cancelPayment();
-    setShowQRModal(false);
   };
 
   return {
-    solAmount,
-    setSolAmount,
-    showQRModal,
-    handleCloseModal,
+    monadAmount,
+    setMonadAmount,
     handleCancelPayment,
     handlePayment,
     handleWithdraw,
     paymentStatus,
     withdrawStatus,
-    paymentURL,
     processingPayment,
     processingWithdraw,
+    isWalletConnected,
   };
 };

@@ -12,8 +12,10 @@
   "dependencies": {
     "@clerk/clerk-react": "^5.20.2",
     "@clerk/react-router": "^0.1.2",
+    "@rainbow-me/rainbowkit": "^2.2.4",
     "@solana/pay": "^0.2.5",
     "@solana/web3.js": "^1.98.0",
+    "@tanstack/react-query": "^5.67.1",
     "bignumber.js": "^9.1.2",
     "class-variance-authority": "^0.7.1",
     "cors": "^2.8.5",
@@ -32,6 +34,8 @@
     "tsparticles": "^3.8.1",
     "tsparticles-slim": "^2.12.0",
     "util": "^0.12.5",
+    "viem": "^2.23.6",
+    "wagmi": "^2.14.12",
     "zustand": "^5.0.3"
   },
   "devDependencies": {

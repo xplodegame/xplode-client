@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { SignedIn, SignedOut, SignInButton, UserButton } from '@clerk/clerk-react';
-import { GamepadIcon, Users, User, Sparkles, Menu, X, Diamond } from 'lucide-react';
+import { GamepadIcon, Users, User, Menu, X, Diamond } from 'lucide-react';
+import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { WalletDropdown } from '../PaymentUI/WalletDropdown';
 import { motion } from 'framer-motion';
 
@@ -59,6 +60,11 @@ const Navbar: React.FC<NavbarProps> = ({ userData }) => {
             <div className="flex items-center justify-end gap-4">
               <SignedIn>
                 <div className="flex items-center gap-3">
+                  {/* Rainbow Kit Connect Button */}
+                  <motion.div whileHover={{ scale: 1.05 }} className="mr-2">
+                    <ConnectButton accountStatus="address" chainStatus="icon" showBalance={false} />
+                  </motion.div>
+
                   {location.pathname !== '/singleplayer' && (
                     <motion.div whileHover={{ scale: 1.05 }}>
                       <Link
@@ -94,6 +100,9 @@ const Navbar: React.FC<NavbarProps> = ({ userData }) => {
               </SignedIn>
 
               <SignedOut>
+                <motion.div whileHover={{ scale: 1.05 }} className="mr-2">
+                  <ConnectButton accountStatus="address" chainStatus="icon" showBalance={false} />
+                </motion.div>
                 <motion.div whileHover={{ scale: 1.05 }}>
                   <SignInButton mode="modal">
                     <button className="px-6 py-2.5 rounded-xl font-medium
@@ -130,7 +139,23 @@ const Navbar: React.FC<NavbarProps> = ({ userData }) => {
 
           {/* Mobile Navigation (simplified for brevity) */}
           <div className="md:hidden">
-            {/* ... Mobile navigation code remains similar but with updated styles ... */}
+            <div className="flex items-center justify-between h-16">
+              <Link to="/" className="flex items-center gap-2">
+                <Diamond className="w-6 h-6 text-emerald-400" />
+                <span className="text-xl font-bold bg-gradient-to-r from-emerald-300 to-emerald-500 bg-clip-text text-transparent">
+                  Diamond Hunter
+                </span>
+              </Link>
+              
+              <div className="flex items-center gap-3">
+                <ConnectButton accountStatus="address" chainStatus="icon" showBalance={false} />
+                <button onClick={toggleMenu} className="text-emerald-400">
+                  {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
+                </button>
+              </div>
+            </div>
+            
+            {/* Mobile menu - add if needed */}
           </div>
         </div>
       </nav>
