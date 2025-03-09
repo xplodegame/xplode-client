@@ -1,16 +1,12 @@
-// Create wallet connect project ID
-// const projectId = 'afbf5cba0993a8447e19af62ce001115';
-
 import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
-import { SignedIn, SignedOut, useUser } from '@clerk/clerk-react';
+import { PrivyProvider, usePrivy } from '@privy-io/react-auth';
 import Navbar from './components/Navbar/Navbar';
 import SingleplayerGame from './pages/SinglePlayerGame/SingleplayerGame';
 import MultiplayerGame from './pages/MultiplayerGame/MultiplayerGame';
 import Home from './pages/Home/Home';
 import './index.css';
 import { useWalletStore } from './stores/walletStore';
-
 import { WagmiProvider, http } from 'wagmi';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { RainbowKitProvider, darkTheme } from '@rainbow-me/rainbowkit';
@@ -18,7 +14,6 @@ import '@rainbow-me/rainbowkit/styles.css';
 import { createConfig } from 'wagmi';
 import { monadNetwork } from './chains';
 
-// Create wagmi config with Monad
 const config = createConfig({
   chains: [monadNetwork],
   transports: {
@@ -26,12 +21,10 @@ const config = createConfig({
   }
 });
 
-// Create React Query client
 const queryClient = new QueryClient();
 
-// Custom RainbowKit theme to match app aesthetics
 const customTheme = darkTheme({
-  accentColor: '#10b981', // emerald-500
+  accentColor: '#10b981',
   accentColorForeground: 'black',
   borderRadius: 'large',
   fontStack: 'system',
@@ -40,7 +33,7 @@ const customTheme = darkTheme({
 
 interface UserData {
   id?: number;
-  clerk_id: string;
+  privy_id: string;
   email: string;
   name: string | null;
   wallet_balance: number;
@@ -48,37 +41,30 @@ interface UserData {
 }
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  return (
-    <>
-      <SignedIn>{children}</SignedIn>
-      <SignedOut>
-        <Navigate to="/" replace />
-      </SignedOut>
-    </>
-  );
+  const { authenticated } = usePrivy();
+  return authenticated ? children : <Navigate to="/" replace />;
 };
 
 const MainApp: React.FC = () => {
-  const { user } = useUser();
+  const { authenticated, user, login } = usePrivy();
   const [userData, setUserData] = useState<UserData | undefined>();
   const [isLoading, setIsLoading] = useState(true);
   const setBalance = useWalletStore(state => state.setBalance);
 
   useEffect(() => {
     const sendUserData = async () => {
-      if (!user || !user.primaryEmailAddress) {
+      if (!authenticated || !user || !user.email) {
         setIsLoading(false);
         return;
       }
 
       try {
         const newUserData = {
-          clerk_id: user.id,
-          email: user.primaryEmailAddress.emailAddress,
-          name: user.fullName,
+          privy_id: user.id,
+          email: user.email,
+          name: user.displayName,
         };
 
-        // Send user details
         const userDetailsResponse = await fetch('http://127.0.0.1:8080/user-details', {
           method: 'POST',
           headers: {
@@ -93,16 +79,13 @@ const MainApp: React.FC = () => {
 
         const userDetailsData = await userDetailsResponse.json();
 
-        // Validate the balance
         if (typeof userDetailsData.balance !== 'number') {
           console.error('Invalid balance received:', userDetailsData.balance);
           throw new Error('Invalid balance received from server');
         }
 
-        // Update the global store
         setBalance(userDetailsData.balance);
 
-        // Update user data
         const updatedUserData = {
           ...newUserData,
           id: userDetailsData.id,
@@ -120,7 +103,7 @@ const MainApp: React.FC = () => {
     };
 
     sendUserData();
-  }, [user, setBalance]);
+  }, [authenticated, user, setBalance]);
 
   if (isLoading) {
     return (
@@ -142,22 +125,8 @@ const MainApp: React.FC = () => {
               <Navbar userData={userData} />
               <Routes>
                 <Route path="/" element={<Home />} />
-                <Route
-                  path="/singleplayer"
-                  element={
-                    <ProtectedRoute>
-                      <SingleplayerGame />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/multiplayer"
-                  element={
-                    <ProtectedRoute>
-                      <MultiplayerGame userData={userData} />
-                    </ProtectedRoute>
-                  }
-                />
+                <Route path="/singleplayer" element={<ProtectedRoute><SingleplayerGame /></ProtectedRoute>} />
+                <Route path="/multiplayer" element={<ProtectedRoute><MultiplayerGame userData={userData} /></ProtectedRoute>} />
               </Routes>
               <div id="modal-root" />
             </div>

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { SignedIn, SignedOut, SignInButton, UserButton } from '@clerk/clerk-react';
+import { usePrivy } from '@privy-io/react-auth';
 import { GamepadIcon, Users, User, Menu, X, Diamond } from 'lucide-react';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { WalletDropdown } from '../PaymentUI/WalletDropdown';
@@ -8,7 +8,7 @@ import { motion } from 'framer-motion';
 
 interface NavbarProps {
   userData?: { 
-    clerk_id: string; 
+    privy_id: string; 
     email: string; 
     name: string | null; 
     wallet_balance: number;
@@ -20,6 +20,7 @@ interface NavbarProps {
 const Navbar: React.FC<NavbarProps> = ({ userData }) => {
   const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { authenticated, user, login, logout } = usePrivy();
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 
@@ -51,16 +52,16 @@ const Navbar: React.FC<NavbarProps> = ({ userData }) => {
 
               {/* Wallet Section - Always Centered */}
               <div className="flex-1 flex justify-center items-center">
-                <SignedIn>
+                {authenticated && (
                   <motion.div whileHover={{ scale: 1.02 }}>
                     <WalletDropdown userData={userData} />
                   </motion.div>
-                </SignedIn>
+                )}
               </div>
 
               {/* Navigation Links and User Section - Fixed Width */}
               <div className="w-1/4 flex items-center justify-end gap-4">
-                <SignedIn>
+                {authenticated ? (
                   <div className="flex items-center gap-3">
                     {/* Full Connect Button that will only show at larger screens */}
                     <motion.div whileHover={{ scale: 1.05 }} className="hidden xl:block">
@@ -227,126 +228,41 @@ const Navbar: React.FC<NavbarProps> = ({ userData }) => {
                       </motion.div>
                     )}
                   </div>
-                </SignedIn>
-
-                <SignedOut>
-                  <motion.div whileHover={{ scale: 1.05 }} className="hidden xl:block mr-2">
-                    <ConnectButton.Custom>
-                      {({
-                        account,
-                        chain,
-                        openAccountModal,
-                        openChainModal,
-                        openConnectModal,
-                        mounted,
-                      }) => {
-                        const ready = mounted;
-                        const connected = ready && account && chain;
-
-                        return (
-                          <div
-                            {...(!ready && {
-                              'aria-hidden': true,
-                              style: {
-                                opacity: 0,
-                                pointerEvents: 'none',
-                                userSelect: 'none',
-                              },
-                            })}
-                          >
-                            {!connected && (
-                              <button
-                                onClick={openConnectModal}
-                                className="px-4 py-2.5 rounded-xl font-medium
-                                         bg-gradient-to-r from-emerald-500/10 to-emerald-500/5
-                                         text-emerald-400 border border-emerald-500/20
-                                         hover:border-emerald-500/40 hover:from-emerald-500/20 hover:to-emerald-500/10
-                                         transition-all duration-300 flex items-center gap-2"
-                              >
-                                <Diamond size={18} />
-                                Connect Wallet
-                              </button>
-                            )}
-                          </div>
-                        );
-                      }}
-                    </ConnectButton.Custom>
-                  </motion.div>
-                  
-                  {/* Compact Connect Button for medium screens */}
-                  <motion.div whileHover={{ scale: 1.05 }} className="xl:hidden">
-                    <ConnectButton.Custom>
-                      {({
-                        account,
-                        chain,
-                        openAccountModal,
-                        openChainModal,
-                        openConnectModal,
-                        mounted,
-                      }) => {
-                        const ready = mounted;
-                        const connected = ready && account && chain;
-
-                        return (
-                          <div
-                            {...(!ready && {
-                              'aria-hidden': true,
-                              style: {
-                                opacity: 0,
-                                pointerEvents: 'none',
-                                userSelect: 'none',
-                              },
-                            })}
-                          >
-                            {!connected && (
-                              <button
-                                onClick={openConnectModal}
-                                className="px-3 py-2.5 rounded-xl font-medium
-                                         bg-gradient-to-r from-emerald-500/10 to-emerald-500/5
-                                         text-emerald-400 border border-emerald-500/20
-                                         hover:border-emerald-500/40 transition-all duration-300 flex items-center gap-2"
-                              >
-                                <Diamond size={18} className="md:mr-0 lg:mr-1" />
-                                <span className="hidden lg:inline">Connect</span>
-                              </button>
-                            )}
-                          </div>
-                        );
-                      }}
-                    </ConnectButton.Custom>
-                  </motion.div>
-                  
-                  <motion.div whileHover={{ scale: 1.05 }}>
-                    <SignInButton mode="modal">
-                      <button className="px-6 py-2.5 rounded-xl font-medium
+                ) : (
+                  <>
+                    <motion.div whileHover={{ scale: 1.05 }}>
+                      <button
+                        onClick={login}
+                        className="px-6 py-2.5 rounded-xl font-medium
                                      bg-gradient-to-r from-emerald-400 to-emerald-500
                                      text-black hover:shadow-lg hover:shadow-emerald-500/20
-                                     transition-all duration-300">
+                                     transition-all duration-300"
+                      >
                         <span className="flex items-center gap-2">
                           <User size={18} />
                           <span className="hidden lg:inline">Sign In</span>
                         </span>
                       </button>
-                    </SignInButton>
-                  </motion.div>
-                </SignedOut>
+                    </motion.div>
+                  </>
+                )}
 
-                <SignedIn>
+                {authenticated && (
                   <motion.div whileHover={{ scale: 1.05 }}>
-                    <UserButton
-                      afterSignOutUrl="/"
-                      appearance={{
-                        elements: {
-                          avatarBox: "w-10 h-10 rounded-xl ring-2 ring-emerald-500/30 hover:ring-emerald-500/50",
-                          userButtonPopoverCard: "bg-black/90 backdrop-blur-xl border border-emerald-500/20 rounded-xl shadow-xl",
-                          userButtonPopoverActionButton: "hover:bg-emerald-500/10 text-emerald-400",
-                          userButtonPopoverActionButtonText: "text-emerald-400",
-                          userButtonPopoverFooter: "hidden",
-                        }
-                      }}
-                    />
+                    <button
+                      onClick={logout}
+                      className="px-6 py-2.5 rounded-xl font-medium
+                                 bg-gradient-to-r from-emerald-400 to-emerald-500
+                                 text-black hover:shadow-lg hover:shadow-emerald-500/20
+                                 transition-all duration-300 whitespace-nowrap"
+                    >
+                      <span className="flex items-center gap-2">
+                        <User size={18} />
+                        <span className="hidden lg:inline">Sign Out</span>
+                      </span>
+                    </button>
                   </motion.div>
-                </SignedIn>
+                )}
               </div>
             </div>
           </div>
@@ -427,39 +343,53 @@ const Navbar: React.FC<NavbarProps> = ({ userData }) => {
                 animate={{ opacity: 1, y: 0 }}
                 className="py-4 px-2 border-t border-white/5 backdrop-blur-xl bg-black/60"
               >
-                <SignedIn>
-                  <div className="flex justify-center mb-4">
-                    <WalletDropdown userData={userData} />
-                  </div>
-                  
-                  <Link
-                    to="/multiplayer"
-                    className="block w-full px-4 py-3 mb-2 rounded-xl font-medium
-                             bg-gradient-to-r from-emerald-500/10 to-emerald-500/5
-                             text-emerald-400 border border-emerald-500/20
-                             hover:border-emerald-500/40 transition-all duration-300 text-center"
-                    onClick={toggleMenu}
-                  >
-                    <span className="flex items-center justify-center gap-2">
-                      <Users size={18} />
-                      Multiplayer
-                    </span>
-                  </Link>
-                </SignedIn>
-                
-                <SignedOut>
-                  <SignInButton mode="modal">
-                    <button className="block w-full px-4 py-3 rounded-xl font-medium
-                                     bg-gradient-to-r from-emerald-400 to-emerald-500
-                                     text-black hover:shadow-lg hover:shadow-emerald-500/20
-                                     transition-all duration-300 text-center">
+                {authenticated ? (
+                  <>
+                    <div className="flex justify-center mb-4">
+                      <WalletDropdown userData={userData} />
+                    </div>
+                    
+                    <Link
+                      to="/multiplayer"
+                      className="block w-full px-4 py-3 mb-2 rounded-xl font-medium
+                               bg-gradient-to-r from-emerald-500/10 to-emerald-500/5
+                               text-emerald-400 border border-emerald-500/20
+                               hover:border-emerald-500/40 transition-all duration-300 text-center"
+                      onClick={toggleMenu}
+                    >
+                      <span className="flex items-center justify-center gap-2">
+                        <Users size={18} />
+                        Multiplayer
+                      </span>
+                    </Link>
+
+                    <button
+                      onClick={logout}
+                      className="block w-full px-4 py-3 rounded-xl font-medium
+                                 bg-gradient-to-r from-emerald-400 to-emerald-500
+                                 text-black hover:shadow-lg hover:shadow-emerald-500/20
+                                 transition-all duration-300 text-center"
+                    >
                       <span className="flex items-center justify-center gap-2">
                         <User size={18} />
-                        Sign In
+                        Sign Out
                       </span>
                     </button>
-                  </SignInButton>
-                </SignedOut>
+                  </>
+                ) : (
+                  <button
+                    onClick={login}
+                    className="block w-full px-4 py-3 rounded-xl font-medium
+                               bg-gradient-to-r from-emerald-400 to-emerald-500
+                               text-black hover:shadow-lg hover:shadow-emerald-500/20
+                               transition-all duration-300 text-center"
+                  >
+                    <span className="flex items-center justify-center gap-2">
+                      <User size={18} />
+                      Sign In
+                    </span>
+                  </button>
+                )}
               </motion.div>
             )}
           </div>

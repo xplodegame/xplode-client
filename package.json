@@ -12,6 +12,7 @@
   "dependencies": {
     "@clerk/clerk-react": "^5.20.2",
     "@clerk/react-router": "^0.1.2",
+    "@privy-io/react-auth": "^2.6.2",
     "@rainbow-me/rainbowkit": "^2.2.4",
     "@solana/pay": "^0.2.5",
     "@solana/web3.js": "^1.98.0",
