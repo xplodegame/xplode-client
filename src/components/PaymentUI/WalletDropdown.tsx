@@ -5,7 +5,7 @@ import { WithdrawForm } from './WithdrawForm';
 import { usePayment } from '../../hooks/usePayment';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useWalletStore } from '../../stores/walletStore';
-import { useAccount } from 'wagmi';
+import { useWallets } from '@privy-io/react-auth'; // Use Privy's wallet hook
 
 type StatusType = 'success' | 'error' | 'processing' | null;
 interface StatusMessage {
@@ -18,7 +18,7 @@ interface WalletDropdownProps {
     id?: number;
     deposit_address?: string;
     wallet_balance: number;
-    clerk_id: string;
+    privy_id: string; // Updated from clerk_id to privy_id
     email: string;
     name: string | null;
   };
@@ -30,8 +30,12 @@ export const WalletDropdown: React.FC<WalletDropdownProps> = ({ userData }) => {
   const [status, setStatus] = useState<StatusMessage | null>(null);
   const dropdownRef = useRef<HTMLDivElement | null>(null);
   const walletBalance = useWalletStore(state => state.balance);
-  const { isConnected } = useAccount();
 
+  // Use Privy's wallet hook to check if a wallet is connected
+  const { wallets } = useWallets();
+  const isWalletConnected = wallets.length > 0; // Check if any wallet is connected via Privy
+
+  // console.log("userID: ",userData?.id);
   const {
     monadAmount,
     setMonadAmount,
@@ -42,10 +46,9 @@ export const WalletDropdown: React.FC<WalletDropdownProps> = ({ userData }) => {
     withdrawStatus,
     processingPayment,
     processingWithdraw,
-    isWalletConnected,
   } = usePayment({
     userId: userData?.id,
-    depositAddress: userData?.deposit_address
+    depositAddress: userData?.deposit_address,
   });
 
   useEffect(() => {
@@ -59,7 +62,7 @@ export const WalletDropdown: React.FC<WalletDropdownProps> = ({ userData }) => {
     if (paymentStatus) {
       setStatus({
         type: mapStatus(paymentStatus),
-        message: paymentStatus.charAt(0).toUpperCase() + paymentStatus.slice(1)
+        message: paymentStatus.charAt(0).toUpperCase() + paymentStatus.slice(1),
       });
       const timer = setTimeout(() => setStatus(null), 5000);
       return () => clearTimeout(timer);
@@ -77,7 +80,7 @@ export const WalletDropdown: React.FC<WalletDropdownProps> = ({ userData }) => {
     if (withdrawStatus) {
       setStatus({
         type: mapStatus(withdrawStatus),
-        message: withdrawStatus.charAt(0).toUpperCase() + withdrawStatus.slice(1)
+        message: withdrawStatus.charAt(0).toUpperCase() + withdrawStatus.slice(1),
       });
       const timer = setTimeout(() => setStatus(null), 5000);
       return () => clearTimeout(timer);
@@ -101,23 +104,23 @@ export const WalletDropdown: React.FC<WalletDropdownProps> = ({ userData }) => {
     const statusConfig = {
       success: {
         color: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30',
-        icon: <CheckCircle size={16} className="text-emerald-400" />
+        icon: <CheckCircle size={16} className="text-emerald-400" />,
       },
       error: {
         color: 'bg-red-500/10 text-red-400 border-red-500/30',
-        icon: <XCircle size={16} className="text-red-400" />
+        icon: <XCircle size={16} className="text-red-400" />,
       },
       processing: {
         color: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30',
-        icon: <Loader2 size={16} className="text-emerald-400 animate-spin" />
-      }
+        icon: <Loader2 size={16} className="text-emerald-400 animate-spin" />,
+      },
     };
-  
+
     // Add null check and default to error state if type is invalid
     const currentStatus = statusConfig[status.type] || statusConfig.error;
-  
+
     return (
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -10 }}
@@ -131,7 +134,7 @@ export const WalletDropdown: React.FC<WalletDropdownProps> = ({ userData }) => {
 
   return (
     <div className="relative flex items-center gap-2" ref={dropdownRef}>
-      <motion.div 
+      <motion.div
         whileHover={{ scale: 1.02 }}
         className="bg-black/40 backdrop-blur-sm px-4 py-2 rounded-lg border border-emerald-500/20"
       >
@@ -172,8 +175,8 @@ export const WalletDropdown: React.FC<WalletDropdownProps> = ({ userData }) => {
               </h2>
             </div>
 
-            {!isConnected && (
-              <motion.div 
+            {!isWalletConnected && (
+              <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 className="p-3 bg-amber-500/10 text-amber-400 border border-amber-500/30 rounded-lg mb-4"
@@ -186,7 +189,7 @@ export const WalletDropdown: React.FC<WalletDropdownProps> = ({ userData }) => {
               {status && <StatusMessage status={status} />}
             </AnimatePresence>
 
-            <motion.div 
+            <motion.div
               className="flex gap-2 p-1 bg-black/40 rounded-lg backdrop-blur-sm border border-emerald-500/10"
             >
               <motion.button
@@ -194,9 +197,9 @@ export const WalletDropdown: React.FC<WalletDropdownProps> = ({ userData }) => {
                 whileTap={{ scale: 0.98 }}
                 onClick={() => setActiveTab('deposit')}
                 className={`flex-1 py-2 px-4 rounded-md font-medium transition-all duration-200
-                           ${activeTab === 'deposit' 
-                             ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' 
-                             : 'text-zinc-400 hover:text-emerald-400'}`}
+                           ${activeTab === 'deposit'
+                    ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                    : 'text-zinc-400 hover:text-emerald-400'}`}
               >
                 Deposit
               </motion.button>
@@ -205,9 +208,9 @@ export const WalletDropdown: React.FC<WalletDropdownProps> = ({ userData }) => {
                 whileTap={{ scale: 0.98 }}
                 onClick={() => setActiveTab('withdraw')}
                 className={`flex-1 py-2 px-4 rounded-md font-medium transition-all duration-200
-                           ${activeTab === 'withdraw' 
-                             ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' 
-                             : 'text-zinc-400 hover:text-emerald-400'}`}
+                           ${activeTab === 'withdraw'
+                    ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                    : 'text-zinc-400 hover:text-emerald-400'}`}
               >
                 Withdraw
               </motion.button>
@@ -221,7 +224,7 @@ export const WalletDropdown: React.FC<WalletDropdownProps> = ({ userData }) => {
                     onAmountChange={setMonadAmount}
                     onSubmit={handlePayment}
                     processingPayment={processingPayment}
-                    isWalletConnected={isConnected}
+                    isWalletConnected={isWalletConnected} // Pass the Privy wallet connection status
                   />
                 ) : (
                   <WithdrawForm

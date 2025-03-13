@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { usePrivy } from '@privy-io/react-auth';
-import { GamepadIcon, Users, User, Menu, X, Diamond } from 'lucide-react';
+import { GamepadIcon, Users, User, Menu, X, Diamond, Trophy, ChevronDown, PlayCircle } from 'lucide-react';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { WalletDropdown } from '../PaymentUI/WalletDropdown';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface NavbarProps {
   userData?: { 
@@ -20,9 +20,29 @@ interface NavbarProps {
 const Navbar: React.FC<NavbarProps> = ({ userData }) => {
   const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isGameHubOpen, setIsGameHubOpen] = useState(false);
+  const gameHubRef = useRef<HTMLDivElement>(null);
   const { authenticated, user, login, logout } = usePrivy();
 
+  // console.log("userID in the navbar: ", userData?.id)
+
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
+  const toggleGameHub = () => setIsGameHubOpen(!isGameHubOpen);
+
+  // Close the game hub dropdown when clicked outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (gameHubRef.current && !gameHubRef.current.contains(event.target as Node)) {
+        setIsGameHubOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Get current active route
+  const isActiveRoute = (path: string) => location.pathname === path;
 
   return (
     <motion.div 
@@ -64,201 +84,100 @@ const Navbar: React.FC<NavbarProps> = ({ userData }) => {
                 {authenticated ? (
                   <div className="flex items-center gap-3">
                     {/* Full Connect Button that will only show at larger screens */}
-                    <motion.div whileHover={{ scale: 1.05 }} className="hidden xl:block">
-                      <ConnectButton.Custom>
-                        {({
-                          account,
-                          chain,
-                          openAccountModal,
-                          openChainModal,
-                          openConnectModal,
-                          mounted,
-                        }) => {
-                          const ready = mounted;
-                          const connected = ready && account && chain;
 
-                          return (
-                            <div
-                              {...(!ready && {
-                                'aria-hidden': true,
-                                style: {
-                                  opacity: 0,
-                                  pointerEvents: 'none',
-                                  userSelect: 'none',
-                                },
-                              })}
-                            >
-                              {(() => {
-                                if (!connected) {
-                                  return (
-                                    <button
-                                      onClick={openConnectModal}
-                                      className="px-3 py-2.5 rounded-xl font-medium whitespace-nowrap
-                                              bg-gradient-to-r from-emerald-500/10 to-emerald-500/5
-                                              text-emerald-400 border border-emerald-500/20
-                                              hover:border-emerald-500/40 hover:from-emerald-500/20 hover:to-emerald-500/10
-                                              transition-all duration-300 flex items-center gap-2"
-                                    >
-                                      <Diamond size={18} />
-                                      <span className="hidden sm:inline">Connect Wallet</span>
-                                    </button>
-                                  );
-                                }
+                    {/* Game Hub Dropdown */}
+                    <div className="relative" ref={gameHubRef}>
+                      <motion.button 
+                        whileHover={{ scale: 1.05 }}
+                        onClick={toggleGameHub}
+                        className={`px-4 py-2.5 rounded-xl font-medium
+                                 bg-gradient-to-r ${isGameHubOpen ? 'from-emerald-500/20 to-emerald-500/10' : 'from-emerald-500/10 to-emerald-500/5'}
+                                 text-emerald-400 border ${isGameHubOpen ? 'border-emerald-500/40' : 'border-emerald-500/20'}
+                                 hover:border-emerald-500/40 hover:from-emerald-500/20 hover:to-emerald-500/10
+                                 transition-all duration-300 flex items-center gap-2`}
+                      >
+                        <GamepadIcon size={18} />
+                        <span className="hidden lg:inline whitespace-nowrap">Game Hub</span>
+                        <ChevronDown size={16} className={`transition-transform duration-300 ${isGameHubOpen ? 'rotate-180' : ''}`} />
+                      </motion.button>
 
-                                return (
-                                  <div className="flex items-center gap-2">
-                                    <button
-                                      onClick={openChainModal}
-                                      className="px-3 py-2.5 rounded-xl font-medium whitespace-nowrap
-                                              bg-gradient-to-r from-emerald-500/10 to-emerald-500/5
-                                              text-emerald-400 border border-emerald-500/20
-                                              hover:border-emerald-500/40 transition-all duration-300 flex items-center gap-2"
-                                    >
-                                      {chain.hasIcon && (
-                                        <div
-                                          style={{
-                                            background: chain.iconBackground,
-                                            width: 16,
-                                            height: 16,
-                                            borderRadius: 999,
-                                            overflow: 'hidden',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                          }}
-                                        >
-                                          {chain.iconUrl && (
-                                            <img
-                                              alt={chain.name ?? 'Chain icon'}
-                                              src={chain.iconUrl}
-                                              style={{ width: 16, height: 16 }}
-                                            />
-                                          )}
-                                        </div>
-                                      )}
-                                      <span className="max-w-[60px] truncate">{chain.name}</span>
-                                    </button>
-
-                                    <button
-                                      onClick={openAccountModal}
-                                      className="px-3 py-2.5 rounded-xl font-medium whitespace-nowrap
-                                              bg-gradient-to-r from-emerald-500/10 to-emerald-500/5
-                                              text-emerald-400 border border-emerald-500/20
-                                              hover:border-emerald-500/40 transition-all duration-300 flex items-center gap-2"
-                                    >
-                                      <span className="truncate max-w-[80px]">
-                                        {account.address.substring(0, 4)}...{account.address.substring(account.address.length - 2)}
-                                      </span>
-                                    </button>
-                                  </div>
-                                );
-                              })()}
+                      <AnimatePresence>
+                        {isGameHubOpen && (
+                          <motion.div
+                            initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                            transition={{ duration: 0.05 }}
+                            className="absolute right-0 mt-2 w-56 rounded-xl overflow-hidden
+                                    border border-emerald-500/20 shadow-lg shadow-emerald-500/5
+                                    backdrop-blur-xl bg-black/90 z-50"
+                          >
+                            <div className="p-1">
+                              <Link
+                                to="/multiplayer"
+                                onClick={() => setIsGameHubOpen(false)}
+                                className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200
+                                        ${isActiveRoute('/multiplayer') ? 'bg-emerald-500/20 text-emerald-300' : 'hover:bg-emerald-500/10 text-emerald-400'}`}
+                              >
+                                <Users size={18} />
+                                <span>Multiplayer</span>
+                                {isActiveRoute('/multiplayer') && (
+                                  <motion.span 
+                                    layoutId="navbar-pill"
+                                    className="ml-auto h-2 w-2 rounded-full bg-emerald-400" 
+                                  />
+                                )}
+                              </Link>
+                              
+                              <Link
+                                to="/leaderboard"
+                                onClick={() => setIsGameHubOpen(false)}
+                                className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200
+                                        ${isActiveRoute('/leaderboard') ? 'bg-emerald-500/20 text-emerald-300' : 'hover:bg-emerald-500/10 text-emerald-400'}`}
+                              >
+                                <Trophy size={18} />
+                                <span>Leaderboard</span>
+                                {isActiveRoute('/leaderboard') && (
+                                  <motion.span 
+                                    layoutId="navbar-pill"
+                                    className="ml-auto h-2 w-2 rounded-full bg-emerald-400" 
+                                  />
+                                )}
+                              </Link>
                             </div>
-                          );
-                        }}
-                      </ConnectButton.Custom>
-                    </motion.div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
 
-                    {/* Compact Connect Button for narrower screens */}
-                    <motion.div whileHover={{ scale: 1.05 }} className="xl:hidden">
-                      <ConnectButton.Custom>
-                        {({
-                          account,
-                          chain,
-                          openAccountModal,
-                          openChainModal,
-                          openConnectModal,
-                          mounted,
-                        }) => {
-                          const ready = mounted;
-                          const connected = ready && account && chain;
-
-                          return (
-                            <div
-                              {...(!ready && {
-                                'aria-hidden': true,
-                                style: {
-                                  opacity: 0,
-                                  pointerEvents: 'none',
-                                  userSelect: 'none',
-                                },
-                              })}
-                            >
-                              {!connected ? (
-                                <button
-                                  onClick={openConnectModal}
-                                  className="px-3 py-2.5 rounded-xl font-medium
-                                         bg-gradient-to-r from-emerald-500/10 to-emerald-500/5
-                                         text-emerald-400 border border-emerald-500/20
-                                         hover:border-emerald-500/40 transition-all duration-300 flex items-center gap-2"
-                                >
-                                  <Diamond size={18} className="md:mr-0 lg:mr-1" />
-                                  <span className="hidden lg:inline">Connect</span>
-                                </button>
-                              ) : (
-                                <button
-                                  onClick={openAccountModal}
-                                  className="px-3 py-2.5 rounded-xl font-medium
-                                         bg-gradient-to-r from-emerald-500/10 to-emerald-500/5
-                                         text-emerald-400 border border-emerald-500/20
-                                         hover:border-emerald-500/40 transition-all duration-300"
-                                >
-                                  {account.address.substring(0, 4)}...
-                                </button>
-                              )}
-                            </div>
-                          );
-                        }}
-                      </ConnectButton.Custom>
-                    </motion.div>
-
-                    {location.pathname !== '/multiplayer' && (
-                      <motion.div whileHover={{ scale: 1.05 }}>
-                        <Link
-                          to="/multiplayer"
-                          className="px-4 py-2.5 rounded-xl font-medium
-                                   bg-gradient-to-r from-emerald-500/10 to-emerald-500/5
-                                   text-emerald-400 border border-emerald-500/20
-                                   hover:border-emerald-500/40 hover:from-emerald-500/20 hover:to-emerald-500/10
-                                   transition-all duration-300 flex items-center gap-2"
-                        >
-                          <Users size={18} />
-                          <span className="hidden lg:inline">Multiplayer</span>
-                        </Link>
-                      </motion.div>
-                    )}
-                  </div>
-                ) : (
-                  <>
+                    {/* Sign Out Button */}
                     <motion.div whileHover={{ scale: 1.05 }}>
                       <button
-                        onClick={login}
+                        onClick={logout}
                         className="px-6 py-2.5 rounded-xl font-medium
-                                     bg-gradient-to-r from-emerald-400 to-emerald-500
-                                     text-black hover:shadow-lg hover:shadow-emerald-500/20
-                                     transition-all duration-300"
-                      >
-                        <span className="flex items-center gap-2">
-                          <User size={18} />
-                          <span className="hidden lg:inline">Sign In</span>
-                        </span>
-                      </button>
-                    </motion.div>
-                  </>
-                )}
-
-                {authenticated && (
-                  <motion.div whileHover={{ scale: 1.05 }}>
-                    <button
-                      onClick={logout}
-                      className="px-6 py-2.5 rounded-xl font-medium
                                  bg-gradient-to-r from-emerald-400 to-emerald-500
                                  text-black hover:shadow-lg hover:shadow-emerald-500/20
                                  transition-all duration-300 whitespace-nowrap"
+                      >
+                        <span className="flex items-center gap-2">
+                          <User size={18} />
+                          <span className="hidden lg:inline">Sign Out</span>
+                        </span>
+                      </button>
+                    </motion.div>
+                  </div>
+                ) : (
+                  <motion.div whileHover={{ scale: 1.05 }}>
+                    <button
+                      onClick={login}
+                      className="px-6 py-2.5 rounded-xl font-medium
+                               bg-gradient-to-r from-emerald-400 to-emerald-500
+                               text-black hover:shadow-lg hover:shadow-emerald-500/20
+                               transition-all duration-300"
                     >
                       <span className="flex items-center gap-2">
                         <User size={18} />
-                        <span className="hidden lg:inline">Sign Out</span>
+                        <span className="hidden lg:inline">Sign In</span>
                       </span>
                     </button>
                   </motion.div>
@@ -278,58 +197,6 @@ const Navbar: React.FC<NavbarProps> = ({ userData }) => {
               </Link>
               
               <div className="flex items-center gap-3">
-                <ConnectButton.Custom>
-                  {({
-                    account,
-                    chain,
-                    openAccountModal,
-                    openChainModal,
-                    openConnectModal,
-                    mounted,
-                  }) => {
-                    const ready = mounted;
-                    const connected = ready && account && chain;
-
-                    return (
-                      <div
-                        {...(!ready && {
-                          'aria-hidden': true,
-                          style: {
-                            opacity: 0,
-                            pointerEvents: 'none',
-                            userSelect: 'none',
-                          },
-                        })}
-                      >
-                        {!connected && (
-                          <button
-                            onClick={openConnectModal}
-                            className="px-3 py-2 rounded-xl text-sm font-medium
-                                   bg-gradient-to-r from-emerald-500/10 to-emerald-500/5
-                                   text-emerald-400 border border-emerald-500/20
-                                   hover:border-emerald-500/40 transition-all duration-300 flex items-center gap-1"
-                          >
-                            <Diamond size={14} />
-                            Connect
-                          </button>
-                        )}
-
-                        {connected && (
-                          <button
-                            onClick={openAccountModal}
-                            className="px-3 py-2 rounded-xl text-sm font-medium
-                                   bg-gradient-to-r from-emerald-500/10 to-emerald-500/5
-                                   text-emerald-400 border border-emerald-500/20
-                                   hover:border-emerald-500/40 transition-all duration-300"
-                          >
-                            {account.address.substring(0, 4)}...{account.address.substring(account.address.length - 4)}
-                          </button>
-                        )}
-                      </div>
-                    );
-                  }}
-                </ConnectButton.Custom>
-                
                 <button onClick={toggleMenu} className="text-emerald-400">
                   {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
                 </button>
@@ -349,26 +216,48 @@ const Navbar: React.FC<NavbarProps> = ({ userData }) => {
                       <WalletDropdown userData={userData} />
                     </div>
                     
-                    <Link
-                      to="/multiplayer"
-                      className="block w-full px-4 py-3 mb-2 rounded-xl font-medium
-                               bg-gradient-to-r from-emerald-500/10 to-emerald-500/5
-                               text-emerald-400 border border-emerald-500/20
-                               hover:border-emerald-500/40 transition-all duration-300 text-center"
-                      onClick={toggleMenu}
-                    >
-                      <span className="flex items-center justify-center gap-2">
-                        <Users size={18} />
-                        Multiplayer
-                      </span>
-                    </Link>
+                    {/* Game Hub options for mobile */}
+                    <div className="space-y-2 mb-4">
+                      <div className="px-4 py-2 text-sm font-medium text-emerald-500 flex items-center gap-2">
+                        <GamepadIcon size={16} />
+                        <span>Game Hub</span>
+                      </div>
+                      
+                      <Link
+                        to="/multiplayer"
+                        className={`block w-full px-4 py-3 rounded-xl font-medium text-center
+                                bg-gradient-to-r ${isActiveRoute('/multiplayer') ? 'from-emerald-500/20 to-emerald-500/10' : 'from-emerald-500/10 to-emerald-500/5'}
+                                text-emerald-400 border ${isActiveRoute('/multiplayer') ? 'border-emerald-500/40' : 'border-emerald-500/20'}
+                                hover:border-emerald-500/40 transition-all duration-300`}
+                        onClick={toggleMenu}
+                      >
+                        <span className="flex items-center justify-center gap-2">
+                          <Users size={18} />
+                          Multiplayer
+                        </span>
+                      </Link>
+                      
+                      <Link
+                        to="/leaderboard"
+                        className={`block w-full px-4 py-3 rounded-xl font-medium text-center
+                                bg-gradient-to-r ${isActiveRoute('/leaderboard') ? 'from-emerald-500/20 to-emerald-500/10' : 'from-emerald-500/10 to-emerald-500/5'}
+                                text-emerald-400 border ${isActiveRoute('/leaderboard') ? 'border-emerald-500/40' : 'border-emerald-500/20'}
+                                hover:border-emerald-500/40 transition-all duration-300`}
+                        onClick={toggleMenu}
+                      >
+                        <span className="flex items-center justify-center gap-2">
+                          <Trophy size={18} />
+                          Leaderboard
+                        </span>
+                      </Link>
+                    </div>
 
                     <button
                       onClick={logout}
                       className="block w-full px-4 py-3 rounded-xl font-medium
-                                 bg-gradient-to-r from-emerald-400 to-emerald-500
-                                 text-black hover:shadow-lg hover:shadow-emerald-500/20
-                                 transition-all duration-300 text-center"
+                               bg-gradient-to-r from-emerald-400 to-emerald-500
+                               text-black hover:shadow-lg hover:shadow-emerald-500/20
+                               transition-all duration-300 text-center"
                     >
                       <span className="flex items-center justify-center gap-2">
                         <User size={18} />

@@ -4,6 +4,7 @@ import { PrivyProvider, usePrivy } from '@privy-io/react-auth';
 import Navbar from './components/Navbar/Navbar';
 import SingleplayerGame from './pages/SinglePlayerGame/SingleplayerGame';
 import MultiplayerGame from './pages/MultiplayerGame/MultiplayerGame';
+import Leaderboard from './pages/Leaderboard/Leaderboard';
 import Home from './pages/Home/Home';
 import './index.css';
 import { useWalletStore } from './stores/walletStore';
@@ -13,12 +14,13 @@ import { RainbowKitProvider, darkTheme } from '@rainbow-me/rainbowkit';
 import '@rainbow-me/rainbowkit/styles.css';
 import { createConfig } from 'wagmi';
 import { monadNetwork } from './chains';
+import {useWallets} from '@privy-io/react-auth';
 
 const config = createConfig({
   chains: [monadNetwork],
   transports: {
     [monadNetwork.id]: http('https://testnet-rpc.monad.xyz/'),
-  }
+  },
 });
 
 const queryClient = new QueryClient();
@@ -46,25 +48,40 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 };
 
 const MainApp: React.FC = () => {
-  const { authenticated, user, login } = usePrivy();
+  const { authenticated, user } = usePrivy();
   const [userData, setUserData] = useState<UserData | undefined>();
   const [isLoading, setIsLoading] = useState(true);
-  const setBalance = useWalletStore(state => state.setBalance);
+  const setBalance = useWalletStore((state) => state.setBalance);
+
+  const {wallets} = useWallets();
+  const wallet = wallets[0];
 
   useEffect(() => {
-    const sendUserData = async () => {
-      if (!authenticated || !user || !user.email) {
+    const fetchUserData = async () => {
+      console.log("authentication check:", authenticated)
+      
+      if (!authenticated || !user ) {
         setIsLoading(false);
         return;
       }
+      console.log("############")
+      
 
       try {
+        // Prepare user data to send to the backend
         const newUserData = {
-          privy_id: user.id,
-          email: user.email,
-          name: user.displayName,
+          // privy_id: user.id,
+          clerk_id: user.id,
+          email: "exampl@gmail.com",
+          name: "aryan",
         };
 
+        console.log("00000000000", newUserData)
+
+        console.log("22222222222222")
+        console.log("1111111111111", wallet.address)
+
+        // Fetch user details from the backend
         const userDetailsResponse = await fetch('http://127.0.0.1:8080/user-details', {
           method: 'POST',
           headers: {
@@ -79,30 +96,33 @@ const MainApp: React.FC = () => {
 
         const userDetailsData = await userDetailsResponse.json();
 
+        // Validate the balance received from the backend
         if (typeof userDetailsData.balance !== 'number') {
           console.error('Invalid balance received:', userDetailsData.balance);
           throw new Error('Invalid balance received from server');
         }
 
+        // Update the global wallet balance
         setBalance(userDetailsData.balance);
 
+        // Update the user data state
         const updatedUserData = {
           ...newUserData,
           id: userDetailsData.id,
           wallet_balance: userDetailsData.balance,
           deposit_address: userDetailsData.user_pda,
         };
-        
+
         setUserData(updatedUserData);
         console.log('Updated user data:', updatedUserData);
       } catch (error) {
-        console.error('Failed to send/receive user data:', error);
+        console.error('Failed to fetch user data:', error);
       } finally {
         setIsLoading(false);
       }
     };
 
-    sendUserData();
+    fetchUserData();
   }, [authenticated, user, setBalance]);
 
   if (isLoading) {
@@ -120,17 +140,37 @@ const MainApp: React.FC = () => {
     <Router>
       <WagmiProvider config={config}>
         <QueryClientProvider client={queryClient}>
-          <RainbowKitProvider theme={customTheme} modalSize="compact">
             <div className="bg-gray-900 min-h-screen">
               <Navbar userData={userData} />
               <Routes>
                 <Route path="/" element={<Home />} />
-                <Route path="/singleplayer" element={<ProtectedRoute><SingleplayerGame /></ProtectedRoute>} />
-                <Route path="/multiplayer" element={<ProtectedRoute><MultiplayerGame userData={userData} /></ProtectedRoute>} />
+                <Route
+                  path="/singleplayer"
+                  element={
+                    <ProtectedRoute>
+                      <SingleplayerGame />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/multiplayer"
+                  element={
+                    <ProtectedRoute>
+                      <MultiplayerGame userData={userData} />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/leaderboard"
+                  element={
+                    <ProtectedRoute>
+                      <Leaderboard />
+                    </ProtectedRoute>
+                  }
+                />
               </Routes>
               <div id="modal-root" />
             </div>
-          </RainbowKitProvider>
         </QueryClientProvider>
       </WagmiProvider>
     </Router>

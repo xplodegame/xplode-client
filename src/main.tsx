@@ -11,7 +11,17 @@ if (!PRIVVY_APP_ID) {
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <PrivyProvider appId={PRIVVY_APP_ID}>
+    {/* <PrivyProvider appId={PRIVVY_APP_ID}> */}
+    <PrivyProvider
+      appId={PRIVVY_APP_ID}
+      config={{
+        embeddedWallets: { 
+          ethereum: { 
+            createOnLogin: 'users-without-wallets', // defaults to 'off'
+          }, 
+        }, 
+      }}
+    >
       <MainApp />
     </PrivyProvider>
   </React.StrictMode>

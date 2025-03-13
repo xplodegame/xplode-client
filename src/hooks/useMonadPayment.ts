@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { useAccount, useSendTransaction } from 'wagmi';
+import { useSendTransaction } from 'wagmi';
 import { parseEther } from 'viem';
+import { useWallets } from '@privy-io/react-auth';
 
 interface UseMonadPaymentProps {
   userId?: number;
@@ -15,19 +16,23 @@ export const useMonadPayment = ({
 }: UseMonadPaymentProps) => {
   const [paymentStatus, setPaymentStatus] = useState<string>('');
   const [processingPayment, setProcessingPayment] = useState(false);
-  const { address, isConnected } = useAccount();
   const { sendTransactionAsync } = useSendTransaction();
 
+  // Use Privy's wallet hook to get the connected wallet
+  const { wallets } = useWallets();
+  const wallet = wallets[0]; // Assuming the first wallet is the one connected via Privy
+  const walletAddress = wallet?.address;
+
   // This is the game's merchant wallet address where funds will be sent
-//   const MERCHANT_WALLET_ADDRESS = '0xe86c30439a990d4e25eAB0f1C97F717968B74DE2';
-  const MERCHANT_WALLET_ADDRESS = '0x4EA4d2af92c3B24Bf832d378435046870Cc092E1'
+  const MERCHANT_WALLET_ADDRESS = '0xe86c30439a990d4e25eAB0f1C97F717968B74DE2';
+  // const MERCHANT_WALLET_ADDRESS = '0x4EA4d2af92c3B24Bf832d378435046870Cc092E1';
 
   const initiatePayment = async (amount: string) => {
     if (!amount || Number(amount) <= 0) {
       throw new Error("Please enter a valid amount");
     }
 
-    if (!isConnected || !address) {
+    if (!walletAddress) {
       throw new Error("Wallet not connected");
     }
 
@@ -114,6 +119,6 @@ export const useMonadPayment = ({
     processingPayment,
     initiatePayment,
     cancelPayment,
-    isWalletConnected: isConnected,
+    isWalletConnected: !!walletAddress, // Check if wallet is connected via Privy
   };
 };
