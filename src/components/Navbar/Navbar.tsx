@@ -2,9 +2,10 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { usePrivy } from '@privy-io/react-auth';
 import { GamepadIcon, Users, User, Menu, X, Diamond, Trophy, ChevronDown, PlayCircle } from 'lucide-react';
-import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { WalletDropdown } from '../PaymentUI/WalletDropdown';
 import { motion, AnimatePresence } from 'framer-motion';
+import { WalletConnectButton } from './WalletConnectButton';
+import { useWallets } from '@privy-io/react-auth';
 
 interface NavbarProps {
   userData?: { 
@@ -23,8 +24,7 @@ const Navbar: React.FC<NavbarProps> = ({ userData }) => {
   const [isGameHubOpen, setIsGameHubOpen] = useState(false);
   const gameHubRef = useRef<HTMLDivElement>(null);
   const { authenticated, user, login, logout } = usePrivy();
-
-  // console.log("userID in the navbar: ", userData?.id)
+  const { wallets } = useWallets();
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
   const toggleGameHub = () => setIsGameHubOpen(!isGameHubOpen);
@@ -71,11 +71,14 @@ const Navbar: React.FC<NavbarProps> = ({ userData }) => {
               </div>
 
               {/* Wallet Section - Always Centered */}
-              <div className="flex-1 flex justify-center items-center">
+              <div className="flex-1 flex justify-center items-center gap-4">
                 {authenticated && (
                   <motion.div whileHover={{ scale: 1.02 }}>
                     <WalletDropdown userData={userData} />
                   </motion.div>
+                )}
+                {authenticated && wallets.length === 0 && (
+                  <WalletConnectButton />
                 )}
               </div>
 
@@ -83,8 +86,6 @@ const Navbar: React.FC<NavbarProps> = ({ userData }) => {
               <div className="w-1/4 flex items-center justify-end gap-4">
                 {authenticated ? (
                   <div className="flex items-center gap-3">
-                    {/* Full Connect Button that will only show at larger screens */}
-
                     {/* Game Hub Dropdown */}
                     <div className="relative" ref={gameHubRef}>
                       <motion.button 
@@ -212,8 +213,11 @@ const Navbar: React.FC<NavbarProps> = ({ userData }) => {
               >
                 {authenticated ? (
                   <>
-                    <div className="flex justify-center mb-4">
+                    <div className="flex flex-col gap-3 items-center justify-center mb-4">
                       <WalletDropdown userData={userData} />
+                      {wallets.length === 0 && (
+                        <WalletConnectButton />
+                      )}
                     </div>
                     
                     {/* Game Hub options for mobile */}

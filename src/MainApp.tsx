@@ -48,6 +48,15 @@ const MainApp: React.FC = () => {
   // const wallet = wallets[0];
 
   useEffect(() => {
+    if (authenticated && wallets.length === 0) {
+      // alert('Please connect a wallet for transactions.');
+      console.log("please connect a wallet for transactions")
+    }
+  }, [authenticated, wallets]);
+  
+
+
+  useEffect(() => {
     const fetchUserData = async () => {
       console.log("authentication check:", authenticated);
       
@@ -56,7 +65,7 @@ const MainApp: React.FC = () => {
         return;
       }
 
-      console.log("##############: ", wallets)
+      // console.log("##############: ", wallets)
   
       // Wait until a wallet is available
       if (wallets.length === 0) {

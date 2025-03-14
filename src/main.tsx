@@ -28,14 +28,14 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
         externalWallets: {
           solana: {connectors: solanaConnectors}
         },
-        embeddedWallets: { 
-          ethereum: { 
-            createOnLogin: 'users-without-wallets', // defaults to 'off'
-          }, 
-          solana: { 
-            createOnLogin: 'users-without-wallets', // defaults to 'off'
-          }, 
-        }, 
+        // embeddedWallets: { 
+        //   ethereum: { 
+        //     createOnLogin: 'users-without-wallets', // defaults to 'off'
+        //   }, 
+        //   solana: { 
+        //     createOnLogin: 'users-without-wallets', // defaults to 'off'
+        //   }, 
+        // }, 
       }}
     >
       <MainApp />
