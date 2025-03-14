@@ -165,8 +165,8 @@ const LeaderboardPage: React.FC = () => {
                         <h3 className="text-zinc-400 text-sm font-medium">Highest Profit</h3>
                         <p className="text-2xl font-bold text-white">
                         {leaderboardData.length > 0 ? 
-                            `${leaderboardData.sort((a, b) => b.profit - a.profit)[0].profit.toFixed(3)} SOL` : 
-                            '0 SOL'}
+                            `${leaderboardData.sort((a, b) => b.profit - a.profit)[0].profit.toFixed(3)} MON` : 
+                            '0 MON'}
                         </p>
                     </div>
                     </div>
@@ -285,7 +285,7 @@ const LeaderboardPage: React.FC = () => {
                             <div className="flex items-center">
                                 <Coins className="h-4 w-4 text-emerald-400 mr-2" />
                                 <span className={`font-mono ${player.profit >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                                {player.profit >= 0 ? '+' : ''}{player.profit.toFixed(3)} SOL
+                                {player.profit >= 0 ? '+' : ''}{player.profit.toFixed(3)} MON
                                 </span>
                             </div>
                             </td>

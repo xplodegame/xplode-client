@@ -43,7 +43,7 @@ const LobbyDetails: React.FC<LobbyDetailsProps> = ({
         <div className="flex items-center gap-2">
           <Coins className="w-4 h-4 text-emerald-400" />
           <span className="text-zinc-300">Balance:</span>
-          <span className="text-emerald-400 font-mono">{walletBalance.toFixed(3)} SOL</span>
+          <span className="text-emerald-400 font-mono">{walletBalance.toFixed(3)} MON</span>
         </div>
         <div className="flex items-center gap-2">
           <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-emerald-400 animate-pulse' : 'bg-red-400'}`} />
