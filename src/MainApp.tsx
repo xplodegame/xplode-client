@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
-import { PrivyProvider, usePrivy } from '@privy-io/react-auth';
+import { usePrivy } from '@privy-io/react-auth';
 import Navbar from './components/Navbar/Navbar';
 import SingleplayerGame from './pages/SinglePlayerGame/SingleplayerGame';
 import MultiplayerGame from './pages/MultiplayerGame/MultiplayerGame';
@@ -10,7 +10,6 @@ import './index.css';
 import { useWalletStore } from './stores/walletStore';
 import { WagmiProvider, http } from 'wagmi';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { RainbowKitProvider, darkTheme } from '@rainbow-me/rainbowkit';
 import '@rainbow-me/rainbowkit/styles.css';
 import { createConfig } from 'wagmi';
 import { monadNetwork } from './chains';
@@ -24,14 +23,6 @@ const config = createConfig({
 });
 
 const queryClient = new QueryClient();
-
-const customTheme = darkTheme({
-  accentColor: '#10b981',
-  accentColorForeground: 'black',
-  borderRadius: 'large',
-  fontStack: 'system',
-  overlayBlur: 'small',
-});
 
 interface UserData {
   id?: number;
@@ -54,34 +45,38 @@ const MainApp: React.FC = () => {
   const setBalance = useWalletStore((state) => state.setBalance);
 
   const {wallets} = useWallets();
-  const wallet = wallets[0];
+  // const wallet = wallets[0];
 
   useEffect(() => {
     const fetchUserData = async () => {
-      console.log("authentication check:", authenticated)
+      console.log("authentication check:", authenticated);
       
-      if (!authenticated || !user ) {
+      if (!authenticated || !user) {
         setIsLoading(false);
         return;
       }
-      console.log("############")
-      
 
+      console.log("##############: ", wallets)
+  
+      // Wait until a wallet is available
+      if (wallets.length === 0) {
+        console.log("No wallet found, waiting...");
+        return;
+      }
+  
+      const wallet = wallets[0]; // Re-fetch the first wallet
+      
+      console.log("Wallet detected:", wallet?.address);
+  
       try {
-        // Prepare user data to send to the backend
         const newUserData = {
-          // privy_id: user.id,
           clerk_id: user.id,
           email: "exampl@gmail.com",
           name: "aryan",
         };
-
-        console.log("00000000000", newUserData)
-
-        console.log("22222222222222")
-        console.log("1111111111111", wallet.address)
-
-        // Fetch user details from the backend
+  
+        // console.log("User data being sent:", newUserData);
+  
         const userDetailsResponse = await fetch('http://127.0.0.1:8080/user-details', {
           method: 'POST',
           headers: {
@@ -89,31 +84,40 @@ const MainApp: React.FC = () => {
           },
           body: JSON.stringify(newUserData),
         });
-
+  
         if (!userDetailsResponse.ok) {
           throw new Error(`HTTP error! status: ${userDetailsResponse.status}`);
         }
-
+  
         const userDetailsData = await userDetailsResponse.json();
 
-        // Validate the balance received from the backend
+        // console.log("User details being received from the backend:", userDetailsData);
+  
         if (typeof userDetailsData.balance !== 'number') {
           console.error('Invalid balance received:', userDetailsData.balance);
           throw new Error('Invalid balance received from server');
         }
-
-        // Update the global wallet balance
+  
         setBalance(userDetailsData.balance);
+  
+        // setUserData({
+        //   ...newUserData,
+        //   id: userDetailsData.id,
+        //   wallet_balance: userDetailsData.balance,
+        //   deposit_address: userDetailsData.user_pda,
+        //   privy_id: user.id, // Added missing property
+        // });
 
-        // Update the user data state
         const updatedUserData = {
           ...newUserData,
           id: userDetailsData.id,
           wallet_balance: userDetailsData.balance,
           deposit_address: userDetailsData.user_pda,
+          privy_id: user.id,
         };
 
         setUserData(updatedUserData);
+  
         console.log('Updated user data:', updatedUserData);
       } catch (error) {
         console.error('Failed to fetch user data:', error);
@@ -121,9 +125,9 @@ const MainApp: React.FC = () => {
         setIsLoading(false);
       }
     };
-
+  
     fetchUserData();
-  }, [authenticated, user, setBalance]);
+  }, [authenticated, user, wallets, setBalance]); // Include `wallets` as a dependency  
 
   if (isLoading) {
     return (

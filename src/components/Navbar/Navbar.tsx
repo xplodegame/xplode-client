@@ -65,7 +65,7 @@ const Navbar: React.FC<NavbarProps> = ({ userData }) => {
                     <Diamond className="w-8 h-8 text-emerald-400" />
                   </motion.div>
                   <span className="text-2xl font-bold bg-gradient-to-r from-emerald-300 to-emerald-500 bg-clip-text text-transparent">
-                    Diamond Hunter
+                    Xplode
                   </span>
                 </Link>
               </div>
@@ -192,7 +192,7 @@ const Navbar: React.FC<NavbarProps> = ({ userData }) => {
               <Link to="/" className="flex items-center gap-2">
                 <Diamond className="w-6 h-6 text-emerald-400" />
                 <span className="text-xl font-bold bg-gradient-to-r from-emerald-300 to-emerald-500 bg-clip-text text-transparent">
-                  Diamond Hunter
+                  Xplode
                 </span>
               </Link>
               

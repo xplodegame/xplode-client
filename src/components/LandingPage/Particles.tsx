@@ -6,12 +6,20 @@ import { loadSlim } from 'tsparticles-slim';
 export const useParticles = () => {
   const [isInitialAnimation, setIsInitialAnimation] = useState(true);
   const [opacity, setOpacity] = useState(1);
+  const [isLoaded, setIsLoaded] = useState(false);
 
   const particlesInit = useCallback(async (engine: Engine) => {
     await loadSlim(engine);
+    setIsLoaded(true);
+  }, []);
+
+  const particlesLoaded = useCallback(() => {
+    console.log('Particles successfully loaded');
   }, []);
 
   useEffect(() => {
+    if (!isLoaded) return;
+    
     // Start fade out at 3.5 seconds
     const fadeOutTimer = setTimeout(() => {
       setOpacity(0);
@@ -28,15 +36,20 @@ export const useParticles = () => {
       clearTimeout(fadeOutTimer);
       clearTimeout(switchTimer);
     };
-  }, []);
+  }, [isLoaded]);
 
   const containerStyle = {
     opacity,
     transition: 'opacity 0.5s ease-in-out',
+    position: 'absolute' as const,
+    top: 0,
+    left: 0,
+    width: '100%',
+    height: '100%',
+    zIndex: 0,
   };
 
   const initialOptions = {
-    // ... (previous initialOptions remain the same)
     background: {
       color: {
         value: 'transparent',
@@ -60,17 +73,16 @@ export const useParticles = () => {
       },
       collisions: {
         enable: true,
-        mode: "bounce",
       },
       move: {
-        enable: true,
-        speed: 1.2,
         direction: "none",
-        random: false,
-        straight: false,
+        enable: true,
         outModes: {
           default: "bounce",
         },
+        random: false,
+        speed: 1.2,
+        straight: false,
         attract: {
           enable: true,
           rotateX: 600,
@@ -88,7 +100,7 @@ export const useParticles = () => {
       opacity: {
         value: 0.8,
         random: true,
-        animation: {
+        anim: {
           enable: true,
           speed: 0.8,
           minimumValue: 0.4,
@@ -98,7 +110,7 @@ export const useParticles = () => {
       size: {
         value: { min: 1, max: 3 },
         random: true,
-        animation: {
+        anim: {
           enable: true,
           speed: 2,
           minimumValue: 0.5,
@@ -112,29 +124,6 @@ export const useParticles = () => {
           frequency: 0.05,
           opacity: 1,
         },
-      },
-      life: {
-        duration: {
-          sync: false,
-          value: 3,
-        },
-        count: 1,
-      },
-      effect: {
-        type: "trail",
-        options: {
-          trail: {
-            length: 10,
-            minWidth: 1,
-            maxWidth: 2,
-          },
-        },
-      },
-      zIndex: {
-        value: { min: 0, max: 100 },
-        opacityRate: 0.5,
-        sizeRate: 1,
-        velocityRate: 1,
       },
     },
     interactivity: {
@@ -184,7 +173,7 @@ export const useParticles = () => {
         },
       },
     ],
-    retina_detect: true,
+    detectRetina: true,
   };
 
   const optimizedOptions = {
@@ -206,23 +195,21 @@ export const useParticles = () => {
         width: 1.2,
         triangles: {
           enable: true,
+          opacity: 0.1,
         },
       },
       collisions: {
         enable: false,
       },
       move: {
-        enable: true,
-        speed: 1,
         direction: "none",
-        random: false,
-        straight: false,
+        enable: true,
         outModes: {
           default: "out",
         },
-        attract: {
-          enable: false,
-        },
+        random: false,
+        speed: 1,
+        straight: false,
       },
       number: {
         density: {
@@ -234,7 +221,7 @@ export const useParticles = () => {
       },
       opacity: {
         value: 0.8,
-        animation: {
+        anim: {
           enable: true,
           speed: 0.5,
           minimumValue: 0.5,
@@ -243,7 +230,7 @@ export const useParticles = () => {
       },
       size: {
         value: { min: 1, max: 2.5 },
-        animation: {
+        anim: {
           enable: false,
         },
       },
@@ -285,7 +272,6 @@ export const useParticles = () => {
       },
     },
     detectRetina: false,
-    smooth: false,
   };
 
   return (
@@ -293,17 +279,9 @@ export const useParticles = () => {
       <Particles
         id="tsparticles"
         init={particlesInit}
+        loaded={particlesLoaded}
         options={isInitialAnimation ? initialOptions : optimizedOptions}
       />
     </div>
   );
 };
-
-
-
-// export const useParticles = () => {
-//   return (
-//     <div>
-//     </div>
-//   );
-// };

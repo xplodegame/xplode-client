@@ -28,7 +28,7 @@ export default function Footer() {
               >
                 <Diamond className="w-6 h-6 text-emerald-400" />
                 <span className="font-bold bg-gradient-to-r from-emerald-300 to-emerald-500 bg-clip-text text-transparent">
-                  Diamond Hunter
+                  Xplode
                 </span>
               </motion.div>
               
