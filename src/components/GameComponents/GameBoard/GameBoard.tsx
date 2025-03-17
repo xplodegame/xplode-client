@@ -4,7 +4,7 @@ import { GameState } from '../../../types/gameTypes';
 interface GameBoardProps {
   gameState: GameState | null;
   userData?: {
-    clerk_id: string; 
+    privy_id: string; 
     email: string; 
     name: string;
     wallet_balance?: number | null;

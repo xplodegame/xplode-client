@@ -26,7 +26,7 @@ const LobbyDetails: React.FC<LobbyDetailsProps> = ({
     setBetAmount(Math.min(numValue, walletBalance));
   };
 
-  const quickBets = [0.05, 0.1, 0.25, 0.5, 1, 2];
+  const quickBets = [0.01, 0.05, 0.1, 0.25, 0.5, 1, 2];
   const gridSizes = [3, 4, 5, 6, 7, 8];
 
   const clickSound = useRef(new Audio('/assets/sounds/click.wav'));

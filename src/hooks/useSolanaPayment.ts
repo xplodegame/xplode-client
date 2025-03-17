@@ -1,8 +1,13 @@
-import { useState, useEffect } from 'react';
-import { PublicKey, Connection, Keypair, clusterApiUrl } from '@solana/web3.js';
-import { encodeURL, findReference, validateTransfer, FindReferenceError } from '@solana/pay';
-import BigNumber from 'bignumber.js';
-import { getPaymentConfig } from '../config/payment.config';
+import { useState, useEffect } from "react";
+import { PublicKey, Connection, Keypair, clusterApiUrl } from "@solana/web3.js";
+import {
+  encodeURL,
+  findReference,
+  validateTransfer,
+  FindReferenceError,
+} from "@solana/pay";
+import BigNumber from "bignumber.js";
+import { getPaymentConfig } from "../config/payment.config";
 
 interface UseSolanaPaymentProps {
   userId?: number;
@@ -17,12 +22,12 @@ export const useSolanaPayment = ({
   solAmount,
   onPaymentComplete,
   onPaymentFailed,
-  depositAddress
+  depositAddress,
 }: UseSolanaPaymentProps) => {
   const paymentConfig = getPaymentConfig(depositAddress);
-  
+
   const [reference, setReference] = useState<PublicKey | null>(null);
-  const [paymentStatus, setPaymentStatus] = useState<string>('');
+  const [paymentStatus, setPaymentStatus] = useState<string>("");
   const [paymentURL, setPaymentURL] = useState<string | null>(null);
   const [processingPayment, setProcessingPayment] = useState(false);
   const [currentAmount, setCurrentAmount] = useState<string>(solAmount);
@@ -32,15 +37,17 @@ export const useSolanaPayment = ({
   }, [solAmount]);
 
   useEffect(() => {
-    if (!reference || paymentStatus !== 'pending' || !paymentConfig) return;
+    if (!reference || paymentStatus !== "pending" || !paymentConfig) return;
 
-    const connection = new Connection(clusterApiUrl('devnet'), 'confirmed');
+    const connection = new Connection(clusterApiUrl("devnet"), "confirmed");
     let interval: NodeJS.Timeout;
 
     const checkPayment = async () => {
       try {
-        const signatureInfo = await findReference(connection, reference, { finality: 'confirmed' });
-        console.log('Found signature:', signatureInfo.signature);
+        const signatureInfo = await findReference(connection, reference, {
+          finality: "confirmed",
+        });
+        console.log("Found signature:", signatureInfo.signature);
 
         await validateTransfer(
           connection,
@@ -48,24 +55,26 @@ export const useSolanaPayment = ({
           {
             recipient: paymentConfig.MERCHANT_WALLET,
             amount: new BigNumber(currentAmount),
-            reference
+            reference,
           },
-          { commitment: 'confirmed' }
+          { commitment: "confirmed" }
         );
 
-        setPaymentStatus('validated');
+        setPaymentStatus("validated");
         await verifyTransaction(signatureInfo.signature);
         setProcessingPayment(false);
         return true;
       } catch (error) {
         if (error instanceof FindReferenceError) {
-          console.log('Waiting for transaction...');
+          console.log("Waiting for transaction...");
           return false;
         }
-        console.error('Payment validation error:', error);
-        setPaymentStatus('failed');
+        console.error("Payment validation error:", error);
+        setPaymentStatus("failed");
         setProcessingPayment(false);
-        onPaymentFailed(error instanceof Error ? error.message : 'Payment validation failed');
+        onPaymentFailed(
+          error instanceof Error ? error.message : "Payment validation failed"
+        );
         return false;
       }
     };
@@ -83,20 +92,23 @@ export const useSolanaPayment = ({
       const depositData = {
         user_id: userId,
         amount: Number(currentAmount),
-        currency: "SOL",
+        currency: "MON",
         tx_type: "DEPOSIT",
         tx_hash: signature,
       };
 
-      console.log('Sending deposit data:', depositData);
+      console.log("Sending deposit data:", depositData);
 
-      const response = await fetch('http://localhost:8080/deposit', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(depositData),
-      });
+      const response = await fetch(
+        "https://mines-browser-wallet007.fly.dev/deposit",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(depositData),
+        }
+      );
 
       if (!response.ok) {
         const errorText = await response.text();
@@ -104,16 +116,18 @@ export const useSolanaPayment = ({
       }
 
       const result = await response.json();
-      
-      if (typeof result.balance === 'number') {
+
+      if (typeof result.balance === "number") {
         onPaymentComplete(result.balance);
-        setPaymentStatus('completed');
+        setPaymentStatus("completed");
       } else {
-        throw new Error('Invalid balance received from server');
+        throw new Error("Invalid balance received from server");
       }
     } catch (err) {
-      setPaymentStatus('failed');
-      onPaymentFailed(err instanceof Error ? err.message : 'Failed to process deposit');
+      setPaymentStatus("failed");
+      onPaymentFailed(
+        err instanceof Error ? err.message : "Failed to process deposit"
+      );
     }
   };
 
@@ -138,11 +152,11 @@ export const useSolanaPayment = ({
         reference: newReference,
         label: paymentConfig.LABELS.GAME_DEPOSIT,
         message: paymentConfig.LABELS.DEPOSIT_MESSAGE,
-        memo: `Game deposit for user ${userId}`
+        memo: `Game deposit for user ${userId}`,
       });
 
       setPaymentURL(url.toString());
-      setPaymentStatus('pending');
+      setPaymentStatus("pending");
       return url.toString();
     } catch (error) {
       setProcessingPayment(false);
@@ -151,10 +165,10 @@ export const useSolanaPayment = ({
   };
 
   const cancelPayment = () => {
-    setPaymentStatus('failed');
+    setPaymentStatus("failed");
     setProcessingPayment(false);
     setReference(null);
-    onPaymentFailed('Payment cancelled by user');
+    onPaymentFailed("Payment cancelled by user");
   };
 
   return {

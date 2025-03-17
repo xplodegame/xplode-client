@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { GameMessage } from "../types/gameTypes";
 
-const WEBSOCKET_URL = "ws://127.0.0.1:3000";
+const WEBSOCKET_URL = "ws://mines-game007.fly.dev";
 const INITIAL_RECONNECT_DELAY = 1000;
 const MAX_RECONNECT_DELAY = 30000;
 const BACKOFF_MULTIPLIER = 1.5;

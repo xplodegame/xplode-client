@@ -73,7 +73,7 @@ export const WithdrawForm: React.FC<WithdrawFormProps> = ({
     >
       <div>
         <label htmlFor="withdraw-amount" className="text-emerald-400 text-sm font-medium">
-          Withdraw Amount (SOL)
+          Withdraw Amount (MON)
         </label>
         <div className="relative">
           <input
@@ -108,13 +108,13 @@ export const WithdrawForm: React.FC<WithdrawFormProps> = ({
           </button>
         </div>
         <div className="text-emerald-400/60 text-xs mt-1">
-          Available: {wallet_balance} SOL
+          Available: {wallet_balance} MON
         </div>
       </div>
 
       <div>
         <label htmlFor="withdraw-address" className="text-emerald-400 text-sm font-medium">
-          Solana Wallet Address
+          Monad Wallet Address
         </label>
         <input
           id="withdraw-address"

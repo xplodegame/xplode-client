@@ -77,20 +77,23 @@ export const useMonadPayment = ({
       const depositData = {
         user_id: userId,
         amount: Number(amount),
-        currency: "SOL",
+        currency: "MON",
         tx_type: "DEPOSIT",
         tx_hash: txHash,
       };
 
       console.log("Sending deposit data:", depositData);
 
-      const response = await fetch("http://localhost:8080/deposit", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(depositData),
-      });
+      const response = await fetch(
+        "https://mines-browser-wallet007.fly.dev/deposit",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(depositData),
+        }
+      );
 
       if (!response.ok) {
         const errorText = await response.text();

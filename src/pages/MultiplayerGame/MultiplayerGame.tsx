@@ -9,13 +9,13 @@ import CountdownTimer from '../../components/GameComponents/CountdownTimer/Count
 import { GameState, GameMessage } from '../../types/gameTypes';
 import { useWalletStore } from '../../stores/walletStore';
 
-const MOVE_TIMEOUT = 10000; // 10 minutes
+const MOVE_TIMEOUT = 30000; // 30 
 const MAX_LOCKS = 3;
 const LOCK_PHASE_TIMEOUT = 5000; // 5 seconds
 
 interface MultiplayerGameProps {
   userData?: { 
-    clerk_id: string; 
+    privy_id: string; 
     email: string; 
     name: string | null; 
     wallet_balance: number;
@@ -147,12 +147,12 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
           const updateUserBalance = async () => {
             try {
               const newUserData = {
-                clerk_id: userData?.clerk_id,
+                privy_id: userData?.privy_id,
                 email: userData?.email,
                 name: userData?.name,
               };
 
-              const userDetailsResponse = await fetch('http://127.0.0.1:8080/user-details', {
+              const userDetailsResponse = await fetch('https://mines-browser-wallet007.fly.dev/user-details', {
                 method: 'POST',
                 headers: {
                   'Content-Type': 'application/json',

@@ -11,7 +11,7 @@ interface QRModalProps {
   userData?: { 
     deposit_address?: string;
     id?: number;
-    clerk_id: string; 
+    privy_id: string; 
     email: string; 
     name: string | null; 
     wallet_balance: number;

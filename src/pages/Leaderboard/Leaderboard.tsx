@@ -31,7 +31,7 @@ const LeaderboardPage: React.FC = () => {
   const fetchLeaderboardData = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch('http://127.0.0.1:8080/leaderboard');
+      const response = await fetch('https://mines-browser-wallet007.fly.dev/leaderboard');
       
       if (!response.ok) {
         throw new Error(`HTTP error! Status: ${response.status}`);

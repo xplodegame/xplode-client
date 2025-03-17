@@ -79,14 +79,14 @@ const MainApp: React.FC = () => {
   
       try {
         const newUserData = {
-          clerk_id: user.id,
+          privy_id: user.id,
           email: "exampl@gmail.com",
           name: "aryan",
         };
   
         // console.log("User data being sent:", newUserData);
   
-        const userDetailsResponse = await fetch('http://127.0.0.1:8080/user-details', {
+        const userDetailsResponse = await fetch('https://mines-browser-wallet007.fly.dev/user-details', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

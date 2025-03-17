@@ -1,5 +1,5 @@
 // src/hooks/useWithdraw.ts
-import { useState } from 'react';
+import { useState } from "react";
 
 interface UseWithdrawProps {
   userId?: number;
@@ -12,7 +12,7 @@ export const useWithdraw = ({
   onWithdrawComplete,
   onWithdrawFailed,
 }: UseWithdrawProps) => {
-  const [withdrawStatus, setWithdrawStatus] = useState<string>('');
+  const [withdrawStatus, setWithdrawStatus] = useState<string>("");
   const [processingWithdraw, setProcessingWithdraw] = useState(false);
 
   const initiateWithdraw = async (amount: string, withdrawAddress: string) => {
@@ -26,22 +26,25 @@ export const useWithdraw = ({
 
     try {
       setProcessingWithdraw(true);
-      setWithdrawStatus('processing');
+      setWithdrawStatus("processing");
 
       const withdrawData = {
         user_id: userId,
         amount: Number(amount),
-        currency: "SOL",
+        currency: "MON",
         withdraw_address: withdrawAddress,
       };
 
-      const response = await fetch('http://localhost:8080/withdraw', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(withdrawData),
-      });
+      const response = await fetch(
+        "https://mines-browser-wallet007.fly.dev/withdraw",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(withdrawData),
+        }
+      );
 
       if (!response.ok) {
         const errorText = await response.text();
@@ -49,16 +52,18 @@ export const useWithdraw = ({
       }
 
       const result = await response.json();
-      
-      if (typeof result.balance === 'number') {
+
+      if (typeof result.balance === "number") {
         onWithdrawComplete(result.balance);
-        setWithdrawStatus('completed');
+        setWithdrawStatus("completed");
       } else {
-        throw new Error('Invalid balance received from server');
+        throw new Error("Invalid balance received from server");
       }
     } catch (error) {
-      setWithdrawStatus('failed');
-      onWithdrawFailed(error instanceof Error ? error.message : 'Failed to process withdrawal');
+      setWithdrawStatus("failed");
+      onWithdrawFailed(
+        error instanceof Error ? error.message : "Failed to process withdrawal"
+      );
     } finally {
       setProcessingWithdraw(false);
     }
