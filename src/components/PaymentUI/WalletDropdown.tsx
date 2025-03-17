@@ -39,7 +39,6 @@ export const WalletDropdown: React.FC<WalletDropdownProps> = ({ userData }) => {
   const {
     monadAmount,
     setMonadAmount,
-    handleCancelPayment,
     handlePayment,
     handleWithdraw,
     paymentStatus,
@@ -48,7 +47,6 @@ export const WalletDropdown: React.FC<WalletDropdownProps> = ({ userData }) => {
     processingWithdraw,
   } = usePayment({
     userId: userData?.id,
-    depositAddress: userData?.deposit_address,
   });
 
   useEffect(() => {
@@ -117,7 +115,7 @@ export const WalletDropdown: React.FC<WalletDropdownProps> = ({ userData }) => {
     };
 
     // Add null check and default to error state if type is invalid
-    const currentStatus = statusConfig[status.type] || statusConfig.error;
+    const currentStatus = status.type ? statusConfig[status.type] : statusConfig.error;
 
     return (
       <motion.div

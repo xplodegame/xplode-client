@@ -4,11 +4,17 @@ import { motion } from 'framer-motion';
 const GRID_SIZE = 5;
 const DECAY_TIME = 2000;
 
+interface GridCellProps {
+  active: boolean;
+  decaying: boolean;
+  onActivate: () => void;
+}
+
 const GridCell = React.memo(function GridCell({ 
   active, 
   decaying, 
   onActivate 
-}) {
+}: GridCellProps) {
   return (
     <button
       onMouseEnter={onActivate}

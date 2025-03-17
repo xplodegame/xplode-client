@@ -1,13 +1,15 @@
 import React from 'react';
-import { GameState, Player } from '../../types/gameTypes';
+import { GameState, Player } from '../../../types/gameTypes';
 import { Loader2 } from 'lucide-react';
 
 interface GameStatusProps {
   gameState: GameState | null;
   userData?: Player;
+  isLockPhase: boolean;
+  locksRemaining: number;
 }
 
-const GameStatus: React.FC<GameStatusProps> = ({ gameState, userData }) => {
+const GameStatus: React.FC<GameStatusProps> = ({ gameState, userData, isLockPhase, locksRemaining }) => {
   if (!gameState || !userData) return null;
 
   if ('WAITING' in gameState) {
@@ -26,7 +28,14 @@ const GameStatus: React.FC<GameStatusProps> = ({ gameState, userData }) => {
     return (
       <div className="text-xl mb-4">
         {isMyTurn ? (
-          <span className="text-green-400">Your turn!</span>
+          <div className="space-y-2">
+            <span className="text-green-400 block">Your turn!</span>
+            {isLockPhase && (
+              <span className="text-sm text-emerald-400 block">
+                Locks remaining: {locksRemaining}
+              </span>
+            )}
+          </div>
         ) : (
           <span className="text-yellow-400">Opponent's turn</span>
         )}

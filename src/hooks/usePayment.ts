@@ -1,16 +1,15 @@
-import { useState } from 'react';
-import { useMonadPayment } from './useMonadPayment';
-import { useWithdraw } from './useWithdraw';
-import { useWalletStore } from '../stores/walletStore';
+import { useState } from "react";
+import { useMonadPayment } from "./useMonadPayment";
+import { useWithdraw } from "./useWithdraw";
+import { useWalletStore } from "../stores/walletStore";
 
 interface UsePaymentProps {
   userId?: number;
-  depositAddress?: string;
 }
 
-export const usePayment = ({ userId, depositAddress }: UsePaymentProps) => {
-  const [monadAmount, setMonadAmount] = useState('');
-  const setBalance = useWalletStore(state => state.setBalance);
+export const usePayment = ({ userId }: UsePaymentProps) => {
+  const [monadAmount, setMonadAmount] = useState("");
+  const setBalance = useWalletStore((state) => state.setBalance);
 
   const {
     paymentStatus,
@@ -22,24 +21,20 @@ export const usePayment = ({ userId, depositAddress }: UsePaymentProps) => {
     userId,
     onPaymentComplete: (balance) => {
       setBalance(balance); // Update global store
-      setMonadAmount('');
+      setMonadAmount("");
     },
     onPaymentFailed: (error) => {
-      console.error('Payment failed:', error);
+      console.error("Payment failed:", error);
     },
   });
 
-  const {
-    withdrawStatus,
-    processingWithdraw,
-    initiateWithdraw,
-  } = useWithdraw({
+  const { withdrawStatus, processingWithdraw, initiateWithdraw } = useWithdraw({
     userId,
     onWithdrawComplete: (balance) => {
       setBalance(balance); // Update global store
     },
     onWithdrawFailed: (error) => {
-      console.error('Withdrawal failed:', error);
+      console.error("Withdrawal failed:", error);
     },
   });
 

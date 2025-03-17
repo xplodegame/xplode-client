@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { usePrivy } from '@privy-io/react-auth';
-import { GamepadIcon, Users, User, Menu, X, Diamond, Trophy, ChevronDown, PlayCircle } from 'lucide-react';
+import { GamepadIcon, Users, User, Menu, X, Diamond, Trophy, ChevronDown } from 'lucide-react';
 import { WalletDropdown } from '../PaymentUI/WalletDropdown';
 import { motion, AnimatePresence } from 'framer-motion';
 import { WalletConnectButton } from './WalletConnectButton';
@@ -23,7 +23,7 @@ const Navbar: React.FC<NavbarProps> = ({ userData }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isGameHubOpen, setIsGameHubOpen] = useState(false);
   const gameHubRef = useRef<HTMLDivElement>(null);
-  const { authenticated, user, login, logout } = usePrivy();
+  const { authenticated, login, logout } = usePrivy();
   const { wallets } = useWallets();
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);

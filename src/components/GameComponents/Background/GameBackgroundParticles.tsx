@@ -60,16 +60,16 @@ export const useParticles = () => {
       },
       collisions: {
         enable: true,
-        mode: "bounce",
+        mode: "bounce" as const,
       },
       move: {
         enable: true,
         speed: 1.2,
-        direction: "none",
+        direction: "none" as const,
         random: false,
         straight: false,
         outModes: {
-          default: "bounce",
+          default: "bounce" as const,
         },
         attract: {
           enable: true,
@@ -138,7 +138,7 @@ export const useParticles = () => {
       },
     },
     interactivity: {
-      detectsOn: "window",
+      detectsOn: "canvas" as const,
       events: {
         onHover: {
           enable: true,
@@ -214,11 +214,11 @@ export const useParticles = () => {
       move: {
         enable: true,
         speed: 1,
-        direction: "none",
+        direction: "none" as const,
         random: false,
         straight: false,
         outModes: {
-          default: "out",
+          default: "out" as const,
         },
         attract: {
           enable: false,

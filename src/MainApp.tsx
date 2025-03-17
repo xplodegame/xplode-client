@@ -28,7 +28,7 @@ interface UserData {
   id?: number;
   privy_id: string;
   email: string;
-  name: string | null;
+  name: string;
   wallet_balance: number;
   deposit_address?: string;
 }

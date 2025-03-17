@@ -67,7 +67,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
         }}
       >
           {board.grid.map((row, rowIndex) =>
-            row.map((cell, colIndex) => {
+            row.map((_, colIndex) => {
               const cellKey = `${rowIndex}-${colIndex}`;
               const isRevealed = revealedCells.has(cellKey);
               const isLocked = lockedCells.has(cellKey);

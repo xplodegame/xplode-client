@@ -17,7 +17,7 @@ interface MultiplayerGameProps {
   userData?: { 
     privy_id: string; 
     email: string; 
-    name: string | null; 
+    name: string; 
     wallet_balance: number;
     id?: number;
     deposit_address?: string;
@@ -27,13 +27,13 @@ interface MultiplayerGameProps {
 
 const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
   const [gameState, setGameState] = useState<GameState | null>(null);
+  const [movesPlayed, setMovesPlayed] = useState<number>(0);
   const [error, setError] = useState<string>('');
   const [betAmount, setBetAmount] = useState<number>(0);
   const [revealedCells, setRevealedCells] = useState<Set<string>>(new Set());
   const [lockedCells, setLockedCells] = useState<Set<string>>(new Set());
   const [isLockPhase, setIsLockPhase] = useState<boolean>(false);
   const [locksRemaining, setLocksRemaining] = useState<number>(MAX_LOCKS);
-  const [turnCount, setTurnCount] = useState<number>(0);
   const [currentPlayerLockedCells, setCurrentPlayerLockedCells] = useState<Set<string>>(new Set());
   const [moveEndTime, setMoveEndTime] = useState<number>(0);
   const [lockEndTime, setLockEndTime] = useState<number>(0);
@@ -76,15 +76,11 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
           }
 
           moveTimeoutRef.current = window.setTimeout(() => {
-            setTurnCount((prevCount) => {
-              const abort = prevCount === 0;
-              sendMessage({
-                Stop: {
-                  game_id: newGameState.RUNNING.game_id,
-                  abort,
-                },
-              });
-              return prevCount;
+            sendMessage({
+              Stop: {
+                game_id: newGameState.RUNNING.game_id,
+                abort: movesPlayed === 0,
+              },
             });
           }, MOVE_TIMEOUT);
 
@@ -149,7 +145,7 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
               const newUserData = {
                 privy_id: userData?.privy_id,
                 email: userData?.email,
-                name: userData?.name,
+                name: userData?.name || '',
               };
 
               const userDetailsResponse = await fetch('https://mines-browser-wallet007.fly.dev/user-details', {
@@ -223,7 +219,7 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
     } else {
         gemSound.current.play().catch(() => {});
     }
-    setTurnCount(prev => prev + 1);
+    setMovesPlayed(prev => prev + 1);
     setIsLockPhase(true);
     setLocksRemaining(MAX_LOCKS);
     setCurrentPlayerLockedCells(new Set());
@@ -281,9 +277,9 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
     setCurrentPlayerLockedCells(new Set());
     setError('');
     setBetAmount(0);
-    setTurnCount(0);
     setMoveEndTime(0);
     setLockEndTime(0);
+    setMovesPlayed(0);
   }, []);
 
   const playGame = useCallback((grid: number, bombs: number, minPlayers: number) => {

@@ -8,7 +8,7 @@ import Footer from '../../components/LandingPage/Footer';
 
 function Home() {
 
-  const [darkMode, setDarkMode] = useState(true);
+  const [darkMode] = useState(true);
   const ParticlesComponent = useParticles();
   // const [playHover] = useSound('/hover.mp3', { volume: 0.5 });
 

@@ -13,7 +13,7 @@ export const useParticles = () => {
     setIsLoaded(true);
   }, []);
 
-  const particlesLoaded = useCallback(() => {
+  const particlesLoaded = useCallback(async () => {
     console.log('Particles successfully loaded');
   }, []);
 
@@ -75,11 +75,9 @@ export const useParticles = () => {
         enable: true,
       },
       move: {
-        direction: "none",
+        direction: "none" as const,
         enable: true,
-        outModes: {
-          default: "bounce",
-        },
+        outModes: "out" as const,
         random: false,
         speed: 1.2,
         straight: false,
@@ -127,7 +125,7 @@ export const useParticles = () => {
       },
     },
     interactivity: {
-      detectsOn: "window",
+      detectsOn: "canvas" as const,
       events: {
         onHover: {
           enable: true,
@@ -202,11 +200,9 @@ export const useParticles = () => {
         enable: false,
       },
       move: {
-        direction: "none",
+        direction: "none" as const,
         enable: true,
-        outModes: {
-          default: "out",
-        },
+        outModes: "out" as const,
         random: false,
         speed: 1,
         straight: false,

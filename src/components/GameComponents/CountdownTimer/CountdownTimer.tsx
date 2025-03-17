@@ -1,11 +1,17 @@
 import { useState, useEffect } from 'react';
 import { Timer } from 'lucide-react';
 
+interface CountdownTimerProps {
+  endTime: number;
+  isActive: boolean;
+  className?: string;
+}
+
 const CountdownTimer = ({ 
   endTime, 
   isActive,
   className = ""
-}) => {
+}: CountdownTimerProps) => {
   const [timeLeft, setTimeLeft] = useState(0);
 
   useEffect(() => {
