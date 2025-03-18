@@ -36,7 +36,7 @@ export const useWithdraw = ({
       };
 
       const response = await fetch(
-        "https://mines-browser-wallet007.fly.dev/withdraw",
+        import.meta.env.VITE_PAYMENT_WITHDRAW_ENDPOINT_URL,
         {
           method: "POST",
           headers: {

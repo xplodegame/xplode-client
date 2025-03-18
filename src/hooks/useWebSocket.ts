@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { GameMessage } from "../types/gameTypes";
 
-const WEBSOCKET_URL = "ws://mines-game007.fly.dev";
 const INITIAL_RECONNECT_DELAY = 1000;
 const MAX_RECONNECT_DELAY = 30000;
 const BACKOFF_MULTIPLIER = 1.5;
@@ -62,7 +61,7 @@ const useWebSocket = ({
     isConnectingRef.current = true;
 
     try {
-      const ws = new WebSocket(WEBSOCKET_URL);
+      const ws = new WebSocket(import.meta.env.VITE_WEBSOCKET_URL);
       wsRef.current = ws;
       ws.binaryType = "arraybuffer";
 

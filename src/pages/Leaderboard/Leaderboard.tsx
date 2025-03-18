@@ -31,7 +31,7 @@ const LeaderboardPage: React.FC = () => {
   const fetchLeaderboardData = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch('https://mines-browser-wallet007.fly.dev/leaderboard');
+      const response = await fetch(import.meta.env.VITE_LEADERBOARD_ENDPOINT_URL);
       
       if (!response.ok) {
         throw new Error(`HTTP error! Status: ${response.status}`);

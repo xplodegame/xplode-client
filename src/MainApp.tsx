@@ -86,7 +86,7 @@ const MainApp: React.FC = () => {
   
         // console.log("User data being sent:", newUserData);
   
-        const userDetailsResponse = await fetch('https://mines-browser-wallet007.fly.dev/user-details', {
+        const userDetailsResponse = await fetch(import.meta.env.VITE_USER_DETAILS_ENDPOINT_URL, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

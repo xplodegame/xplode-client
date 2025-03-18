@@ -85,7 +85,7 @@ export const useMonadPayment = ({
       console.log("Sending deposit data:", depositData);
 
       const response = await fetch(
-        "https://mines-browser-wallet007.fly.dev/deposit",
+        import.meta.env.VITE_PAYMENT_DEPOSIT_ENDPOINT_URL,
         {
           method: "POST",
           headers: {
