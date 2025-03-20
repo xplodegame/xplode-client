@@ -1,15 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Trophy, Coins, ArrowUpDown, Users, TrendingUp } from 'lucide-react';
-// import { useParticles } from '../../components/GameComponents/Background/GameBackgroundParticles';
+import { Trophy, Coins, ArrowUpDown, Users, TrendingUp, Clock, Network } from 'lucide-react';
 import { useParticles } from '../../components/LandingPage/Particles';
 
-
-interface PnlData {
+interface LeaderboardEntry {
   id: number;
   user_id: number;
-  num_matches: number;
-  profit: number;
+  network: string;
+  total_matches: number;  
+  total_profit: number;   
   created_at: string;
   updated_at: string;
   // Additional fields we'll fetch from user details
@@ -18,68 +17,50 @@ interface PnlData {
 }
 
 const LeaderboardPage: React.FC = () => {
-  const [leaderboardData, setLeaderboardData] = useState<PnlData[]>([]);
+  const [leaderboardData, setLeaderboardData] = useState<LeaderboardEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [sortBy, setSortBy] = useState<'profit' | 'num_matches'>('profit');
+  const [sortBy, setSortBy] = useState<'total_profit' | 'total_matches'>('total_profit');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+  const [network, setNetwork] = useState<string>('MONAD'); // Default to MONAD based on DB data
+  const [timeframe, setTimeframe] = useState<string>('all'); // Default timeframe
   const Particles = useParticles();
 
   useEffect(() => {
     fetchLeaderboardData();
-  }, []);
+  }, [network, timeframe]);
 
   const fetchLeaderboardData = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch(import.meta.env.VITE_LEADERBOARD_ENDPOINT_URL);
+      // Get base URL from environment
+      const baseUrl = import.meta.env.VITE_LEADERBOARD_ENDPOINT_URL || '';
+      // Remove trailing slash if present
+      const cleanBaseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
+      
+      // Fixed URL construction - remove the duplicate "leaderboard" in the path
+      // The API expects /leaderboard/{network}/{timeframe} not /leaderboard/leaderboard/{network}/{timeframe}
+      const endpoint = `${cleanBaseUrl}/${network}/${timeframe}`;
+      
+      console.log("Fetching from:", endpoint);
+      const response = await fetch(endpoint);
       
       if (!response.ok) {
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
       
       const data = await response.json();
-      
-      // Ensure we have only one entry per user (the most recent one)
-      const uniqueUserEntries = Object.values(
-        data.reduce((acc: Record<number, PnlData>, item: PnlData) => {
-          // If this user_id isn't in our accumulator yet, or if it is but this entry is more recent, update
-          if (!acc[item.user_id] || new Date(item.updated_at) > new Date(acc[item.user_id].updated_at)) {
-            acc[item.user_id] = item;
-          }
-          return acc;
-        }, {})
-      ) as PnlData[];
-      
-      // Fetch additional user details for each entry if needed
-      // This is commented out because it depends on your API structure
-      /*
-      const enhancedData = await Promise.all(
-        uniqueUserEntries.map(async (entry) => {
-          try {
-            const userResponse = await fetch(`http://127.0.0.1:8080/user/${entry.user_id}`);
-            if (userResponse.ok) {
-              const userData = await userResponse.json();
-              return { ...entry, name: userData.name, email: userData.email };
-            }
-            return entry;
-          } catch (error) {
-            console.error(`Error fetching details for user ${entry.user_id}:`, error);
-            return entry;
-          }
-        })
-      );
-      setLeaderboardData(enhancedData);
-      */
-      
-      setLeaderboardData(uniqueUserEntries);
+      console.log("################################: ", data);
+      setLeaderboardData(data);
     } catch (error) {
       console.error('Error fetching leaderboard data:', error);
+      // Set empty array to prevent errors in rendering
+      setLeaderboardData([]);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleSort = (key: 'profit' | 'num_matches') => {
+  const handleSort = (key: 'total_profit' | 'total_matches') => {
     if (sortBy === key) {
       // Toggle direction if clicking the same column
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
@@ -96,10 +77,19 @@ const LeaderboardPage: React.FC = () => {
   });
 
   const getOrdinal = (n: number) => {
+    if (typeof n !== 'number' || isNaN(n)) return '0th';
     const s = ['th', 'st', 'nd', 'rd'];
     const v = n % 100;
     return n + (s[(v - 20) % 10] || s[v] || s[0]);
   };
+  
+  // Updated network options based on DB data
+  // Changed the MONAD network value to match the backend's expected parameter
+  const networks = ['MONAD', 'ETH', 'BLAST'];
+  const timeframes = [
+    { value: '24h', label: 'Last 24 Hours' },
+    { value: 'all', label: 'All Time' }
+  ];
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-game-dark to-game-dark-light">
@@ -130,6 +120,54 @@ const LeaderboardPage: React.FC = () => {
                 <p className="text-zinc-300 max-w-2xl mx-auto">
                 The galaxy's most skilled navigators, ranked by their cosmic profits and survival tactics.
                 </p>
+            </motion.div>
+            
+            {/* Network and Timeframe Selector */}
+            <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.1 }}
+                className="mb-8 flex flex-col md:flex-row gap-4 justify-center"
+            >
+                <div className="bg-black/60 backdrop-blur-sm border border-emerald-500/20 rounded-xl p-4 flex items-center gap-3">
+                    <Network className="h-5 w-5 text-emerald-400" />
+                    <span className="text-zinc-300 text-sm">Network:</span>
+                    <div className="flex gap-2">
+                        {networks.map((net) => (
+                            <button
+                                key={net}
+                                onClick={() => setNetwork(net)}
+                                className={`px-3 py-1 rounded-lg text-sm transition-colors ${
+                                    network === net
+                                        ? 'bg-emerald-500 text-black font-medium'
+                                        : 'bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20'
+                                }`}
+                            >
+                                {net}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+                
+                <div className="bg-black/60 backdrop-blur-sm border border-emerald-500/20 rounded-xl p-4 flex items-center gap-3">
+                    <Clock className="h-5 w-5 text-emerald-400" />
+                    <span className="text-zinc-300 text-sm">Timeframe:</span>
+                    <div className="flex gap-2">
+                        {timeframes.map((time) => (
+                            <button
+                                key={time.value}
+                                onClick={() => setTimeframe(time.value)}
+                                className={`px-3 py-1 rounded-lg text-sm transition-colors ${
+                                    timeframe === time.value
+                                        ? 'bg-emerald-500 text-black font-medium'
+                                        : 'bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20'
+                                }`}
+                            >
+                                {time.label}
+                            </button>
+                        ))}
+                    </div>
+                </div>
             </motion.div>
             
             {/* Stats Cards */}
@@ -165,7 +203,7 @@ const LeaderboardPage: React.FC = () => {
                         <h3 className="text-zinc-400 text-sm font-medium">Highest Profit</h3>
                         <p className="text-2xl font-bold text-white">
                         {leaderboardData.length > 0 ? 
-                            `${leaderboardData.sort((a, b) => b.profit - a.profit)[0].profit.toFixed(3)} MON` : 
+                            `${leaderboardData.sort((a, b) => b.total_profit - a.total_profit)[0].total_profit.toFixed(3)} MON` : 
                             '0 MON'}
                         </p>
                     </div>
@@ -181,7 +219,7 @@ const LeaderboardPage: React.FC = () => {
                     <div>
                         <h3 className="text-zinc-400 text-sm font-medium">Total Matches</h3>
                         <p className="text-2xl font-bold text-white">
-                        {leaderboardData.reduce((sum, item) => sum + item.num_matches, 0)}
+                        {leaderboardData.reduce((sum, item) => sum + item.total_matches, 0)}
                         </p>
                     </div>
                     </div>
@@ -215,14 +253,14 @@ const LeaderboardPage: React.FC = () => {
                             Explorer ID
                         </th>
                         <th className="px-6 py-4 text-left text-xs font-medium text-emerald-400 uppercase tracking-wider cursor-pointer"
-                            onClick={() => handleSort('num_matches')}>
+                            onClick={() => handleSort('total_matches')}>
                             <div className="flex items-center gap-2">
                             Matches
                             <ArrowUpDown className="h-4 w-4" />
                             </div>
                         </th>
                         <th className="px-6 py-4 text-left text-xs font-medium text-emerald-400 uppercase tracking-wider cursor-pointer"
-                            onClick={() => handleSort('profit')}>
+                            onClick={() => handleSort('total_profit')}>
                             <div className="flex items-center gap-2">
                             Profit
                             <ArrowUpDown className="h-4 w-4" />
@@ -235,74 +273,75 @@ const LeaderboardPage: React.FC = () => {
                     </thead>
                     <tbody className="divide-y divide-emerald-500/10">
                         {sortedData.map((player, index) => (
-                        <motion.tr 
-                            key={player.id}
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.3, delay: 0.1 * index }}
-                            className={`${index < 3 ? 'bg-emerald-500/5' : ''} hover:bg-emerald-500/10 transition-colors`}
-                        >
-                            <td className="px-6 py-4 whitespace-nowrap">
-                            {index < 3 ? (
-                                <div className="flex items-center">
-                                <Trophy className={`h-5 w-5 mr-2 ${
-                                    index === 0 ? 'text-yellow-400' : 
-                                    index === 1 ? 'text-zinc-300' : 
-                                    'text-amber-600'
-                                }`} />
-                                <span className="text-white font-bold">{getOrdinal(index + 1)}</span>
-                                </div>
-                            ) : (
-                                <span className="text-zinc-400">{getOrdinal(index + 1)}</span>
-                            )}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="flex items-center">
-                                <div className="h-8 w-8 rounded-full bg-emerald-500/20 flex items-center justify-center mr-3">
-                                <span className="text-emerald-400 font-mono text-xs">
-                                    {player.user_id.toString().padStart(2, '0')}
-                                </span>
-                                </div>
-                                <div>
-                                <div className="text-sm font-medium text-white">
-                                    {player.name || `Explorer #${player.user_id}`}
-                                </div>
-                                {player.email && (
-                                    <div className="text-xs text-zinc-400">
-                                    {player.email}
+                            <motion.tr 
+                                key={`${player.id}-${player.user_id}-${index}`}
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ duration: 0.3, delay: 0.1 * Math.min(index, 10) }}
+                                    className={`${index < 3 ? 'bg-emerald-500/5' : ''} hover:bg-emerald-500/10 transition-colors`}
+                                >
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                    {index < 3 ? (
+                                        <div className="flex items-center">
+                                        <Trophy className={`h-5 w-5 mr-2 ${
+                                            index === 0 ? 'text-yellow-400' : 
+                                            index === 1 ? 'text-zinc-300' : 
+                                            'text-amber-600'
+                                        }`} />
+                                        <span className="text-white font-bold">{getOrdinal(index + 1)}</span>
+                                        </div>
+                                    ) : (
+                                        <span className="text-zinc-400">{getOrdinal(index + 1)}</span>
+                                    )}
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                    <div className="flex items-center">
+                                        <div className="h-8 w-8 rounded-full bg-emerald-500/20 flex items-center justify-center mr-3">
+                                          <span className="text-emerald-400 font-mono text-xs">
+                                            {((player.user_id ?? 0) || 0).toString().padStart(2, '0')}
+                                          </span>
+                                        </div>
+                                        <div>
+                                          <div className="text-sm font-medium text-white">
+                                            {player.name || `Explorer #${player.user_id ?? 'Unknown'}`}
+                                          </div>
+                                          {player.email && (
+                                            <div className="text-xs text-zinc-400">
+                                              {player.email}
+                                            </div>
+                                          )}
+                                        </div>
+                                      </div>
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                    <div className="flex items-center">
+                                        <TrendingUp className="h-4 w-4 text-emerald-400 mr-2" />
+                                        <span className="text-zinc-300">{player.total_matches}</span>
                                     </div>
-                                )}
-                                </div>
-                            </div>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="flex items-center">
-                                <TrendingUp className="h-4 w-4 text-emerald-400 mr-2" />
-                                <span className="text-zinc-300">{player.num_matches}</span>
-                            </div>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="flex items-center">
-                                <Coins className="h-4 w-4 text-emerald-400 mr-2" />
-                                <span className={`font-mono ${player.profit >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                                {player.profit >= 0 ? '+' : ''}{player.profit.toFixed(3)} MON
-                                </span>
-                            </div>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-400">
-                            {new Date(player.updated_at).toLocaleDateString('en-US', {
-                                year: 'numeric',
-                                month: 'short',
-                                day: 'numeric'
-                            })}
-                            </td>
-                        </motion.tr>
-                        ))}
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                    <div className="flex items-center">
+                                        <Coins className="h-4 w-4 text-emerald-400 mr-2" />
+                                        <span className={`font-mono ${(player.total_profit ?? 0) >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                                        {(player.total_profit ?? 0) >= 0 ? '+' : ''}{(player.total_profit ?? 0).toFixed(3)} MON
+                                        </span>
+                                    </div>
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-400">
+                                    {new Date(player.updated_at).toLocaleDateString('en-US', {
+                                        year: 'numeric',
+                                        month: 'short',
+                                        day: 'numeric'
+                                    })}
+                                    </td>
+                                </motion.tr>
+                                )
+                        )}
                         
                         {sortedData.length === 0 && (
                         <tr>
                             <td colSpan={5} className="px-6 py-10 text-center text-zinc-400">
-                            No explorers have ventured into the cosmic grid yet.
+                            No explorers have ventured into the cosmic grid on {network} in this timeframe yet.
                             </td>
                         </tr>
                         )}
@@ -321,30 +360,19 @@ const LeaderboardPage: React.FC = () => {
             >
                 <h3 className="text-emerald-400 text-lg font-medium mb-4">Tips for Cosmic Success</h3>
                 <ul className="grid grid-cols-1 md:grid-cols-2 gap-4 text-zinc-300">
-                <li className="flex items-start gap-2">
-                    <div className="bg-emerald-500/10 p-1 rounded-full mt-1">
-                    <div className="h-2 w-2 bg-emerald-400 rounded-full"></div>
-                    </div>
-                    <span>Start with smaller grids to master navigation techniques</span>
-                </li>
-                <li className="flex items-start gap-2">
-                    <div className="bg-emerald-500/10 p-1 rounded-full mt-1">
-                    <div className="h-2 w-2 bg-emerald-400 rounded-full"></div>
-                    </div>
-                    <span>Practice anticipating anomaly patterns</span>
-                </li>
-                <li className="flex items-start gap-2">
-                    <div className="bg-emerald-500/10 p-1 rounded-full mt-1">
-                    <div className="h-2 w-2 bg-emerald-400 rounded-full"></div>
-                    </div>
-                    <span>Maintain a balanced risk strategy for maximum profits</span>
-                </li>
-                <li className="flex items-start gap-2">
-                    <div className="bg-emerald-500/10 p-1 rounded-full mt-1">
-                    <div className="h-2 w-2 bg-emerald-400 rounded-full"></div>
-                    </div>
-                    <span>Join multiplayer games for bigger reward pools</span>
-                </li>
+                    {[
+                        "Start with smaller grids to master navigation techniques",
+                        "Practice anticipating anomaly patterns",
+                        "Maintain a balanced risk strategy for maximum profits",
+                        "Join multiplayer games for bigger reward pools"
+                    ].map((tip, index) => (
+                        <li key={index} className="flex items-start gap-2">
+                            <div className="bg-emerald-500/10 p-1 rounded-full mt-1">
+                                <div className="h-2 w-2 bg-emerald-400 rounded-full"></div>
+                            </div>
+                            <span>{tip}</span>
+                        </li>
+                    ))}
                 </ul>
             </motion.div>
             
