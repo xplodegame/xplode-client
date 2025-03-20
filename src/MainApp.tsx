@@ -34,7 +34,27 @@ interface UserData {
 }
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { authenticated } = usePrivy();
+  const { authenticated, ready } = usePrivy(); // Add the 'ready' flag
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  
+  useEffect(() => {
+    if (ready) {
+      setIsCheckingAuth(false);
+    }
+  }, [ready]);
+  
+  // Show loading indicator while checking auth status
+  if (isCheckingAuth) {
+    return (
+      <div className="bg-gradient-to-b from-zinc-900 to-black min-h-screen flex items-center justify-center">
+        <div className="flex flex-col items-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-emerald-500 mb-4"></div>
+          <p className="text-emerald-400 text-lg">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+  
   return authenticated ? children : <Navigate to="/" replace />;
 };
 

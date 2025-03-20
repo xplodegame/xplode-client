@@ -103,56 +103,71 @@ const Navbar: React.FC<NavbarProps> = ({ userData }) => {
                       </motion.button>
 
                       <AnimatePresence>
-                        {isGameHubOpen && (
-                          <motion.div
-                            initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                            animate={{ opacity: 1, y: 0, scale: 1 }}
-                            exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                            transition={{ duration: 0.05 }}
-                            className="absolute right-0 mt-2 w-56 rounded-xl overflow-hidden
+                      {isGameHubOpen && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                          transition={{ duration: 0.05 }}
+                          className="absolute right-0 mt-2 w-56 rounded-xl overflow-hidden
                                     border border-emerald-500/20 shadow-lg shadow-emerald-500/5
                                     backdrop-blur-xl bg-black/90 z-50"
-                          >
-                            <div className="p-1">
-                              <Link
-                                to="/multiplayer"
-                                onClick={() => setIsGameHubOpen(false)}
-                                className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200
+                        >
+                          <div className="p-1">
+                            <Link
+                              to="/multiplayer"
+                              onClick={() => setIsGameHubOpen(false)}
+                              className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200
                                         ${isActiveRoute('/multiplayer') ? 'bg-emerald-500/20 text-emerald-300' : 'hover:bg-emerald-500/10 text-emerald-400'}`}
-                              >
-                                <Users size={18} />
-                                <span>Multiplayer</span>
-                                {isActiveRoute('/multiplayer') && (
-                                  <motion.span 
-                                    layoutId="navbar-pill"
-                                    className="ml-auto h-2 w-2 rounded-full bg-emerald-400" 
-                                  />
-                                )}
-                              </Link>
-                              
-                              <Link
-                                to="/leaderboard"
-                                onClick={() => setIsGameHubOpen(false)}
-                                className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200
+                            >
+                              <Users size={18} />
+                              <span>Multiplayer</span>
+                              {isActiveRoute('/multiplayer') && (
+                                <motion.span 
+                                  layoutId="navbar-pill"
+                                  className="ml-auto h-2 w-2 rounded-full bg-emerald-400" 
+                                />
+                              )}
+                            </Link>
+                            
+                            <Link
+                              to="/leaderboard"
+                              onClick={() => setIsGameHubOpen(false)}
+                              className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200
                                         ${isActiveRoute('/leaderboard') ? 'bg-emerald-500/20 text-emerald-300' : 'hover:bg-emerald-500/10 text-emerald-400'}`}
+                            >
+                              <Trophy size={18} />
+                              <span>Leaderboard</span>
+                              {isActiveRoute('/leaderboard') && (
+                                <motion.span 
+                                  layoutId="navbar-pill"
+                                  className="ml-auto h-2 w-2 rounded-full bg-emerald-400" 
+                                />
+                              )}
+                            </Link>
+
+                            {/* Sign Out Button */}
+                            {authenticated && (
+                              <button
+                                onClick={() => {
+                                  logout();
+                                  setIsGameHubOpen(false);
+                                }}
+                                className="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200
+                                        hover:bg-emerald-500/10 text-emerald-400"
                               >
-                                <Trophy size={18} />
-                                <span>Leaderboard</span>
-                                {isActiveRoute('/leaderboard') && (
-                                  <motion.span 
-                                    layoutId="navbar-pill"
-                                    className="ml-auto h-2 w-2 rounded-full bg-emerald-400" 
-                                  />
-                                )}
-                              </Link>
-                            </div>
-                          </motion.div>
-                        )}
+                                <User size={18} />
+                                <span>Sign Out</span>
+                              </button>
+                            )}
+                          </div>
+                        </motion.div>
+                      )}
                       </AnimatePresence>
                     </div>
 
                     {/* Sign Out Button */}
-                    <motion.div whileHover={{ scale: 1.05 }}>
+                    {/* <motion.div whileHover={{ scale: 1.05 }}>
                       <button
                         onClick={logout}
                         className="px-6 py-2.5 rounded-xl font-medium
@@ -165,7 +180,7 @@ const Navbar: React.FC<NavbarProps> = ({ userData }) => {
                           <span className="hidden lg:inline">Sign Out</span>
                         </span>
                       </button>
-                    </motion.div>
+                    </motion.div> */}
                   </div>
                 ) : (
                   <motion.div whileHover={{ scale: 1.05 }}>
