@@ -9,7 +9,7 @@ import CountdownTimer from '../../components/GameComponents/CountdownTimer/Count
 import { GameState, GameMessage } from '../../types/gameTypes';
 import { useWalletStore } from '../../stores/walletStore';
 
-const MOVE_TIMEOUT = 30000; // 30 
+const MOVE_TIMEOUT = 30000; // 30 seconds
 const MAX_LOCKS = 3;
 const LOCK_PHASE_TIMEOUT = 5000; // 5 seconds
 
@@ -23,7 +23,6 @@ interface MultiplayerGameProps {
     deposit_address?: string;
   };
 }
-
 
 const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
   const [gameState, setGameState] = useState<GameState | null>(null);
@@ -179,7 +178,7 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
     }
   }, [userData?.id]);
 
-  const { sendMessage, isConnected } = useWebSocket({
+  const { sendMessage, isConnected, isRedirecting } = useWebSocket({
     onMessage: handleGameMessage,
     onError: setError,
     gameState
@@ -357,10 +356,17 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
       </div>
 
       <div className="relative w-full max-w-md z-10">
-        {!isConnected && (
+        {!isConnected && !isRedirecting && (
           <div className="text-zinc-400 text-sm mt-6 flex items-center justify-center space-x-2">
             <Loader2 className="animate-spin" size={16} />
             <span>Reconnecting...</span>
+          </div>
+        )}
+
+        {isRedirecting && (
+          <div className="text-emerald-400 text-sm mt-6 flex items-center justify-center space-x-2">
+            <Loader2 className="animate-spin" size={16} />
+            <span>Connecting to optimal game server...</span>
           </div>
         )}
 

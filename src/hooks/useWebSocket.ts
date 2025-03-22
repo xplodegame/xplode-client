@@ -1,15 +1,21 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { GameMessage } from "../types/gameTypes";
+import { GameMessage, GameState } from "../types/gameTypes";
 
 const INITIAL_RECONNECT_DELAY = 1000;
 const MAX_RECONNECT_DELAY = 30000;
 const BACKOFF_MULTIPLIER = 1.5;
 const MAX_RETRIES = 10;
+const CONNECTION_TIMEOUT = 5000;
 
 interface WebSocketHookProps {
   onMessage: (message: GameMessage) => void;
   onError: (error: string) => void;
-  gameState?: any;
+  gameState?: GameState | null;
+}
+
+interface WebSocketConfig {
+  url: string;
+  lastPlayRequest?: GameMessage;
 }
 
 const useWebSocket = ({
@@ -21,12 +27,17 @@ const useWebSocket = ({
   const reconnectTimeoutRef = useRef<NodeJS.Timeout>();
   const reconnectAttemptsRef = useRef<number>(0);
   const isConnectingRef = useRef<boolean>(false);
-  const gameStateRef = useRef(gameState); // Add this line
+  const gameStateRef = useRef<GameState | null>(gameState ?? null);
+  const configRef = useRef<WebSocketConfig>({
+    url: import.meta.env.VITE_WEBSOCKET_URL,
+    lastPlayRequest: undefined,
+  });
   const [isConnected, setIsConnected] = useState(false);
+  const [isRedirecting, setIsRedirecting] = useState(false);
 
   // Update gameStateRef whenever gameState changes
   useEffect(() => {
-    gameStateRef.current = gameState;
+    gameStateRef.current = gameState ?? null;
   }, [gameState]);
 
   const getNextReconnectDelay = useCallback(() => {
@@ -48,128 +59,170 @@ const useWebSocket = ({
     isConnectingRef.current = false;
   }, []);
 
-  const connect = useCallback(() => {
-    if (
-      isConnectingRef.current ||
-      wsRef.current?.readyState === WebSocket.OPEN ||
-      wsRef.current?.readyState === WebSocket.CONNECTING
-    ) {
-      return;
-    }
+  const connect = useCallback(
+    (url?: string) => {
+      if (
+        isConnectingRef.current ||
+        wsRef.current?.readyState === WebSocket.OPEN ||
+        wsRef.current?.readyState === WebSocket.CONNECTING
+      ) {
+        return;
+      }
 
-    cleanup();
-    isConnectingRef.current = true;
+      cleanup();
+      isConnectingRef.current = true;
 
-    try {
-      const ws = new WebSocket(import.meta.env.VITE_WEBSOCKET_URL);
-      wsRef.current = ws;
-      ws.binaryType = "arraybuffer";
+      try {
+        // Use provided URL or fallback to current config URL
+        const wsUrl = url || configRef.current.url;
+        const ws = new WebSocket(wsUrl);
+        wsRef.current = ws;
+        ws.binaryType = "arraybuffer";
 
-      const connectionTimeout = setTimeout(() => {
-        if (ws.readyState !== WebSocket.OPEN) {
-          ws.close();
-        }
-      }, 5000);
-
-      ws.onopen = () => {
-        clearTimeout(connectionTimeout);
-        console.log("WebSocket connected");
-        isConnectingRef.current = false;
-        setIsConnected(true);
-        onError("");
-        reconnectAttemptsRef.current = 0;
-
-        // Use gameStateRef.current instead of gameState
-        try {
-          const currentGameState = gameStateRef.current;
-
-          const pingMessage =
-            currentGameState &&
-            ("RUNNING" in currentGameState || "WAITING" in currentGameState)
-              ? {
-                  Ping: {
-                    game_id:
-                      currentGameState.RUNNING?.game_id ||
-                      currentGameState.WAITING?.game_id,
-                  },
-                }
-              : { Ping: {} };
-
-          const messageStr = JSON.stringify(pingMessage);
-          console.log(messageStr);
-          const encoder = new TextEncoder();
-          const binaryData = encoder.encode(messageStr);
-          ws.send(binaryData);
-        } catch (err) {
-          console.error("Error sending initial ping:", err);
-        }
-      };
-
-      // Rest of the WebSocket implementation remains the same
-      ws.onmessage = (event) => {
-        try {
-          if (event.data instanceof ArrayBuffer) {
-            const decoder = new TextDecoder("utf-8");
-            const messageStr = decoder.decode(event.data);
-            const message = JSON.parse(messageStr) as GameMessage;
-            console.log("Received message:", message);
-            onMessage(message);
-          } else {
-            console.warn("Received non-binary message:", event.data);
+        const connectionTimeout = setTimeout(() => {
+          if (ws.readyState !== WebSocket.OPEN) {
+            ws.close();
           }
-        } catch (err) {
-          console.error("Error parsing message:", err);
-        }
-      };
+        }, CONNECTION_TIMEOUT);
 
-      ws.onerror = (event) => {
-        clearTimeout(connectionTimeout);
-        console.error("WebSocket error:", event);
-      };
+        ws.onopen = () => {
+          clearTimeout(connectionTimeout);
+          console.log("WebSocket connected to:", wsUrl);
+          isConnectingRef.current = false;
+          setIsConnected(true);
+          setIsRedirecting(false);
+          onError("");
+          reconnectAttemptsRef.current = 0;
 
-      ws.onclose = (event) => {
-        clearTimeout(connectionTimeout);
-        console.log(
-          `WebSocket closed with code ${event.code}, reason: ${event.reason}`
-        );
-        isConnectingRef.current = false;
-        setIsConnected(false);
-        wsRef.current = null;
+          // If we have a stored play request and we're connecting to a new server, replay it
+          if (configRef.current.lastPlayRequest && url) {
+            try {
+              const messageStr = JSON.stringify(
+                configRef.current.lastPlayRequest
+              );
+              const encoder = new TextEncoder();
+              const binaryData = encoder.encode(messageStr);
+              ws.send(binaryData);
+              // Clear the stored request after replaying
+              configRef.current.lastPlayRequest = undefined;
+            } catch (err) {
+              console.error("Error replaying last request:", err);
+            }
+          } else {
+            // Send initial ping
+            try {
+              const currentGameState = gameStateRef.current;
+              let pingMessage: GameMessage = "Ping";
 
-        if (event.code !== 1000 && reconnectAttemptsRef.current < MAX_RETRIES) {
-          const nextDelay = getNextReconnectDelay();
+              if (currentGameState) {
+                if ("RUNNING" in currentGameState) {
+                  pingMessage = {
+                    Ping: { game_id: currentGameState.RUNNING.game_id },
+                  };
+                } else if ("WAITING" in currentGameState) {
+                  pingMessage = {
+                    Ping: { game_id: currentGameState.WAITING.game_id },
+                  };
+                }
+              }
+
+              const messageStr = JSON.stringify(pingMessage);
+              const encoder = new TextEncoder();
+              const binaryData = encoder.encode(messageStr);
+              ws.send(binaryData);
+            } catch (err) {
+              console.error("Error sending initial ping:", err);
+            }
+          }
+        };
+
+        ws.onmessage = (event) => {
+          try {
+            if (event.data instanceof ArrayBuffer) {
+              const decoder = new TextDecoder("utf-8");
+              const messageStr = decoder.decode(event.data);
+              const message = JSON.parse(messageStr) as GameMessage;
+              console.log("Received message:", message);
+
+              // Handle RedirectToServer message
+              if (
+                typeof message === "object" &&
+                "RedirectToServer" in message
+              ) {
+                const { redirect_url, region } = message.RedirectToServer;
+                console.log(`Redirecting to server in region: ${region}`);
+                setIsRedirecting(true);
+                configRef.current.url = redirect_url;
+                cleanup();
+                connect(redirect_url);
+                return;
+              }
+
+              onMessage(message);
+            } else {
+              console.warn("Received non-binary message:", event.data);
+            }
+          } catch (err) {
+            console.error("Error parsing message:", err);
+          }
+        };
+
+        ws.onerror = (event) => {
+          clearTimeout(connectionTimeout);
+          console.error("WebSocket error:", event);
+        };
+
+        ws.onclose = (event) => {
+          clearTimeout(connectionTimeout);
           console.log(
-            `Scheduling reconnect in ${nextDelay}ms (attempt ${
-              reconnectAttemptsRef.current + 1
-            })`
+            `WebSocket closed with code ${event.code}, reason: ${event.reason}`
           );
+          isConnectingRef.current = false;
+          setIsConnected(false);
+          wsRef.current = null;
 
+          // Don't attempt to reconnect if we're in the middle of a redirect
+          if (!isRedirecting) {
+            if (
+              event.code !== 1000 &&
+              reconnectAttemptsRef.current < MAX_RETRIES
+            ) {
+              const nextDelay = getNextReconnectDelay();
+              console.log(
+                `Scheduling reconnect in ${nextDelay}ms (attempt ${
+                  reconnectAttemptsRef.current + 1
+                })`
+              );
+
+              reconnectTimeoutRef.current = setTimeout(() => {
+                reconnectAttemptsRef.current++;
+                connect();
+              }, nextDelay);
+            } else if (reconnectAttemptsRef.current >= MAX_RETRIES) {
+              console.log("Maximum reconnection attempts reached");
+              onError(
+                "Maximum reconnection attempts reached. Please refresh the page."
+              );
+            }
+          }
+        };
+      } catch (err) {
+        console.error("Connection error:", err);
+        isConnectingRef.current = false;
+        onError("Failed to connect to game server");
+        setIsConnected(false);
+
+        if (!isRedirecting && reconnectAttemptsRef.current < MAX_RETRIES) {
+          const nextDelay = getNextReconnectDelay();
           reconnectTimeoutRef.current = setTimeout(() => {
             reconnectAttemptsRef.current++;
             connect();
           }, nextDelay);
-        } else if (reconnectAttemptsRef.current >= MAX_RETRIES) {
-          console.log("Maximum reconnection attempts reached");
-          onError(
-            "Maximum reconnection attempts reached. Please refresh the page."
-          );
         }
-      };
-    } catch (err) {
-      console.error("Connection error:", err);
-      isConnectingRef.current = false;
-      onError("Failed to connect to game server");
-      setIsConnected(false);
-
-      if (reconnectAttemptsRef.current < MAX_RETRIES) {
-        const nextDelay = getNextReconnectDelay();
-        reconnectTimeoutRef.current = setTimeout(() => {
-          reconnectAttemptsRef.current++;
-          connect();
-        }, nextDelay);
       }
-    }
-  }, [cleanup, getNextReconnectDelay, onMessage, onError]); // Remove gameState from dependencies
+    },
+    [cleanup, getNextReconnectDelay, onMessage, onError]
+  );
 
   useEffect(() => {
     connect();
@@ -185,6 +238,11 @@ const useWebSocket = ({
       }
 
       try {
+        // Store Play requests for potential replay after redirect
+        if (typeof message === "object" && "Play" in message) {
+          configRef.current.lastPlayRequest = message;
+        }
+
         const messageStr = JSON.stringify(message);
         const encoder = new TextEncoder();
         const binaryData = encoder.encode(messageStr);
@@ -201,6 +259,7 @@ const useWebSocket = ({
   return {
     sendMessage,
     isConnected,
+    isRedirecting,
     reconnect: connect,
   };
 };

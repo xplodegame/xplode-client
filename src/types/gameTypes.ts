@@ -44,8 +44,9 @@ export type GameState =
   | { ABORTED: { game_id: string } };
 
 export type GameMessage =
-  | "Ping" // Changed to string literal type for unit variant
-  | "Pong" // Added Pong response type
+  | "Ping" // Unit variant for initial ping
+  | "Pong" // Unit variant for pong response
+  | { Ping: { game_id: string } } // Object variant for game-specific ping
   | {
       Play: {
         player_id: string;
@@ -60,4 +61,12 @@ export type GameMessage =
   | { GameUpdate: GameState }
   | { Error: string }
   | { Lock: { game_id: string; x: number; y: number } }
-  | { LockComplete: { game_id: string } };
+  | { LockComplete: { game_id: string } }
+  | {
+      RedirectToServer: {
+        game_id: string;
+        server_id: string;
+        region: string;
+        redirect_url: string;
+      };
+    };
