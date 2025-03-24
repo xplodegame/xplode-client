@@ -27,7 +27,8 @@ interface MultiplayerGameProps {
 
 const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
   const [gameState, setGameState] = useState<GameState | null>(null);
-  const [movesPlayed, setMovesPlayed] = useState<number>(0);
+  // const [movesPlayed, setMovesPlayed] = useState<number>(0);
+  const [, setTurnCount] = useState<number>(0);
   const [error, setError] = useState<string>('');
   const [betAmount, setBetAmount] = useState<number>(0);
   const [revealedCells, setRevealedCells] = useState<Set<string>>(new Set());
@@ -102,11 +103,15 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
           }
 
           moveTimeoutRef.current = window.setTimeout(() => {
-            sendMessage({
-              Stop: {
-                game_id: newGameState.RUNNING.game_id,
-                abort: movesPlayed === 0,
-              },
+            setTurnCount((prevCount) => {
+              const abort = prevCount === 0;
+              sendMessage({
+                Stop: {
+                  game_id: newGameState.RUNNING.game_id,
+                  abort,
+                },
+              });
+              return prevCount;
             });
           }, MOVE_TIMEOUT);
 
@@ -246,7 +251,7 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
     } else {
         gemSound.current.play().catch(() => {});
     }
-    setMovesPlayed(prev => prev + 1);
+    setTurnCount(prev => prev + 1);
     setIsLockPhase(true);
     setLocksRemaining(MAX_LOCKS);
     setCurrentPlayerLockedCells(new Set());
@@ -306,7 +311,7 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
     setBetAmount(0);
     setMoveEndTime(0);
     setLockEndTime(0);
-    setMovesPlayed(0);
+    setTurnCount(0);
   }, []);
 
   const playGame = useCallback((gridSize: number, bombs: number, minPlayers: number) => {
