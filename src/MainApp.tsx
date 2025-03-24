@@ -78,7 +78,7 @@ const MainApp: React.FC = () => {
 
   useEffect(() => {
     const fetchUserData = async () => {
-      console.log("authentication check:", authenticated);
+      // console.log("authentication check:", authenticated);
       
       if (!authenticated || !user) {
         setIsLoading(false);

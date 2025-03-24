@@ -6,6 +6,7 @@ import GameBoard from '../../components/GameComponents/GameBoard/GameBoard';
 import GameStatus from '../../components/GameComponents/GameStatus/GameStatus';
 import LobbyDetails from '../../components/GameComponents/LobbyDetails/LobbyDetails';
 import CountdownTimer from '../../components/GameComponents/CountdownTimer/CountdownTimer';
+import MatchmakingAnimation from '../../components/GameComponents/MatchmakingAnimation/MatchmakingAnimation'
 import { GameState, GameMessage } from '../../types/gameTypes';
 import { useWalletStore } from '../../stores/walletStore';
 
@@ -53,7 +54,13 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
     userDataRef.current = userData;
   }, [userData]);
 
-  console.log("Outside userDataRef: ", userDataRef.current);
+  // console.log("Outside userDataRef: ", userDataRef.current);
+
+  const [matchmakingParams, setMatchmakingParams] = useState<{
+    gridSize: number;
+    bombs: number;
+    betAmount: number;
+  } | null>(null);
   
 
   const handleGameMessage = useCallback((message: GameMessage) => {
@@ -68,6 +75,11 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
     if ('GameUpdate' in message) {
       const newGameState = message.GameUpdate;
       setGameState(newGameState ?? null);
+      
+      // Clear matchmaking parameters when game state changes from WAITING
+      if (newGameState && ('RUNNING' in newGameState || 'FINISHED' in newGameState)) {
+        setMatchmakingParams(null);
+      }
       
       if (newGameState) {
         if (moveTimeoutRef.current) {
@@ -297,15 +309,18 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
     setMovesPlayed(0);
   }, []);
 
-  const playGame = useCallback((grid: number, bombs: number, minPlayers: number) => {
+  const playGame = useCallback((gridSize: number, bombs: number, minPlayers: number) => {
     if (!userData?.id) return;
     resetGameState();
   
+    // Store matchmaking parameters
+    setMatchmakingParams({ gridSize, bombs, betAmount });
+
     sendMessage({
       Play: {
         player_id: userData.id.toString(),
         single_bet_size: betAmount,
-        grid,
+        grid: gridSize,
         bombs,
         min_players: minPlayers
       },
@@ -314,6 +329,16 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
 
   return (
     <div className="relative flex flex-col items-center justify-center min-h-screen bg-gradient-to-b from-zinc-900 to-black text-white p-4">
+
+      {/* Matchmaking overlay */}
+      {matchmakingParams && (
+        <MatchmakingAnimation 
+          gridSize={matchmakingParams.gridSize}
+          bombs={matchmakingParams.bombs}
+          betAmount={matchmakingParams.betAmount}
+        />
+      )}
+
       {ParticlesComponent}
       
       <div className="relative w-full max-w-md z-10">

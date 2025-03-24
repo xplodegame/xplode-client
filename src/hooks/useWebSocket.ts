@@ -87,7 +87,7 @@ const useWebSocket = ({
 
         ws.onopen = () => {
           clearTimeout(connectionTimeout);
-          console.log("WebSocket connected to:", wsUrl);
+          // console.log("WebSocket connected to:", wsUrl);
           isConnectingRef.current = false;
           setIsConnected(true);
           setIsRedirecting(false);
