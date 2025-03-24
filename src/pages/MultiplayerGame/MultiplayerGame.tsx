@@ -46,6 +46,16 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
 
   const ParticlesComponent = useParticles();
 
+  const userDataRef = useRef(userData);
+
+  // Add effect to update userDataRef when userData changes
+  useEffect(() => {
+    userDataRef.current = userData;
+  }, [userData]);
+
+  console.log("Outside userDataRef: ", userDataRef.current);
+  
+
   const handleGameMessage = useCallback((message: GameMessage) => {
     if (typeof message === "string") {
       if (message === "Pong") {
@@ -65,8 +75,13 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
         }
   
         if ('RUNNING' in newGameState) {
+
+          const currentUserData = userDataRef.current;
+
           const currentPlayer = newGameState.RUNNING.players[newGameState.RUNNING.turn_idx];
-          const isCurrentPlayerTurn = currentPlayer.id === userData?.id?.toString();
+          const isCurrentPlayerTurn = currentPlayer.id === currentUserData?.id?.toString();
+          console.log("isCurrentPlayerTurn: ", isCurrentPlayerTurn);
+          console.log("inside currentUserData: ", currentUserData);
           
           if (isCurrentPlayerTurn) {
             setMoveEndTime(Date.now() + MOVE_TIMEOUT);
@@ -140,11 +155,12 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
 
           // Create a separate async function for the API call
           const updateUserBalance = async () => {
+            const currentUserData = userDataRef.current;
             try {
               const newUserData = {
-                privy_id: userData?.privy_id,
-                email: userData?.email,
-                name: userData?.name || '',
+                privy_id: currentUserData?.privy_id,
+                email: currentUserData?.email,
+                name: currentUserData?.name || '',
               };
 
               const userDetailsResponse = await fetch(import.meta.env.VITE_USER_DETAILS_ENDPOINT_URL, {
