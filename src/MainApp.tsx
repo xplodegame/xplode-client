@@ -87,16 +87,6 @@ const MainApp: React.FC = () => {
 
       // console.log("##############: ", wallets)
   
-      // Wait until a wallet is available
-      if (wallets.length === 0) {
-        console.log("No wallet found, waiting...");
-        return;
-      }
-  
-      const wallet = wallets[0]; // Re-fetch the first wallet
-      
-      console.log("Wallet detected:", wallet?.address);
-  
       try {
         const newUserData = {
           privy_id: user.id,
@@ -148,6 +138,15 @@ const MainApp: React.FC = () => {
         setUserData(updatedUserData);
   
         console.log('Updated user data:', updatedUserData);
+
+        if (wallets.length === 0) {
+          console.log("No wallet found, waiting...");
+          return;
+        }
+    
+        const wallet = wallets[0]; // Re-fetch the first wallet
+        
+        console.log("Wallet detected:", wallet?.address);
       } catch (error) {
         console.error('Failed to fetch user data:', error);
       } finally {
