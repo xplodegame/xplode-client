@@ -16,6 +16,7 @@ interface WebSocketHookProps {
 interface WebSocketConfig {
   url: string;
   lastPlayRequest?: GameMessage;
+  instanceId?: string;
 }
 
 const useWebSocket = ({
@@ -31,6 +32,7 @@ const useWebSocket = ({
   const configRef = useRef<WebSocketConfig>({
     url: import.meta.env.VITE_WEBSOCKET_URL,
     lastPlayRequest: undefined,
+    instanceId: undefined,
   });
   const [isConnected, setIsConnected] = useState(false);
   const [isRedirecting, setIsRedirecting] = useState(false);
@@ -47,7 +49,7 @@ const useWebSocket = ({
     return Math.min(delay, MAX_RECONNECT_DELAY);
   }, []);
 
-  const cleanup = useCallback(() => {
+  const cleanup = useCallback((skipCookieClear: boolean = false) => {
     if (reconnectTimeoutRef.current) {
       clearTimeout(reconnectTimeoutRef.current);
       reconnectTimeoutRef.current = undefined;
@@ -57,10 +59,15 @@ const useWebSocket = ({
       wsRef.current = null;
     }
     isConnectingRef.current = false;
+
+    // Only clear the cookie if not skipping
+    if (!skipCookieClear) {
+      document.cookie = "fly-machine-id=; max-age=0; path=/";
+    }
   }, []);
 
   const connect = useCallback(
-    (url?: string) => {
+    (url?: string, instanceId?: string) => {
       if (
         isConnectingRef.current ||
         wsRef.current?.readyState === WebSocket.OPEN ||
@@ -75,9 +82,16 @@ const useWebSocket = ({
       try {
         // Use provided URL or fallback to current config URL
         const wsUrl = url || configRef.current.url;
+
+        // Create WebSocket connection
         const ws = new WebSocket(wsUrl);
         wsRef.current = ws;
         ws.binaryType = "arraybuffer";
+
+        // Store instance ID in config
+        if (instanceId) {
+          configRef.current.instanceId = instanceId;
+        }
 
         const connectionTimeout = setTimeout(() => {
           if (ws.readyState !== WebSocket.OPEN) {
@@ -149,12 +163,22 @@ const useWebSocket = ({
                 typeof message === "object" &&
                 "RedirectToServer" in message
               ) {
-                const { redirect_url, region } = message.RedirectToServer;
-                console.log(`Redirecting to server in region: ${region}`);
+                const { game_id, machine_id } = message.RedirectToServer;
+                console.log(
+                  `Redirecting to server, game_id: ${game_id}, with machine_id: ${machine_id}`
+                );
                 setIsRedirecting(true);
-                configRef.current.url = redirect_url;
-                cleanup();
-                connect(redirect_url);
+                configRef.current.url = import.meta.env.VITE_WEBSOCKET_URL;
+
+                // Set the fly-machine-id cookie when we receive a RedirectToServer message
+                if (machine_id) {
+                  const maxAge = 6 * 24 * 60 * 60 * 1000; // 6 days
+                  document.cookie = `fly-machine-id=${machine_id}; max-age=${maxAge}; path=/`;
+                }
+
+                // Cleanup without clearing the cookie
+                cleanup(true);
+                connect(import.meta.env.VITE_WEBSOCKET_URL);
                 return;
               }
 

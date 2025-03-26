@@ -65,8 +65,6 @@ export type GameMessage =
   | {
       RedirectToServer: {
         game_id: string;
-        server_id: string;
-        region: string;
-        redirect_url: string;
+        machine_id: string;
       };
     };
