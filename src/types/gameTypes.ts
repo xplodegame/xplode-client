@@ -56,6 +56,12 @@ export type GameMessage =
         grid: number;
       };
     }
+  | {
+      Join: {
+        player_id: string;
+        game_id: string;
+      };
+    }
   | { MakeMove: { game_id: string; x: number; y: number } }
   | { Stop: { game_id: string; abort: boolean } }
   | { GameUpdate: GameState }

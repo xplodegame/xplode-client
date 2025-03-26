@@ -175,6 +175,21 @@ const useWebSocket = ({
                   const maxAge = 6 * 24 * 60 * 60 * 1000; // 6 days
                   document.cookie = `fly-machine-id=${machine_id}; max-age=${maxAge}; path=/`;
                 }
+                // Extract player_id from the lastPlayRequest
+
+                if (
+                  typeof configRef.current.lastPlayRequest === "object" &&
+                  "Play" in configRef.current.lastPlayRequest
+                ) {
+                  const playerId =
+                    configRef.current.lastPlayRequest?.Play?.player_id;
+                  configRef.current.lastPlayRequest = {
+                    Join: {
+                      player_id: playerId,
+                      game_id: game_id,
+                    },
+                  };
+                }
 
                 // Cleanup without clearing the cookie
                 cleanup(true);

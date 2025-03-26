@@ -10,7 +10,7 @@ import MatchmakingAnimation from '../../components/GameComponents/MatchmakingAni
 import { GameState, GameMessage } from '../../types/gameTypes';
 import { useWalletStore } from '../../stores/walletStore';
 
-const MOVE_TIMEOUT = 60000; // 30 seconds
+const MOVE_TIMEOUT = 30000; // 30 seconds
 const LOCK_PHASE_TIMEOUT = 10000; // 30 seconds
 
 interface MultiplayerGameProps {
