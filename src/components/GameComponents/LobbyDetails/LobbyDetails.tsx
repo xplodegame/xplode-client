@@ -139,7 +139,7 @@ const LobbyDetails: React.FC<LobbyDetailsProps> = ({
           <div>
             <div className="flex items-center gap-2 text-emerald-400/80 text-sm mb-3">
               <Users className="w-4 h-4" />
-              <h3 className="font-medium tracking-wider">MINIMUM PLAYERS</h3>
+              <h3 className="font-medium tracking-wider">TOTAL PLAYERS</h3>
             </div>
             <div className="grid grid-cols-4 sm:grid-cols-7 gap-2">
               {Array.from({ length: 7 }, (_, i) => i + 2).map(players => (
