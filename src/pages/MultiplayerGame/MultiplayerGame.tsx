@@ -403,6 +403,7 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
       Play: {
         player_id: userData.id.toString(),
         single_bet_size: betAmount,
+        name: userData.name.toString(),
         grid: gridSize,
         bombs,
         min_players: minPlayers

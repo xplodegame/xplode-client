@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import { usePrivy } from '@privy-io/react-auth';
 import Navbar from './components/Navbar/Navbar';
+import SingleplayerGame from './pages/SinglePlayerGame/SingleplayerGame';
 import MultiplayerGame from './pages/MultiplayerGame/MultiplayerGame';
 import Leaderboard from './pages/Leaderboard/Leaderboard';
 import CosmicUsernameModal from './components/GameComponents/CosmicUsernameModal/CosmicUsernameModal';
@@ -59,6 +60,38 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   return authenticated ? children : <Navigate to="/" replace />;
 };
 
+// Wrapper component for checking username before accessing protected content
+const UsernameRequiredWrapper = ({ 
+  children,
+  userData,
+  isUsernameModalOpen,
+  setIsUsernameModalOpen,
+  handleUsernameSet
+}: { 
+  children: React.ReactNode,
+  userData?: UserData,
+  isUsernameModalOpen: boolean,
+  setIsUsernameModalOpen: (isOpen: boolean) => void,
+  handleUsernameSet: (username: string) => Promise<void>
+}) => {
+  // Check if username is required
+  useEffect(() => {
+    if (userData && !userData.name) {
+      setIsUsernameModalOpen(true);
+    }
+  }, [userData, setIsUsernameModalOpen]);
+  
+  return (
+    <>
+      <CosmicUsernameModal 
+        isOpen={isUsernameModalOpen}
+        onUsernameSet={handleUsernameSet}
+      />
+      {children}
+    </>
+  );
+};
+
 const MainApp: React.FC = () => {
   const { authenticated, user } = usePrivy();
   const [userData, setUserData] = useState<UserData | undefined>();
@@ -81,14 +114,14 @@ const MainApp: React.FC = () => {
         setIsLoading(false);
         return;
       }
-
+  
       try {
         const newUserData = {
           privy_id: user.id,
           email: "exampl@gmail.com",
           name: "", // Start with empty name
         };
-
+  
         const userDetailsResponse = await fetch(import.meta.env.VITE_USER_DETAILS_ENDPOINT_URL, {
           method: 'POST',
           headers: {
@@ -96,33 +129,33 @@ const MainApp: React.FC = () => {
           },
           body: JSON.stringify(newUserData),
         });
-
+  
         if (!userDetailsResponse.ok) {
           throw new Error(`HTTP error! status: ${userDetailsResponse.status}`);
         }
-
+  
         const userDetailsData = await userDetailsResponse.json();
-        // console.log("userDetailsData #######:", userDetailsData);
-
+        console.log("userDetailsData #######:", userDetailsData);
+  
         if (typeof userDetailsData.balance !== 'number') {
           console.error('Invalid balance received:', userDetailsData.balance);
           throw new Error('Invalid balance received from server');
         }
-
+  
         setBalance(userDetailsData.balance);
-
-        const updatedUserData: UserData = {
+  
+        const updatedUserData = {
           ...newUserData,
-          id: userDetailsData.user_id, // Using user_id from the response instead of id
+          id: userDetailsData.id, // Use user_id from response
           wallet_balance: userDetailsData.balance,
           deposit_address: userDetailsData.wallet_address || "",
-          name: userDetailsData.name || ""
+          name: userDetailsData.name || "" 
         };
 
         // Store userData in localStorage for persistence
         localStorage.setItem('userData', JSON.stringify(updatedUserData));
         setUserData(updatedUserData);
-
+  
         console.log('Updated user data:', updatedUserData);
 
         if (wallets.length > 0) {
@@ -134,7 +167,7 @@ const MainApp: React.FC = () => {
         setIsLoading(false);
       }
     };
-
+  
     fetchUserData();
   }, [authenticated, user, wallets, setBalance]);
 
@@ -153,9 +186,7 @@ const MainApp: React.FC = () => {
         wallet_address: undefined // Optional field
       };
       
-      // Log for debugging
       console.log("Updating user with ID:", userData.id);
-      console.log("Update request:", updateRequest);
       
       // Build the URL with the user_id
       const updateUrl = `${import.meta.env.VITE_USER_DETAILS_ENDPOINT_URL}/${userData.id}`;
@@ -169,7 +200,7 @@ const MainApp: React.FC = () => {
         body: JSON.stringify(updateRequest),
       });
       
-      // First get the response as text for debugging
+      // Get response as text first for debugging
       const responseText = await updateResponse.text();
       console.log("Raw response:", responseText);
       
@@ -190,34 +221,7 @@ const MainApp: React.FC = () => {
       console.log('Username set successfully:', username);
     } catch (error) {
       console.error('Failed to update username:', error);
-      // Keep modal open when there's an error
     }
-  };
-
-  // Check for empty username when route changes
-  const checkUsernameRequired = (Component: React.ComponentType<any>, props: any) => {
-    // If user is not authenticated or still loading, don't check username
-    if (!authenticated || isLoading) {
-      return <Component {...props} />;
-    }
-    
-    // Show modal if no username is set
-    const shouldShowModal = userData && !userData.name;
-    if (shouldShowModal && !isUsernameModalOpen) {
-      setIsUsernameModalOpen(true);
-    }
-    
-    return (
-      <>
-        {shouldShowModal && (
-          <CosmicUsernameModal 
-            isOpen={isUsernameModalOpen}
-            onUsernameSet={handleUsernameSet}
-          />
-        )}
-        <Component {...props} />
-      </>
-    );
   };
 
   if (isLoading) {
@@ -240,10 +244,32 @@ const MainApp: React.FC = () => {
               <Routes>
                 <Route path="/" element={<Home />} />
                 <Route
+                  path="/singleplayer"
+                  element={
+                    <ProtectedRoute>
+                      <UsernameRequiredWrapper
+                        userData={userData}
+                        isUsernameModalOpen={isUsernameModalOpen}
+                        setIsUsernameModalOpen={setIsUsernameModalOpen}
+                        handleUsernameSet={handleUsernameSet}
+                      >
+                        <SingleplayerGame />
+                      </UsernameRequiredWrapper>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
                   path="/multiplayer"
                   element={
                     <ProtectedRoute>
-                      {checkUsernameRequired(MultiplayerGame, { userData })}
+                      <UsernameRequiredWrapper
+                        userData={userData}
+                        isUsernameModalOpen={isUsernameModalOpen}
+                        setIsUsernameModalOpen={setIsUsernameModalOpen}
+                        handleUsernameSet={handleUsernameSet}
+                      >
+                        <MultiplayerGame userData={userData} />
+                      </UsernameRequiredWrapper>
                     </ProtectedRoute>
                   }
                 />
@@ -251,7 +277,14 @@ const MainApp: React.FC = () => {
                   path="/leaderboard"
                   element={
                     <ProtectedRoute>
-                      {checkUsernameRequired(Leaderboard, {})}
+                      <UsernameRequiredWrapper
+                        userData={userData}
+                        isUsernameModalOpen={isUsernameModalOpen}
+                        setIsUsernameModalOpen={setIsUsernameModalOpen}
+                        handleUsernameSet={handleUsernameSet}
+                      >
+                        <Leaderboard />
+                      </UsernameRequiredWrapper>
                     </ProtectedRoute>
                   }
                 />

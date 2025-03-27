@@ -50,6 +50,7 @@ export type GameMessage =
   | {
       Play: {
         player_id: string;
+        name: string;
         single_bet_size: number;
         min_players: number;
         bombs: number;
