@@ -10,8 +10,8 @@ import MatchmakingAnimation from '../../components/GameComponents/MatchmakingAni
 import { GameState, GameMessage } from '../../types/gameTypes';
 import { useWalletStore } from '../../stores/walletStore';
 
-const MOVE_TIMEOUT = 60000; // 60 seconds
-const LOCK_PHASE_TIMEOUT = 10000; // 10 seconds
+const MOVE_TIMEOUT = 10000; // 10 seconds
+const LOCK_PHASE_TIMEOUT = 8000; // 8 seconds
 
 interface MultiplayerGameProps {
   userData?: { 
@@ -261,6 +261,7 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
 
               // Update the global store
               setBalance(userDetailsData.balance);
+              console.log("Balance update of the user after the game is finished: ", userDetailsData)
             } catch (error) {
               console.error('Failed to update user balance:', error);
             }
