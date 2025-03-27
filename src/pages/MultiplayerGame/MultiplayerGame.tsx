@@ -33,6 +33,7 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
   const [lockedCells, setLockedCells] = useState<Set<string>>(new Set());
   const [isLockPhase, setIsLockPhase] = useState<boolean>(false);
   const [locksRemaining, setLocksRemaining] = useState<number>(0);
+  const [totalGameLocksUsed, setTotalGameLocksUsed] = useState<number>(0);
   const previousTurnIdxRef = useRef<number>(-1);
   const [currentPlayerLockedCells, setCurrentPlayerLockedCells] = useState<Set<string>>(new Set());
   const [moveEndTime, setMoveEndTime] = useState<number>(0);
@@ -42,6 +43,7 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
   const moveTimeoutRef = useRef<number>();
   const lockTimeoutRef = useRef<number>();
   const locksRemainingRef = useRef<number>(0);
+  const totalGameLocksUsedRef = useRef<number>(0);
   const lastRevealedCountRef = useRef<number>(0);
 
   const gemSound = useRef(new Audio('/assets/sounds/gemSound.mp3'));
@@ -84,9 +86,11 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
   
     const board = gameState.RUNNING.board;
     const gridSize = board.grid.length;
-    const maxPossibleLocks = gridSize * 2;
     
-    // Count unopened cells
+    // Calculate the theoretical maximum locks for the entire game
+    const totalGameMaxLocks = Math.floor(gridSize * (gridSize + 1) / 2);
+    
+    // Count unopened cells to ensure we leave at least one for the next player
     let unopenedCells = 0;
     board.grid.forEach((row) => {
       row.forEach((cell) => {
@@ -96,14 +100,20 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
       });
     });
   
-    let calculatedLocks;
-    if (unopenedCells > maxPossibleLocks + 1) {
-      calculatedLocks = maxPossibleLocks;
+    // Calculate the remaining locks available for the game
+    const remainingGameLocks = Math.max(0, totalGameMaxLocks - totalGameLocksUsedRef.current);
+    
+    // Calculate the maximum locks allowed for this turn
+    let availableLocks;
+    if (unopenedCells > remainingGameLocks + 1) {
+      // If we have plenty of unopened cells, use the remaining game locks
+      availableLocks = remainingGameLocks;
     } else {
-      calculatedLocks = Math.max(0, unopenedCells - 2); // Ensure non-negative
+      // If cells are running low, ensure we leave at least 2 cells (1 for next move + buffer)
+      availableLocks = Math.max(0, unopenedCells - 2);
     }
-  
-    return calculatedLocks;
+    
+    return availableLocks;
   }, []);
   
 
@@ -351,9 +361,13 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
       return;
     }
 
-    // Decrement locks
+    // Decrement locks for this turn
     locksRemainingRef.current -= 1;
     setLocksRemaining(locksRemainingRef.current);
+
+    // Increment total game locks used
+    totalGameLocksUsedRef.current += 1;
+    setTotalGameLocksUsed(totalGameLocksUsedRef.current);
 
     // Update locked cells
     setCurrentPlayerLockedCells(prev => {
@@ -405,6 +419,8 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
     setMoveEndTime(0);
     setLockEndTime(0);
     setTurnCount(0);
+    setTotalGameLocksUsed(0);
+    totalGameLocksUsedRef.current = 0;
     lastRevealedCountRef.current = 0;
   }, []);
 
