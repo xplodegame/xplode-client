@@ -27,7 +27,7 @@ const GameStatus: React.FC<GameStatusProps> = ({ gameState, userData, isLockPhas
     const isMyTurn = gameState.RUNNING.players[gameState.RUNNING.turn_idx].id === userData.id?.toString();
     return (
       <div className="text-xl mb-4">
-        {isMyTurn ? (
+        {/* {isMyTurn ? (
           <div className="space-y-2">
             <span className="text-green-400 block">Your turn!</span>
             {isLockPhase && (
@@ -38,7 +38,7 @@ const GameStatus: React.FC<GameStatusProps> = ({ gameState, userData, isLockPhas
           </div>
         ) : (
           <span className="text-yellow-400">Opponent's turn</span>
-        )}
+        )} */}
       </div>
     );
   }

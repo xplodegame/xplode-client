@@ -5,13 +5,13 @@ import { useParticles } from '../../components/GameComponents/Background/GameBac
 import GameBoard from '../../components/GameComponents/GameBoard/GameBoard';
 import GameStatus from '../../components/GameComponents/GameStatus/GameStatus';
 import LobbyDetails from '../../components/GameComponents/LobbyDetails/LobbyDetails';
-import CountdownTimer from '../../components/GameComponents/CountdownTimer/CountdownTimer';
+import EnhancedTurnIndicator from '../../components/GameComponents/EnhancedTurnIndicator/EnhancedTurnIndicator';
 import MatchmakingAnimation from '../../components/GameComponents/MatchmakingAnimation/MatchmakingAnimation'
 import { GameState, GameMessage } from '../../types/gameTypes';
 import { useWalletStore } from '../../stores/walletStore';
 
-const MOVE_TIMEOUT = 30000; // 30 seconds
-const LOCK_PHASE_TIMEOUT = 10000; // 30 seconds
+const MOVE_TIMEOUT = 10000; // 10 seconds
+const LOCK_PHASE_TIMEOUT = 8000; // 8 seconds
 
 interface MultiplayerGameProps {
   userData?: { 
@@ -33,6 +33,7 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
   const [lockedCells, setLockedCells] = useState<Set<string>>(new Set());
   const [isLockPhase, setIsLockPhase] = useState<boolean>(false);
   const [locksRemaining, setLocksRemaining] = useState<number>(0);
+  const [totalGameLocksUsed, setTotalGameLocksUsed] = useState<number>(0);
   const previousTurnIdxRef = useRef<number>(-1);
   const [currentPlayerLockedCells, setCurrentPlayerLockedCells] = useState<Set<string>>(new Set());
   const [moveEndTime, setMoveEndTime] = useState<number>(0);
@@ -42,6 +43,8 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
   const moveTimeoutRef = useRef<number>();
   const lockTimeoutRef = useRef<number>();
   const locksRemainingRef = useRef<number>(0);
+  const totalGameLocksUsedRef = useRef<number>(0);
+  const lastRevealedCountRef = useRef<number>(0);
 
   const gemSound = useRef(new Audio('/assets/sounds/gemSound.mp3'));
   const bombSound = useRef(new Audio('/assets/sounds/bombSound.mp3'));
@@ -61,6 +64,20 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
     betAmount: number;
   } | null>(null);
 
+  // Helper function to count revealed cells
+  const countRevealedCells = useCallback((board: any) => {
+    if (!board || !board.grid) return 0;
+    let count = 0;
+    board.grid.forEach((row: any) => {
+      row.forEach((cell: any) => {
+        if (cell === 'Mined' || cell === 'Revealed') {
+          count++;
+        }
+      });
+    });
+    return count;
+  }, []);
+
   const calculateMaxLocks = useCallback((gameState: GameState) => {
     if (!('RUNNING' in gameState)) {
       console.error('Cannot calculate locks: Not in RUNNING state');
@@ -69,9 +86,11 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
   
     const board = gameState.RUNNING.board;
     const gridSize = board.grid.length;
-    const maxPossibleLocks = gridSize * 2;
     
-    // Count unopened cells
+    // Calculate the theoretical maximum locks for the entire game
+    const totalGameMaxLocks = Math.floor(gridSize * (gridSize + 1) / 2);
+    
+    // Count unopened cells to ensure we leave at least one for the next player
     let unopenedCells = 0;
     board.grid.forEach((row) => {
       row.forEach((cell) => {
@@ -81,22 +100,20 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
       });
     });
   
-    let calculatedLocks;
-    if (unopenedCells > maxPossibleLocks + 1) {
-      calculatedLocks = maxPossibleLocks;
+    // Calculate the remaining locks available for the game
+    const remainingGameLocks = Math.max(0, totalGameMaxLocks - totalGameLocksUsedRef.current);
+    
+    // Calculate the maximum locks allowed for this turn
+    let availableLocks;
+    if (unopenedCells > remainingGameLocks + 1) {
+      // If we have plenty of unopened cells, use the remaining game locks
+      availableLocks = remainingGameLocks;
     } else {
-      calculatedLocks = Math.max(0, unopenedCells - 2); // Ensure non-negative
+      // If cells are running low, ensure we leave at least 2 cells (1 for next move + buffer)
+      availableLocks = Math.max(0, unopenedCells - 2);
     }
-  
-    // console.group('Lock Calculation Debug');
-    // console.log(`Grid Size: ${gridSize}`);
-    // console.log(`Total Cells: ${gridSize * gridSize}`);
-    // console.log(`Unopened Cells: ${unopenedCells}`);
-    // console.log(`Max Possible Locks: ${maxPossibleLocks}`);
-    // console.log(`Calculated Locks: ${calculatedLocks}`);
-    // console.groupEnd();
-  
-    return calculatedLocks;
+    
+    return availableLocks;
   }, []);
   
 
@@ -129,33 +146,54 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
           const currentPlayer = newGameState.RUNNING.players[currentTurnIdx];
           const isCurrentPlayerTurn = currentPlayer.id === currentUserData?.id?.toString();
 
-          if (isCurrentPlayerTurn) {
-            // Recalculate max locks ONLY if the turn has changed
-            if (previousTurnIdxRef.current !== currentTurnIdx) {
+          // Check if turn has changed
+          if (previousTurnIdxRef.current !== currentTurnIdx) {
+            // For all players: set move timer and exit lock phase
+            setMoveEndTime(Date.now() + MOVE_TIMEOUT);
+            setIsLockPhase(false);
+            
+            // Only reset locks for the current player
+            if (isCurrentPlayerTurn) {
               const maxLocks = calculateMaxLocks(newGameState);
               locksRemainingRef.current = maxLocks;
               setLocksRemaining(maxLocks);
-              previousTurnIdxRef.current = currentTurnIdx; // Update ref
+            } else {
+              // Just reset the player's local locked cells
+              setCurrentPlayerLockedCells(new Set());
             }
+            
+            // Update turn reference
+            previousTurnIdxRef.current = currentTurnIdx;
+          }
 
-            setMoveEndTime(Date.now() + MOVE_TIMEOUT);
-          } else {
-            setMoveEndTime(0);
-            previousTurnIdxRef.current = -1; // Reset for non-current players
-          }        
+          // Detect if a move was just made by checking revealed cells
+          const currentRevealedCount = countRevealedCells(newGameState.RUNNING.board);
+          
+          if (currentRevealedCount > lastRevealedCountRef.current && 
+              previousTurnIdxRef.current === currentTurnIdx) {
+            // A move was made without turn change - entering lock phase
+            setIsLockPhase(true);
+            setLockEndTime(Date.now() + LOCK_PHASE_TIMEOUT);
+          }
+          
+          // Update our reference of revealed cell count
+          lastRevealedCountRef.current = currentRevealedCount;
 
-          moveTimeoutRef.current = window.setTimeout(() => {
-            setTurnCount((prevCount) => {
-              const abort = prevCount === 0;
-              sendMessage({
-                Stop: {
-                  game_id: newGameState.RUNNING.game_id,
-                  abort,
-                },
+          // Set move timeout only for the current player
+          if (isCurrentPlayerTurn) {
+            moveTimeoutRef.current = window.setTimeout(() => {
+              setTurnCount((prevCount) => {
+                const abort = prevCount === 0;
+                sendMessage({
+                  Stop: {
+                    game_id: newGameState.RUNNING.game_id,
+                    abort,
+                  },
+                });
+                return prevCount;
               });
-              return prevCount;
-            });
-          }, MOVE_TIMEOUT);
+            }, MOVE_TIMEOUT);
+          }
 
           // Update locked cells
           const newLockedCells = new Set<string>();
@@ -178,14 +216,10 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
           });
           setRevealedCells(newRevealedCells);
 
-          // Reset lock phase for non-current players
-          if (!isCurrentPlayerTurn) {
-            setIsLockPhase(false);
-            setCurrentPlayerLockedCells(new Set());
-            setLockEndTime(0);
-            if (lockTimeoutRef.current) {
-              clearTimeout(lockTimeoutRef.current);
-            }
+          // Only clear timeouts for non-current players
+          if (!isCurrentPlayerTurn && lockTimeoutRef.current) {
+            clearTimeout(lockTimeoutRef.current);
+            lockTimeoutRef.current = undefined;
           }
         } else if ('WAITING' in newGameState) {
           moveTimeoutRef.current = window.setTimeout(() => {
@@ -237,6 +271,7 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
 
               // Update the global store
               setBalance(userDetailsData.balance);
+              console.log("Balance update of the user after the game is finished: ", userDetailsData)
             } catch (error) {
               console.error('Failed to update user balance:', error);
             }
@@ -249,7 +284,7 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
     } else if ('Error' in message) {
       setError(typeof message.Error === 'string' ? message.Error : 'An error occurred');
     }
-  }, [calculateMaxLocks]);
+  }, [calculateMaxLocks, countRevealedCells]);
 
   const { sendMessage, isConnected, isRedirecting } = useWebSocket({
     onMessage: handleGameMessage,
@@ -303,8 +338,6 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
           game_id: gameState.RUNNING.game_id,
         },
       });
-      setIsLockPhase(false);
-      setLockEndTime(0);
     }, LOCK_PHASE_TIMEOUT);
   }, [gameState, sendMessage]);
 
@@ -328,14 +361,13 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
       return;
     }
 
-    // Decrement locks
+    // Decrement locks for this turn
     locksRemainingRef.current -= 1;
     setLocksRemaining(locksRemainingRef.current);
 
-    // console.group('Lock Action Debug');
-    // console.log(`Locking cell: ${cellKey}`);
-    // console.log(`Locks remaining: ${locksRemainingRef.current}`);
-    // console.groupEnd();
+    // Increment total game locks used
+    totalGameLocksUsedRef.current += 1;
+    setTotalGameLocksUsed(totalGameLocksUsedRef.current);
 
     // Update locked cells
     setCurrentPlayerLockedCells(prev => {
@@ -358,8 +390,6 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
 
     // Check if lock phase should complete
     if (locksRemainingRef.current === 0) {
-      // console.log('Lock phase completed - no more locks');
-      
       // Clear lock timeout
       if (lockTimeoutRef.current) {
         clearTimeout(lockTimeoutRef.current);
@@ -383,13 +413,15 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
     setRevealedCells(new Set());
     setLockedCells(new Set());
     setIsLockPhase(false);
-    // setLocksRemaining(MAX_LOCKS);
     setCurrentPlayerLockedCells(new Set());
     setError('');
     setBetAmount(0);
     setMoveEndTime(0);
     setLockEndTime(0);
     setTurnCount(0);
+    setTotalGameLocksUsed(0);
+    totalGameLocksUsedRef.current = 0;
+    lastRevealedCountRef.current = 0;
   }, []);
 
   const playGame = useCallback((gridSize: number, bombs: number, minPlayers: number) => {
@@ -403,6 +435,7 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
       Play: {
         player_id: userData.id.toString(),
         single_bet_size: betAmount,
+        name: userData.name.toString(),
         grid: gridSize,
         bombs,
         min_players: minPlayers
@@ -443,18 +476,13 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
         )}
 
         {gameState && 'RUNNING' in gameState && (
-          <div className="mb-4 flex justify-center space-x-4">
-            <CountdownTimer
-              endTime={moveEndTime}
-              isActive={moveEndTime > 0 && !isLockPhase}
-              className="text-yellow-400"
-            />
-            <CountdownTimer
-              endTime={lockEndTime}
-              isActive={isLockPhase && lockEndTime > 0}
-              className="text-emerald-400"
-            />
-          </div>
+          <EnhancedTurnIndicator 
+            gameState={gameState}
+            userData={userData}
+            isLockPhase={isLockPhase}
+            moveEndTime={moveEndTime}
+            lockEndTime={lockEndTime}
+          />
         )}
 
         <GameStatus 

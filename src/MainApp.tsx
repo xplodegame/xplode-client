@@ -5,6 +5,7 @@ import Navbar from './components/Navbar/Navbar';
 import SingleplayerGame from './pages/SinglePlayerGame/SingleplayerGame';
 import MultiplayerGame from './pages/MultiplayerGame/MultiplayerGame';
 import Leaderboard from './pages/Leaderboard/Leaderboard';
+import CosmicUsernameModal from './components/GameComponents/CosmicUsernameModal/CosmicUsernameModal';
 import Home from './pages/Home/Home';
 import './index.css';
 import { useWalletStore } from './stores/walletStore';
@@ -33,8 +34,9 @@ interface UserData {
   deposit_address?: string;
 }
 
+// Original ProtectedRoute without modifications
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { authenticated, ready } = usePrivy(); // Add the 'ready' flag
+  const { authenticated, ready } = usePrivy();
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   
   useEffect(() => {
@@ -58,43 +60,67 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   return authenticated ? children : <Navigate to="/" replace />;
 };
 
+// Wrapper component for checking username before accessing protected content
+const UsernameRequiredWrapper = ({ 
+  children,
+  userData,
+  isUsernameModalOpen,
+  setIsUsernameModalOpen,
+  handleUsernameSet
+}: { 
+  children: React.ReactNode,
+  userData?: UserData,
+  isUsernameModalOpen: boolean,
+  setIsUsernameModalOpen: (isOpen: boolean) => void,
+  handleUsernameSet: (username: string) => Promise<void>
+}) => {
+  // Check if username is required
+  useEffect(() => {
+    if (userData && !userData.name) {
+      setIsUsernameModalOpen(true);
+    }
+  }, [userData, setIsUsernameModalOpen]);
+  
+  return (
+    <>
+      <CosmicUsernameModal 
+        isOpen={isUsernameModalOpen}
+        onUsernameSet={handleUsernameSet}
+      />
+      {children}
+    </>
+  );
+};
+
 const MainApp: React.FC = () => {
   const { authenticated, user } = usePrivy();
   const [userData, setUserData] = useState<UserData | undefined>();
   const [isLoading, setIsLoading] = useState(true);
+  const [isUsernameModalOpen, setIsUsernameModalOpen] = useState(false);
+  
   const setBalance = useWalletStore((state) => state.setBalance);
-
   const {wallets} = useWallets();
-  // const wallet = wallets[0];
 
   useEffect(() => {
     if (authenticated && wallets.length === 0) {
-      // alert('Please connect a wallet for transactions.');
-      console.log("please connect a wallet for transactions")
+      console.log("please connect a wallet for transactions");
     }
   }, [authenticated, wallets]);
-  
 
-
+  // User Data Fetching
   useEffect(() => {
     const fetchUserData = async () => {
-      // console.log("authentication check:", authenticated);
-      
       if (!authenticated || !user) {
         setIsLoading(false);
         return;
       }
-
-      // console.log("##############: ", wallets)
   
       try {
         const newUserData = {
           privy_id: user.id,
           email: "exampl@gmail.com",
-          name: "aryan",
+          name: "", // Start with empty name
         };
-  
-        // console.log("User data being sent:", newUserData);
   
         const userDetailsResponse = await fetch(import.meta.env.VITE_USER_DETAILS_ENDPOINT_URL, {
           method: 'POST',
@@ -109,8 +135,7 @@ const MainApp: React.FC = () => {
         }
   
         const userDetailsData = await userDetailsResponse.json();
-
-        // console.log("User details being received from the backend:", userDetailsData);
+        console.log("userDetailsData #######:", userDetailsData);
   
         if (typeof userDetailsData.balance !== 'number') {
           console.error('Invalid balance received:', userDetailsData.balance);
@@ -119,34 +144,23 @@ const MainApp: React.FC = () => {
   
         setBalance(userDetailsData.balance);
   
-        // setUserData({
-        //   ...newUserData,
-        //   id: userDetailsData.id,
-        //   wallet_balance: userDetailsData.balance,
-        //   deposit_address: userDetailsData.user_pda,
-        //   privy_id: user.id, // Added missing property
-        // });
-
         const updatedUserData = {
           ...newUserData,
-          id: userDetailsData.id,
+          id: userDetailsData.id, // Use user_id from response
           wallet_balance: userDetailsData.balance,
-          deposit_address: userDetailsData.user_pda,
-          privy_id: user.id,
+          deposit_address: userDetailsData.wallet_address || "",
+          name: userDetailsData.name || "" 
         };
 
+        // Store userData in localStorage for persistence
+        localStorage.setItem('userData', JSON.stringify(updatedUserData));
         setUserData(updatedUserData);
   
         console.log('Updated user data:', updatedUserData);
 
-        if (wallets.length === 0) {
-          console.log("No wallet found, waiting...");
-          return;
+        if (wallets.length > 0) {
+          console.log("Wallet detected:", wallets[0]?.address);
         }
-    
-        const wallet = wallets[0]; // Re-fetch the first wallet
-        
-        console.log("Wallet detected:", wallet?.address);
       } catch (error) {
         console.error('Failed to fetch user data:', error);
       } finally {
@@ -155,14 +169,67 @@ const MainApp: React.FC = () => {
     };
   
     fetchUserData();
-  }, [authenticated, user, wallets, setBalance]); // Include `wallets` as a dependency  
+  }, [authenticated, user, wallets, setBalance]);
+
+  // Handle username setting
+  const handleUsernameSet = async (username: string) => {
+    if (!userData || userData.id === undefined) {
+      console.error("Cannot update username: User ID is missing");
+      return;
+    }
+    
+    try {
+      // Create the request body according to the expected format
+      const updateRequest = {
+        name: username,
+        email: userData.email,
+        wallet_address: undefined // Optional field
+      };
+      
+      console.log("Updating user with ID:", userData.id);
+      
+      // Build the URL with the user_id
+      const updateUrl = `${import.meta.env.VITE_USER_DETAILS_ENDPOINT_URL}/${userData.id}`;
+      console.log("Update URL:", updateUrl);
+      
+      const updateResponse = await fetch(updateUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updateRequest),
+      });
+      
+      // Get response as text first for debugging
+      const responseText = await updateResponse.text();
+      console.log("Raw response:", responseText);
+      
+      if (!updateResponse.ok) {
+        throw new Error(`HTTP error! status: ${updateResponse.status}, response: ${responseText}`);
+      }
+      
+      // Update local state with new username
+      const updatedUserData = {
+        ...userData,
+        name: username
+      };
+      
+      setUserData(updatedUserData);
+      localStorage.setItem('userData', JSON.stringify(updatedUserData));
+      setIsUsernameModalOpen(false);
+      
+      console.log('Username set successfully:', username);
+    } catch (error) {
+      console.error('Failed to update username:', error);
+    }
+  };
 
   if (isLoading) {
     return (
       <div className="bg-gray-900 min-h-screen flex items-center justify-center">
         <div className="flex flex-col items-center">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-emerald-500 mb-4"></div>
-          <p className="text-emerald-400 text-lg">Loading...</p>
+          <p className="text-emerald-400 text-lg">Plotting Cosmic Course...</p>
         </div>
       </div>
     );
@@ -180,7 +247,14 @@ const MainApp: React.FC = () => {
                   path="/singleplayer"
                   element={
                     <ProtectedRoute>
-                      <SingleplayerGame />
+                      <UsernameRequiredWrapper
+                        userData={userData}
+                        isUsernameModalOpen={isUsernameModalOpen}
+                        setIsUsernameModalOpen={setIsUsernameModalOpen}
+                        handleUsernameSet={handleUsernameSet}
+                      >
+                        <SingleplayerGame />
+                      </UsernameRequiredWrapper>
                     </ProtectedRoute>
                   }
                 />
@@ -188,7 +262,14 @@ const MainApp: React.FC = () => {
                   path="/multiplayer"
                   element={
                     <ProtectedRoute>
-                      <MultiplayerGame userData={userData} />
+                      <UsernameRequiredWrapper
+                        userData={userData}
+                        isUsernameModalOpen={isUsernameModalOpen}
+                        setIsUsernameModalOpen={setIsUsernameModalOpen}
+                        handleUsernameSet={handleUsernameSet}
+                      >
+                        <MultiplayerGame userData={userData} />
+                      </UsernameRequiredWrapper>
                     </ProtectedRoute>
                   }
                 />
@@ -196,7 +277,14 @@ const MainApp: React.FC = () => {
                   path="/leaderboard"
                   element={
                     <ProtectedRoute>
-                      <Leaderboard />
+                      <UsernameRequiredWrapper
+                        userData={userData}
+                        isUsernameModalOpen={isUsernameModalOpen}
+                        setIsUsernameModalOpen={setIsUsernameModalOpen}
+                        handleUsernameSet={handleUsernameSet}
+                      >
+                        <Leaderboard />
+                      </UsernameRequiredWrapper>
                     </ProtectedRoute>
                   }
                 />
