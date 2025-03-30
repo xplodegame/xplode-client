@@ -27,7 +27,10 @@ const EnhancedTurnIndicator: React.FC<EnhancedTurnIndicatorProps> = ({
   const [pulseEffect, setPulseEffect] = useState(false);
   const [moveTimeLeft, setMoveTimeLeft] = useState(0);
   const [lockTimeLeft, setLockTimeLeft] = useState(0);
+  
   const [showWarning, setShowWarning] = useState(false);
+  console.log("Show warning", showWarning);
+  
   
   // Calculate time remaining for timers
   useEffect(() => {

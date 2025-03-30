@@ -53,6 +53,10 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
   const ParticlesComponent = useParticles();
 
   const userDataRef = useRef(userData);
+  console.log("userData", userData);
+  console.log("totalGameLocksUsed", totalGameLocksUsed);
+  
+  
 
   useEffect(() => {
     userDataRef.current = userData;

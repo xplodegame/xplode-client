@@ -10,6 +10,8 @@ interface GameStatusProps {
 }
 
 const GameStatus: React.FC<GameStatusProps> = ({ gameState, userData, isLockPhase, locksRemaining }) => {
+  console.log('isLockPhase', isLockPhase);
+  console.log('locksRemaining', locksRemaining);
   if (!gameState || !userData) return null;
 
   if ('WAITING' in gameState) {
@@ -24,7 +26,9 @@ const GameStatus: React.FC<GameStatusProps> = ({ gameState, userData, isLockPhas
   }
 
   if ('RUNNING' in gameState) {
-    const isMyTurn = gameState.RUNNING.players[gameState.RUNNING.turn_idx].id === userData.id?.toString();
+    
+    // const isMyTurn = gameState.RUNNING.players[gameState.RUNNING.turn_idx].id === userData.id?.toString();
+    
     return (
       <div className="text-xl mb-4">
         {/* {isMyTurn ? (
