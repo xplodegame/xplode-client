@@ -176,7 +176,6 @@ const useWebSocket = ({
                   document.cookie = `fly-machine-id=${machine_id}; max-age=${maxAge}; path=/`;
                 }
                 // Extract player_id from the lastPlayRequest
-
                 if (
                   typeof configRef.current.lastPlayRequest === "object" &&
                   "Play" in configRef.current.lastPlayRequest
@@ -187,6 +186,7 @@ const useWebSocket = ({
                     Join: {
                       player_id: playerId,
                       game_id: game_id,
+                      name: configRef.current.lastPlayRequest?.Play?.name,
                     },
                   };
                 }

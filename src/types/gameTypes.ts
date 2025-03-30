@@ -61,6 +61,7 @@ export type GameMessage =
       Join: {
         player_id: string;
         game_id: string;
+        name: string;
       };
     }
   | { MakeMove: { game_id: string; x: number; y: number } }
