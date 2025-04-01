@@ -230,6 +230,9 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
             });
             resetGameState();
             setError('Game aborted due to inactivity.');
+            
+            // Clear matchmaking overlay
+            setMatchmakingParams(null);
           }, MOVE_TIMEOUT);
         } else if ('FINISHED' in newGameState) {
           // Handle finished state
@@ -305,11 +308,11 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
 
   const handleMove = useCallback((x: number, y: number) => {
     if (!gameState || !('RUNNING' in gameState)) return;
-
+  
     if (moveTimeoutRef.current) {
       clearTimeout(moveTimeoutRef.current);
     }
-
+  
     sendMessage({
       MakeMove: {
         game_id: gameState.RUNNING.game_id,
@@ -319,18 +322,49 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
     });
     
     setTurnCount(prev => prev + 1);
-    setIsLockPhase(true);
-    setCurrentPlayerLockedCells(new Set());
-    setLockEndTime(Date.now() + LOCK_PHASE_TIMEOUT);
-
-    lockTimeoutRef.current = window.setTimeout(() => {
+    
+    // Calculate available locks after making this move
+    const maxLocks = calculateMaxLocks(gameState);
+    
+    if (maxLocks <= 0) {
+      // Skip lock phase if no locks are available
+      console.log("No locks available - skipping lock phase");
+      setIsLockPhase(false);
+      
+      // Immediately send lock complete to move to next player
       sendMessage({
         LockComplete: {
           game_id: gameState.RUNNING.game_id,
         },
       });
-    }, LOCK_PHASE_TIMEOUT);
-  }, [gameState, sendMessage]);
+      
+      // Clear any existing lock timeout
+      if (lockTimeoutRef.current) {
+        clearTimeout(lockTimeoutRef.current);
+        lockTimeoutRef.current = undefined;
+      }
+    } else {
+      // Normal flow - enter lock phase
+      setIsLockPhase(true);
+      setCurrentPlayerLockedCells(new Set());
+      setLockEndTime(Date.now() + LOCK_PHASE_TIMEOUT);
+      locksRemainingRef.current = maxLocks;
+      setLocksRemaining(maxLocks);
+  
+      // Set timeout for locking phase
+      if (lockTimeoutRef.current) {
+        clearTimeout(lockTimeoutRef.current);
+      }
+      
+      lockTimeoutRef.current = window.setTimeout(() => {
+        sendMessage({
+          LockComplete: {
+            game_id: gameState.RUNNING.game_id,
+          },
+        });
+      }, LOCK_PHASE_TIMEOUT);
+    }
+  }, [gameState, sendMessage, calculateMaxLocks]);
 
   const handleLock = useCallback((x: number, y: number) => {
     if (!gameState || !('RUNNING' in gameState)) {
