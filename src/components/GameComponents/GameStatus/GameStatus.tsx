@@ -5,13 +5,9 @@ import { Loader2 } from 'lucide-react';
 interface GameStatusProps {
   gameState: GameState | null;
   userData?: Player;
-  isLockPhase: boolean;
-  locksRemaining: number;
 }
 
-const GameStatus: React.FC<GameStatusProps> = ({ gameState, userData, isLockPhase, locksRemaining }) => {
-  // console.log('isLockPhase', isLockPhase);
-  // console.log('locksRemaining', locksRemaining);
+const GameStatus: React.FC<GameStatusProps> = ({ gameState, userData }) => {
   if (!gameState || !userData) return null;
 
   if ('WAITING' in gameState) {
@@ -21,28 +17,6 @@ const GameStatus: React.FC<GameStatusProps> = ({ gameState, userData, isLockPhas
           <Loader2 className="animate-spin" size={20} />
           <span>Finding opponents...</span>
         </div>
-      </div>
-    );
-  }
-
-  if ('RUNNING' in gameState) {
-    
-    // const isMyTurn = gameState.RUNNING.players[gameState.RUNNING.turn_idx].id === userData.id?.toString();
-    
-    return (
-      <div className="text-xl mb-4">
-        {/* {isMyTurn ? (
-          <div className="space-y-2">
-            <span className="text-green-400 block">Your turn!</span>
-            {isLockPhase && (
-              <span className="text-sm text-emerald-400 block">
-                Locks remaining: {locksRemaining}
-              </span>
-            )}
-          </div>
-        ) : (
-          <span className="text-yellow-400">Opponent's turn</span>
-        )} */}
       </div>
     );
   }

@@ -534,8 +534,6 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
         <GameStatus 
           gameState={gameState} 
           userData={userData}
-          isLockPhase={isLockPhase}
-          locksRemaining={locksRemaining}
         />
       </div>
 
