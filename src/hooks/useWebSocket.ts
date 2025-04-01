@@ -49,20 +49,36 @@ const useWebSocket = ({
     return Math.min(delay, MAX_RECONNECT_DELAY);
   }, []);
 
-  const cleanup = useCallback((skipCookieClear: boolean = false) => {
+  // Helper function to build a URL with machine_id parameter
+  const getUrlWithMachineId = useCallback(
+    (baseUrl = import.meta.env.VITE_WEBSOCKET_URL, machineId?: string) => {
+      const id = machineId || configRef.current.instanceId;
+
+      if (!id) return baseUrl;
+
+      const separator = baseUrl.includes("?") ? "&" : "?";
+      return `${baseUrl}${separator}machine_id=${id}`;
+    },
+    []
+  );
+
+  const cleanup = useCallback((skipUrlReset: boolean = false) => {
     if (reconnectTimeoutRef.current) {
       clearTimeout(reconnectTimeoutRef.current);
       reconnectTimeoutRef.current = undefined;
     }
+
     if (wsRef.current) {
       wsRef.current.close();
       wsRef.current = null;
     }
+
     isConnectingRef.current = false;
 
-    // Only clear the cookie if not skipping
-    if (!skipCookieClear) {
-      document.cookie = "fly-machine-id=; max-age=0; path=/";
+    // Only reset URL and instanceId during normal cleanup, not redirects
+    if (!skipUrlReset) {
+      configRef.current.url = import.meta.env.VITE_WEBSOCKET_URL;
+      configRef.current.instanceId = undefined;
     }
   }, []);
 
@@ -76,32 +92,40 @@ const useWebSocket = ({
         return;
       }
 
-      cleanup();
+      console.log("Connecting to WebSocket...");
+      cleanup(!!url || !!instanceId); // Skip URL reset if providing a new URL or instanceId
       isConnectingRef.current = true;
 
       try {
-        // Use provided URL or fallback to current config URL
-        const wsUrl = url || configRef.current.url;
+        // Use provided URL or build one with machine_id if available
+        const wsUrl =
+          url ||
+          (configRef.current.instanceId
+            ? getUrlWithMachineId()
+            : configRef.current.url);
+
+        console.log("WebSocket URL:", wsUrl);
 
         // Create WebSocket connection
         const ws = new WebSocket(wsUrl);
         wsRef.current = ws;
         ws.binaryType = "arraybuffer";
 
-        // Store instance ID in config
+        // Store instance ID in config if provided
         if (instanceId) {
           configRef.current.instanceId = instanceId;
         }
 
         const connectionTimeout = setTimeout(() => {
           if (ws.readyState !== WebSocket.OPEN) {
+            console.error("WebSocket connection timeout");
             ws.close();
           }
         }, CONNECTION_TIMEOUT);
 
         ws.onopen = () => {
           clearTimeout(connectionTimeout);
-          // console.log("WebSocket connected to:", wsUrl);
+          console.log("WebSocket connected to:", wsUrl);
           isConnectingRef.current = false;
           setIsConnected(true);
           setIsRedirecting(false);
@@ -111,6 +135,10 @@ const useWebSocket = ({
           // If we have a stored play request and we're connecting to a new server, replay it
           if (configRef.current.lastPlayRequest && url) {
             try {
+              console.log(
+                "Replaying stored request:",
+                configRef.current.lastPlayRequest
+              );
               const messageStr = JSON.stringify(
                 configRef.current.lastPlayRequest
               );
@@ -140,6 +168,7 @@ const useWebSocket = ({
                 }
               }
 
+              console.log("Sending initial ping:", pingMessage);
               const messageStr = JSON.stringify(pingMessage);
               const encoder = new TextEncoder();
               const binaryData = encoder.encode(messageStr);
@@ -155,8 +184,17 @@ const useWebSocket = ({
             if (event.data instanceof ArrayBuffer) {
               const decoder = new TextDecoder("utf-8");
               const messageStr = decoder.decode(event.data);
+              console.log(
+                "Raw message received:",
+                messageStr.slice(0, 200) +
+                  (messageStr.length > 200 ? "..." : "")
+              );
+
               const message = JSON.parse(messageStr) as GameMessage;
-              console.log("Received message:", message);
+              console.log(
+                "Parsed message type:",
+                typeof message === "object" ? Object.keys(message)[0] : message
+              );
 
               // Handle RedirectToServer message
               if (
@@ -167,33 +205,51 @@ const useWebSocket = ({
                 console.log(
                   `Redirecting to server, game_id: ${game_id}, with machine_id: ${machine_id}`
                 );
-                setIsRedirecting(true);
-                configRef.current.url = import.meta.env.VITE_WEBSOCKET_URL;
 
-                // Set the fly-machine-id cookie when we receive a RedirectToServer message
-                if (machine_id) {
-                  const maxAge = 6 * 24 * 60 * 60 * 1000; // 6 days
-                  document.cookie = `fly-machine-id=${machine_id}; max-age=${maxAge}; path=/`;
-                }
-                // Extract player_id from the lastPlayRequest
+                setIsRedirecting(true);
+
+                // Store machine_id for future connections
+                configRef.current.instanceId = machine_id;
+
+                // Build URL with machine_id parameter
+                const url = getUrlWithMachineId(
+                  import.meta.env.VITE_WEBSOCKET_URL,
+                  machine_id
+                );
+                configRef.current.url = url;
+
+                // Extract player_id from the lastPlayRequest for Join message
                 if (
                   typeof configRef.current.lastPlayRequest === "object" &&
                   "Play" in configRef.current.lastPlayRequest
                 ) {
                   const playerId =
                     configRef.current.lastPlayRequest?.Play?.player_id;
+                  const playerName =
+                    configRef.current.lastPlayRequest?.Play?.name;
+
                   configRef.current.lastPlayRequest = {
                     Join: {
                       player_id: playerId,
                       game_id: game_id,
-                      name: configRef.current.lastPlayRequest?.Play?.name,
+                      name: playerName,
                     },
                   };
+                  console.log(
+                    "Updated lastPlayRequest for Join:",
+                    configRef.current.lastPlayRequest
+                  );
                 }
 
-                // Cleanup without clearing the cookie
+                // Cleanup but preserve URL and instanceId
                 cleanup(true);
-                connect(import.meta.env.VITE_WEBSOCKET_URL);
+
+                // Add small delay before reconnecting to ensure clean connection
+                setTimeout(() => {
+                  console.log("Reconnecting to:", url);
+                  connect(url);
+                }, 100);
+
                 return;
               }
 
@@ -203,12 +259,33 @@ const useWebSocket = ({
             }
           } catch (err) {
             console.error("Error parsing message:", err);
+            console.error(
+              "Raw data length:",
+              event.data instanceof ArrayBuffer
+                ? event.data.byteLength
+                : String(event.data).length
+            );
           }
         };
 
         ws.onerror = (event) => {
           clearTimeout(connectionTimeout);
           console.error("WebSocket error:", event);
+
+          // Provide more specific error messaging based on connection state
+          if (ws.readyState === WebSocket.CONNECTING) {
+            onError("Failed to establish connection to game server");
+          } else if (ws.readyState === WebSocket.OPEN) {
+            onError("Connection interrupted with game server");
+          } else {
+            onError("WebSocket error occurred");
+          }
+
+          // Check if we're using a machine_id parameter
+          const wsUrl = ws.url || "";
+          if (wsUrl.includes("machine_id=")) {
+            console.error("Error occurred with machine_id routing");
+          }
         };
 
         ws.onclose = (event) => {
@@ -235,7 +312,14 @@ const useWebSocket = ({
 
               reconnectTimeoutRef.current = setTimeout(() => {
                 reconnectAttemptsRef.current++;
-                connect();
+
+                // Reconnect with machine_id if available
+                if (configRef.current.instanceId) {
+                  const url = getUrlWithMachineId();
+                  connect(url);
+                } else {
+                  connect();
+                }
               }, nextDelay);
             } else if (reconnectAttemptsRef.current >= MAX_RETRIES) {
               console.log("Maximum reconnection attempts reached");
@@ -260,13 +344,20 @@ const useWebSocket = ({
         }
       }
     },
-    [cleanup, getNextReconnectDelay, onMessage, onError]
+    [cleanup, getNextReconnectDelay, onMessage, onError, getUrlWithMachineId]
   );
 
   useEffect(() => {
-    connect();
-    return cleanup;
-  }, [connect, cleanup]);
+    // Check if we have a stored machine ID and use it for the initial connection
+    if (configRef.current.instanceId) {
+      const url = getUrlWithMachineId();
+      connect(url);
+    } else {
+      connect();
+    }
+
+    return () => cleanup();
+  }, [connect, cleanup, getUrlWithMachineId]);
 
   const sendMessage = useCallback(
     (message: GameMessage) => {
@@ -285,7 +376,10 @@ const useWebSocket = ({
         const messageStr = JSON.stringify(message);
         const encoder = new TextEncoder();
         const binaryData = encoder.encode(messageStr);
-        console.log("Sending message:", messageStr);
+        console.log(
+          "Sending message:",
+          typeof message === "object" ? Object.keys(message)[0] : message
+        );
         wsRef.current.send(binaryData);
       } catch (err) {
         console.error("Error sending message:", err);
