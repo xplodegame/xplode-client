@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import { usePrivy } from '@privy-io/react-auth';
 import Navbar from './components/Navbar/Navbar';
-import SingleplayerGame from './pages/SinglePlayerGame/SingleplayerGame';
 import MultiplayerGame from './pages/MultiplayerGame/MultiplayerGame';
 import Leaderboard from './pages/Leaderboard/Leaderboard';
 import CosmicUsernameModal from './components/GameComponents/CosmicUsernameModal/CosmicUsernameModal';
@@ -135,7 +134,7 @@ const MainApp: React.FC = () => {
         }
   
         const userDetailsData = await userDetailsResponse.json();
-        console.log("userDetailsData #######:", userDetailsData);
+        // console.log("userDetailsData #######:", userDetailsData);
   
         if (typeof userDetailsData.balance !== 'number') {
           console.error('Invalid balance received:', userDetailsData.balance);
@@ -243,21 +242,6 @@ const MainApp: React.FC = () => {
               <Navbar userData={userData} />
               <Routes>
                 <Route path="/" element={<Home />} />
-                <Route
-                  path="/singleplayer"
-                  element={
-                    <ProtectedRoute>
-                      <UsernameRequiredWrapper
-                        userData={userData}
-                        isUsernameModalOpen={isUsernameModalOpen}
-                        setIsUsernameModalOpen={setIsUsernameModalOpen}
-                        handleUsernameSet={handleUsernameSet}
-                      >
-                        <SingleplayerGame />
-                      </UsernameRequiredWrapper>
-                    </ProtectedRoute>
-                  }
-                />
                 <Route
                   path="/multiplayer"
                   element={

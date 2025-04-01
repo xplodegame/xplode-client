@@ -10,8 +10,8 @@ interface GameStatusProps {
 }
 
 const GameStatus: React.FC<GameStatusProps> = ({ gameState, userData, isLockPhase, locksRemaining }) => {
-  console.log('isLockPhase', isLockPhase);
-  console.log('locksRemaining', locksRemaining);
+  // console.log('isLockPhase', isLockPhase);
+  // console.log('locksRemaining', locksRemaining);
   if (!gameState || !userData) return null;
 
   if ('WAITING' in gameState) {

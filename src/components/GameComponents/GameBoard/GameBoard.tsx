@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import { GameState } from '../../../types/gameTypes';
 
 interface GameBoardProps {
@@ -30,6 +30,92 @@ const GameBoard: React.FC<GameBoardProps> = ({
   isLockPhase,
   locksRemaining
 }) => {
+
+  const gemSound = useRef(new Audio('/assets/sounds/gemSound.mp3'));
+  const bombSound = useRef(new Audio('/assets/sounds/bombSound.mp3'));
+  // Reference to previous game state to detect state changes
+  const prevGameStateRef = useRef<GameState | null>(null);
+  
+  // Handle game state changes specifically for bomb detection
+  useEffect(() => {
+    if (!gameState) return;
+    
+    // Check if the game just transitioned to FINISHED state
+    const wasNotFinished = !prevGameStateRef.current || !('FINISHED' in prevGameStateRef.current);
+    const isNowFinished = 'FINISHED' in gameState;
+    
+    // If we just transitioned to FINISHED and have a loser_idx defined
+    if (wasNotFinished && isNowFinished) {
+      console.log('Game just finished - checking if due to bomb');
+      
+      if (gameState.FINISHED.loser_idx !== undefined) {
+        console.log('Game finished due to a player hitting a bomb');
+        
+        // Play bomb sound
+        if (bombSound.current) {
+          console.log('Playing bomb sound for game end');
+          bombSound.current.currentTime = 0;
+          
+          // Play with comprehensive error handling
+          bombSound.current.play()
+            .then(() => {
+              console.log('Bomb sound playing successfully');
+              // setBombSoundPlayed(true);
+            })
+            .catch(err => {
+              console.error('Failed to play bomb sound:', err);
+              
+              // Fallback: create a new Audio object and try again
+              const newBombSound = new Audio('/assets/sounds/bombSound.mp3');
+              newBombSound.play().catch(e => console.error('Fallback bomb sound also failed:', e));
+              // setBombSoundPlayed(true);
+            });
+        }
+      }
+    }
+    
+    // Also handle normal revealed cells for gem sounds
+    const board = 'WAITING' in gameState ? gameState.WAITING.board :
+                  'RUNNING' in gameState ? gameState.RUNNING.board :
+                  'FINISHED' in gameState ? gameState.FINISHED.board : null;
+    
+    if (board && 'RUNNING' in gameState) {
+      // Only play gem sounds during RUNNING state
+      const prevBoard = prevGameStateRef.current && ('RUNNING' in prevGameStateRef.current) 
+        ? prevGameStateRef.current.RUNNING.board 
+        : null;
+      
+      if (prevBoard) {
+        // Check if we have more revealed cells than before (gem found)
+        const prevRevealedCount = countRevealedCells(prevBoard);
+        const currentRevealedCount = countRevealedCells(board);
+        
+        if (currentRevealedCount > prevRevealedCount && gemSound.current) {
+          console.log('Playing gem sound for new revealed cell');
+          gemSound.current.currentTime = 0;
+          gemSound.current.play().catch(err => console.error('Failed to play gem sound:', err));
+        }
+      }
+    }
+    
+    // Update previous game state
+    prevGameStateRef.current = gameState;
+  }, [gameState]);
+  
+  // Helper function to count revealed cells
+  const countRevealedCells = (board: any) => {
+    if (!board || !board.grid) return 0;
+    let count = 0;
+    board.grid.forEach((row: any) => {
+      row.forEach((cell: any) => {
+        if (cell === 'Mined' || cell === 'Revealed') {
+          count++;
+        }
+      });
+    });
+    return count;
+  };
+
   if (!gameState || !userData) return null;
 
   const board = 'WAITING' in gameState ? gameState.WAITING.board :

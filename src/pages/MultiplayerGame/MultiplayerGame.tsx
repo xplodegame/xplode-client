@@ -33,7 +33,7 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
   const [lockedCells, setLockedCells] = useState<Set<string>>(new Set());
   const [isLockPhase, setIsLockPhase] = useState<boolean>(false);
   const [locksRemaining, setLocksRemaining] = useState<number>(0);
-  const [totalGameLocksUsed, setTotalGameLocksUsed] = useState<number>(0);
+  const [, setTotalGameLocksUsed] = useState<number>(0);
   const previousTurnIdxRef = useRef<number>(-1);
   const [currentPlayerLockedCells, setCurrentPlayerLockedCells] = useState<Set<string>>(new Set());
   const [moveEndTime, setMoveEndTime] = useState<number>(0);
@@ -46,17 +46,12 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
   const totalGameLocksUsedRef = useRef<number>(0);
   const lastRevealedCountRef = useRef<number>(0);
 
-  const gemSound = useRef(new Audio('/assets/sounds/gemSound.mp3'));
-  const bombSound = useRef(new Audio('/assets/sounds/bombSound.mp3'));
   const lockSound = useRef(new Audio('/assets/sounds/lockSound.wav'));
 
   const ParticlesComponent = useParticles();
 
   const userDataRef = useRef(userData);
-  console.log("userData", userData);
-  console.log("totalGameLocksUsed", totalGameLocksUsed);
-  
-  
+  // console.log("userData", userData);
 
   useEffect(() => {
     userDataRef.current = userData;
@@ -323,14 +318,6 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
       },
     });
     
-    const cellIndex = x * gameState.RUNNING.board.grid.length + y;
-    if (gameState.RUNNING.board.bomb_coordinates.includes(cellIndex)) {
-        bombSound.current.play().catch(() => {
-            console.error("Failed to play bomb sound.");
-        });
-    } else {
-        gemSound.current.play().catch(() => {});
-    }
     setTurnCount(prev => prev + 1);
     setIsLockPhase(true);
     setCurrentPlayerLockedCells(new Set());
@@ -413,6 +400,18 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
   }, [gameState, sendMessage, revealedCells, lockedCells]);
 
   const resetGameState = useCallback(() => {
+    // Clear any existing timeouts
+    if (moveTimeoutRef.current) {
+      clearTimeout(moveTimeoutRef.current);
+      moveTimeoutRef.current = undefined;
+    }
+    
+    if (lockTimeoutRef.current) {
+      clearTimeout(lockTimeoutRef.current);
+      lockTimeoutRef.current = undefined;
+    }
+    
+    // Reset all state variables
     setGameState(null);
     setRevealedCells(new Set());
     setLockedCells(new Set());
@@ -420,12 +419,21 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
     setCurrentPlayerLockedCells(new Set());
     setError('');
     setBetAmount(0);
+    
+    // Reset the move and lock end times
     setMoveEndTime(0);
     setLockEndTime(0);
+    
+    // Reset turn count and locks
     setTurnCount(0);
     setTotalGameLocksUsed(0);
+    setLocksRemaining(0);
+    
+    // Reset all reference variables
     totalGameLocksUsedRef.current = 0;
     lastRevealedCountRef.current = 0;
+    locksRemainingRef.current = 0;
+    previousTurnIdxRef.current = -1;
   }, []);
 
   const playGame = useCallback((gridSize: number, bombs: number, minPlayers: number) => {
