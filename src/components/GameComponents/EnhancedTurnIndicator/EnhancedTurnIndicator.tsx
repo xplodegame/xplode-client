@@ -28,7 +28,7 @@ const EnhancedTurnIndicator: React.FC<EnhancedTurnIndicatorProps> = ({
   const [moveTimeLeft, setMoveTimeLeft] = useState(0);
   const [lockTimeLeft, setLockTimeLeft] = useState(0);
   
-  const [showWarning, setShowWarning] = useState(false);
+  const [, setShowWarning] = useState(false);
   // console.log("Show warning", showWarning);
   
   
