@@ -21,7 +21,7 @@ const LeaderboardPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [sortBy, setSortBy] = useState<'total_profit' | 'total_matches'>('total_profit');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
-  const [network, setNetwork] = useState<string>('MONAD'); // Default to MONAD based on DB data
+  const [network, setNetwork] = useState<string>('MON'); // Default to MONAD based on DB data
   const [timeframe, setTimeframe] = useState<string>('all'); // Default timeframe
   const Particles = useParticles();
 
