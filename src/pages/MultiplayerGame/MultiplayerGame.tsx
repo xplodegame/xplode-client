@@ -45,6 +45,8 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
   const locksRemainingRef = useRef<number>(0);
   const totalGameLocksUsedRef = useRef<number>(0);
   const lastRevealedCountRef = useRef<number>(0);
+  // First, add a new ref to track if a player has made a move in their current turn
+  const playerMadeMoveRef = useRef<boolean>(false);
 
   const lockSound = useRef(new Audio('/assets/sounds/lockSound.wav'));
 
@@ -150,6 +152,9 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
             // For all players: set move timer and exit lock phase
             setMoveEndTime(Date.now() + MOVE_TIMEOUT);
             setIsLockPhase(false);
+
+            // Reset the move made flag when turn changes
+            playerMadeMoveRef.current = false;
             
             // Only reset locks for the current player
             if (isCurrentPlayerTurn) {
@@ -165,12 +170,17 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
             previousTurnIdxRef.current = currentTurnIdx;
           }
 
-          // Detect if a move was just made by checking revealed cells
+          // Detect if a move was just made(by this player) by checking revealed cells
           const currentRevealedCount = countRevealedCells(newGameState.RUNNING.board);
-          
+
+          // Only enter lock phase if:
+          // 1. More cells are revealed than before
+          // 2. The turn hasn't changed
+          // 3. This player has made a move in their turn (not just server state updates)          
           if (currentRevealedCount > lastRevealedCountRef.current && 
-              previousTurnIdxRef.current === currentTurnIdx) {
-            // A move was made without turn change - entering lock phase
+              previousTurnIdxRef.current === currentTurnIdx &&
+              playerMadeMoveRef.current) {
+            // A move was made without turn change - entering lock phase 
             setIsLockPhase(true);
             setLockEndTime(Date.now() + LOCK_PHASE_TIMEOUT);
           }
@@ -312,6 +322,9 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
     if (moveTimeoutRef.current) {
       clearTimeout(moveTimeoutRef.current);
     }
+
+    // Set the flag to indicate THIS player made a move
+    playerMadeMoveRef.current = true;
   
     sendMessage({
       MakeMove: {
