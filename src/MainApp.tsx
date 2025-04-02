@@ -114,57 +114,87 @@ const MainApp: React.FC = () => {
         return;
       }
   
-      try {
-        const newUserData = {
-          privy_id: user.id,
-          email: "exampl@gmail.com",
-          name: "", // Start with empty name
-        };
+      const newUserData = {
+        privy_id: user.id,
+        email: "exampl@gmail.com",
+        name: "", // Start with empty name
+      };
   
-        const userDetailsResponse = await fetch(import.meta.env.VITE_USER_DETAILS_ENDPOINT_URL, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(newUserData),
-        });
+      let retryCount = 0;
+      const maxRetries = 3;
+      const retryDelay = 1000; // 1 second delay between retries
+      
+      while (retryCount <= maxRetries) {
+        try {
+          const userDetailsResponse = await fetch(import.meta.env.VITE_USER_DETAILS_ENDPOINT_URL, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(newUserData),
+          });
   
-        if (!userDetailsResponse.ok) {
-          throw new Error(`HTTP error! status: ${userDetailsResponse.status}`);
+          if (!userDetailsResponse.ok) {
+            throw new Error(`HTTP error! status: ${userDetailsResponse.status}`);
+          }
+  
+          const userDetailsData = await userDetailsResponse.json();
+          // console.log(`Attempt ${retryCount + 1} - User details response:`, userDetailsData);
+          
+          // Check if all required fields are present
+          if (userDetailsData.id === undefined || 
+              typeof userDetailsData.balance !== 'number') {
+            
+            // console.warn(`Attempt ${retryCount + 1} - Incomplete user data received:`, userDetailsData);
+            
+            if (retryCount < maxRetries) {
+              retryCount++;
+              // console.log(`Retrying in ${retryDelay}ms... (${retryCount}/${maxRetries})`);
+              await new Promise(resolve => setTimeout(resolve, retryDelay));
+              continue; // Retry the request
+            } else {
+              throw new Error('Max retries reached with incomplete user data');
+            }
+          }
+  
+          // If we reached here, we have valid data
+          setBalance(userDetailsData.balance);
+  
+          const updatedUserData = {
+            ...newUserData,
+            id: userDetailsData.id,
+            wallet_balance: userDetailsData.balance,
+            deposit_address: userDetailsData.wallet_address || "",
+            name: userDetailsData.name || ""
+          };
+  
+          // Store userData in localStorage for persistence
+          localStorage.setItem('userData', JSON.stringify(updatedUserData));
+          setUserData(updatedUserData);
+  
+          console.log('Updated user data successfully:', updatedUserData);
+  
+          if (wallets.length > 0) {
+            console.log("Wallet detected:", wallets[0]?.address);
+          }
+          
+          // Break out of the retry loop as we got valid data
+          break;
+          
+        } catch (error) {
+          if (retryCount < maxRetries) {
+            retryCount++;
+            console.error(`Attempt ${retryCount} failed:`, error);
+            console.log(`Retrying in ${retryDelay}ms... (${retryCount}/${maxRetries})`);
+            await new Promise(resolve => setTimeout(resolve, retryDelay));
+          } else {
+            console.error('Failed to fetch user data after max retries:', error);
+            break;
+          }
         }
-  
-        const userDetailsData = await userDetailsResponse.json();
-        // console.log("userDetailsData #######:", userDetailsData);
-  
-        if (typeof userDetailsData.balance !== 'number') {
-          console.error('Invalid balance received:', userDetailsData.balance);
-          throw new Error('Invalid balance received from server');
-        }
-  
-        setBalance(userDetailsData.balance);
-  
-        const updatedUserData = {
-          ...newUserData,
-          id: userDetailsData.id, // Use user_id from response
-          wallet_balance: userDetailsData.balance,
-          deposit_address: userDetailsData.wallet_address || "",
-          name: userDetailsData.name || "" 
-        };
-
-        // Store userData in localStorage for persistence
-        localStorage.setItem('userData', JSON.stringify(updatedUserData));
-        setUserData(updatedUserData);
-  
-        console.log('Updated user data:', updatedUserData);
-
-        if (wallets.length > 0) {
-          console.log("Wallet detected:", wallets[0]?.address);
-        }
-      } catch (error) {
-        console.error('Failed to fetch user data:', error);
-      } finally {
-        setIsLoading(false);
       }
+      
+      setIsLoading(false);
     };
   
     fetchUserData();
