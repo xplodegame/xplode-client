@@ -10,6 +10,7 @@ interface GridCellProps {
   onActivate: () => void;
 }
 
+// Original desktop GridCell component - completely untouched
 const GridCell = React.memo(function GridCell({ 
   active, 
   decaying, 
@@ -62,6 +63,60 @@ const GridCell = React.memo(function GridCell({
   );
 });
 
+// Mobile-specific GridCell component
+const MobileGridCell = React.memo(function MobileGridCell({ 
+  active, 
+  decaying, 
+  onActivate 
+}: GridCellProps) {
+  return (
+    <button
+      onMouseEnter={onActivate}
+      onClick={onActivate}
+      className={`
+        w-11 h-11 rounded-xl relative 
+        transition-all duration-300 ease-out
+        border border-white/10
+        ${active 
+          ? 'bg-gradient-to-br from-emerald-500/30 to-emerald-500/10' 
+          : decaying
+          ? 'bg-gradient-to-br from-emerald-500/10 to-transparent'
+          : 'bg-black/40 hover:bg-black/30'
+        }
+      `}
+    >
+      {active && (
+        <motion.div>
+          <motion.span 
+            animate={{ 
+              y: [-1, 1, -1],
+              scale: [1, 1.1, 1],
+              rotate: [0, 5, -5, 0]
+            }}
+            transition={{
+              duration: 2,
+              repeat: Infinity,
+              ease: "easeInOut"
+            }}
+            className="text-lg"
+          >
+            💎
+          </motion.span>
+        </motion.div>
+      )}
+      {(active || decaying) && (
+        <div 
+          className="absolute inset-0 bg-emerald-500/20 blur-lg rounded-full"
+          style={{
+            opacity: active ? 0.4 : 0.1,
+            transition: 'opacity 300ms ease-out'
+          }}
+        />
+      )}
+    </button>
+  );
+});
+
 export default function GameGrid() {
   // Use a single flat array for better performance
   const [activeStates, setActiveStates] = useState(new Array(GRID_SIZE * GRID_SIZE).fill(false));
@@ -70,6 +125,24 @@ export default function GameGrid() {
   // Use refs to track timeouts
   const timeoutRefs = useRef(new Array(GRID_SIZE * GRID_SIZE).fill(null));
   const decayTimeoutRefs = useRef(new Array(GRID_SIZE * GRID_SIZE).fill(null));
+
+  // Detect viewport size
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkSize = () => {
+      setIsMobile(window.innerWidth < 640);
+    };
+    
+    // Initial check
+    checkSize();
+    
+    // Add resize listener
+    window.addEventListener('resize', checkSize);
+    
+    // Cleanup
+    return () => window.removeEventListener('resize', checkSize);
+  }, []);
 
   // Cleanup function
   useEffect(() => {
@@ -119,46 +192,94 @@ export default function GameGrid() {
     }, DECAY_TIME);
   }, [activeStates]);
 
-  // Memoize the grid
-  const grid = useMemo(() => {
-    const cells = [];
-    for (let i = 0; i < GRID_SIZE * GRID_SIZE; i++) {
-      cells.push(
-        <GridCell
-          key={i}
-          active={activeStates[i]}
-          decaying={decayingStates[i]}
-          onActivate={() => handleCellActivate(i)}
-        />
-      );
-    }
-    return cells;
-  }, [activeStates, decayingStates, handleCellActivate]);
+  // Render either desktop or mobile view
+  if (isMobile) {
+    // Mobile version
+    // Memoize the mobile grid
+    const mobileGrid = useMemo(() => {
+      const cells = [];
+      for (let i = 0; i < GRID_SIZE * GRID_SIZE; i++) {
+        cells.push(
+          <MobileGridCell
+            key={i}
+            active={activeStates[i]}
+            decaying={decayingStates[i]}
+            onActivate={() => handleCellActivate(i)}
+          />
+        );
+      }
+      return cells;
+    }, [activeStates, decayingStates, handleCellActivate]);
 
-  return (
-    <div className="relative p-6">
-      <style>{`
-        @keyframes fadeIn {
-          from { opacity: 0; transform: scale(0.8); }
-          to { opacity: 1; transform: scale(1); }
-        }
-        @keyframes pop {
-          0% { transform: scale(0.8); }
-          50% { transform: scale(1.1); }
-          100% { transform: scale(1); }
-        }
-        .animate-fadeIn {
-          animation: fadeIn 0.2s ease-out forwards;
-        }
-        .animate-pop {
-          animation: pop 0.3s ease-out forwards;
-        }
-      `}</style>
-      <div className="relative">
-        <div className="grid grid-cols-5 gap-4">
-          {grid}
+    return (
+      <div className="relative p-2">
+        <style>{`
+          @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.8); }
+            to { opacity: 1; transform: scale(1); }
+          }
+          @keyframes pop {
+            0% { transform: scale(0.8); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+          }
+          .animate-fadeIn {
+            animation: fadeIn 0.2s ease-out forwards;
+          }
+          .animate-pop {
+            animation: pop 0.3s ease-out forwards;
+          }
+        `}</style>
+        <div className="relative">
+          <div className="grid grid-cols-5 gap-2">
+            {mobileGrid}
+          </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  } else {
+    // Original desktop version - completely untouched
+    // Memoize the grid
+    const grid = useMemo(() => {
+      const cells = [];
+      for (let i = 0; i < GRID_SIZE * GRID_SIZE; i++) {
+        cells.push(
+          <GridCell
+            key={i}
+            active={activeStates[i]}
+            decaying={decayingStates[i]}
+            onActivate={() => handleCellActivate(i)}
+          />
+        );
+      }
+      return cells;
+    }, [activeStates, decayingStates, handleCellActivate]);
+
+    return (
+      <div className="relative p-6">
+        <style>{`
+          @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.8); }
+            to { opacity: 1; transform: scale(1); }
+          }
+          @keyframes pop {
+            0% { transform: scale(0.8); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+          }
+          .animate-fadeIn {
+            animation: fadeIn 0.2s ease-out forwards;
+          }
+          .animate-pop {
+            animation: pop 0.3s ease-out forwards;
+          }
+        `}</style>
+        <div className="relative">
+          <div className="grid grid-cols-5 gap-4">
+            {grid}
+          </div>
+        </div>
+      </div>
+    );
+  }
 }
