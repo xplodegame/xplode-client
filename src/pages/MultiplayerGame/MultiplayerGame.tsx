@@ -322,10 +322,17 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
     if (moveTimeoutRef.current) {
       clearTimeout(moveTimeoutRef.current);
     }
-
-    // Set the flag to indicate THIS player made a move
-    playerMadeMoveRef.current = true;
   
+    // Check if the cell being clicked is a bomb
+    const board = gameState.RUNNING.board;
+    const gridSize = board.grid.length;
+    const cellIndex = x * gridSize + y;
+    const isBomb = board.bomb_coordinates.includes(cellIndex);
+    
+    // Set the flag to indicate this player made a move
+    playerMadeMoveRef.current = true;
+    
+    // Send the move to the server
     sendMessage({
       MakeMove: {
         game_id: gameState.RUNNING.game_id,
@@ -336,46 +343,73 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
     
     setTurnCount(prev => prev + 1);
     
-    // Calculate available locks after making this move
-    const maxLocks = calculateMaxLocks(gameState);
-    
-    if (maxLocks <= 0) {
-      // Skip lock phase if no locks are available
-      console.log("No locks available - skipping lock phase");
+    // If the cell is a bomb, don't enter lock phase - instead show a brief pause
+    if (isBomb) {
+      console.log("Player hit a bomb! Pausing before next turn...");
+      
+      // Don't enter lock phase
       setIsLockPhase(false);
       
-      // Immediately send lock complete to move to next player
-      sendMessage({
-        LockComplete: {
-          game_id: gameState.RUNNING.game_id,
-        },
-      });
-      
-      // Clear any existing lock timeout
+      // Clear any lock timeout
       if (lockTimeoutRef.current) {
         clearTimeout(lockTimeoutRef.current);
         lockTimeoutRef.current = undefined;
       }
-    } else {
-      // Normal flow - enter lock phase
-      setIsLockPhase(true);
-      setCurrentPlayerLockedCells(new Set());
-      setLockEndTime(Date.now() + LOCK_PHASE_TIMEOUT);
-      locksRemainingRef.current = maxLocks;
-      setLocksRemaining(maxLocks);
-  
-      // Set timeout for locking phase
-      if (lockTimeoutRef.current) {
-        clearTimeout(lockTimeoutRef.current);
-      }
       
-      lockTimeoutRef.current = window.setTimeout(() => {
+      // After a brief pause, tell the server we're done (if game hasn't ended already)
+      setTimeout(() => {
+        // Double-check if game is still running (it might have ended already due to bomb)
+        if (gameState && 'RUNNING' in gameState) {
+          console.log("Sending lock complete after bomb pause");
+          sendMessage({
+            LockComplete: {
+              game_id: gameState.RUNNING.game_id,
+            },
+          });
+        }
+      }, 2000); // 2 second delay for visual feedback
+    } else {
+      // Normal flow for non-bomb cells - calculate locks and potentially enter lock phase
+      const maxLocks = calculateMaxLocks(gameState);
+      
+      if (maxLocks <= 0) {
+        // Skip lock phase if no locks are available
+        console.log("No locks available - skipping lock phase");
+        setIsLockPhase(false);
+        
+        // Immediately send lock complete to move to next player
         sendMessage({
           LockComplete: {
             game_id: gameState.RUNNING.game_id,
           },
         });
-      }, LOCK_PHASE_TIMEOUT);
+        
+        // Clear any existing lock timeout
+        if (lockTimeoutRef.current) {
+          clearTimeout(lockTimeoutRef.current);
+          lockTimeoutRef.current = undefined;
+        }
+      } else {
+        // Normal flow - enter lock phase
+        setIsLockPhase(true);
+        setCurrentPlayerLockedCells(new Set());
+        setLockEndTime(Date.now() + LOCK_PHASE_TIMEOUT);
+        locksRemainingRef.current = maxLocks;
+        setLocksRemaining(maxLocks);
+    
+        // Set timeout for locking phase
+        if (lockTimeoutRef.current) {
+          clearTimeout(lockTimeoutRef.current);
+        }
+        
+        lockTimeoutRef.current = window.setTimeout(() => {
+          sendMessage({
+            LockComplete: {
+              game_id: gameState.RUNNING.game_id,
+            },
+          });
+        }, LOCK_PHASE_TIMEOUT);
+      }
     }
   }, [gameState, sendMessage, calculateMaxLocks]);
 
