@@ -241,6 +241,29 @@ const useWebSocket = ({
                   );
                 }
 
+                // Extract player_id from the lastPlayRequest for Join message
+                if (
+                  typeof configRef.current.lastPlayRequest === "object" &&
+                  "Join" in configRef.current.lastPlayRequest
+                ) {
+                  const playerId =
+                    configRef.current.lastPlayRequest?.Join?.player_id;
+                  const playerName =
+                    configRef.current.lastPlayRequest?.Join?.name;
+
+                  configRef.current.lastPlayRequest = {
+                    Join: {
+                      player_id: playerId,
+                      game_id: game_id,
+                      name: playerName,
+                    },
+                  };
+                  console.log(
+                    "Updated lastPlayRequest for Join:",
+                    configRef.current.lastPlayRequest
+                  );
+                }
+
                 // Cleanup but preserve URL and instanceId
                 cleanup(true);
 
@@ -369,7 +392,11 @@ const useWebSocket = ({
 
       try {
         // Store Play requests for potential replay after redirect
-        if (typeof message === "object" && "Play" in message) {
+        if (
+          typeof message === "object" &&
+          ("Play" in message || "Join" in message)
+        ) {
+          console.log("Storing Play request for potential replay:", message);
           configRef.current.lastPlayRequest = message;
         }
 
