@@ -1,11 +1,12 @@
 import React, { useState, useRef } from 'react';
-import { Coins, Grid, Bomb, Users } from 'lucide-react';
+import { Coins, Grid, Bomb, Users, UserPlus } from 'lucide-react';
 import { useWalletStore } from '../../../stores/walletStore';
 
 interface LobbyDetailsProps {
   betAmount: number;
   setBetAmount: (amount: number) => void;
   playGame: (gridSize: number, bombs: number, minPlayers: number) => void;
+  createGameRoom: (gridSize: number, bombs: number, minPlayers: number) => void;
   isConnected: boolean;
 }
 
@@ -13,12 +14,14 @@ const LobbyDetails: React.FC<LobbyDetailsProps> = ({
   betAmount,
   setBetAmount,
   playGame,
+  createGameRoom,
   isConnected,
 }) => {
   const walletBalance = useWalletStore(state => state.balance);
   const [gridSize, setGridSize] = useState<number>(5);
   const [bombs, setBombs] = useState<number>(3);
   const [minPlayers, setMinPlayers] = useState<number>(2);
+  const [activeTab, setActiveTab] = useState<'random' | 'create'>('random');
 
   const handleBetChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -53,6 +56,38 @@ const LobbyDetails: React.FC<LobbyDetailsProps> = ({
 
       {/* Main Panel */}
       <div className="bg-black/60 backdrop-blur-sm border border-emerald-500/10 rounded-lg overflow-hidden shadow-xl shadow-emerald-500/5">
+        {/* Tab Selection */}
+        <div className="flex border-b border-emerald-500/10">
+          <button
+            onClick={() => {
+              playClickSound();
+              setActiveTab('random');
+            }}
+            className={`flex-1 py-3 px-4 flex items-center justify-center gap-2 transition-all ${
+              activeTab === 'random' 
+                ? 'bg-emerald-500/20 text-emerald-400' 
+                : 'text-emerald-400/70 hover:bg-emerald-500/10'
+            }`}
+          >
+            <Users className="w-4 h-4" />
+            <span>Join Random</span>
+          </button>
+          <button
+            onClick={() => {
+              playClickSound();
+              setActiveTab('create');
+            }}
+            className={`flex-1 py-3 px-4 flex items-center justify-center gap-2 transition-all ${
+              activeTab === 'create' 
+                ? 'bg-emerald-500/20 text-emerald-400' 
+                : 'text-emerald-400/70 hover:bg-emerald-500/10'
+            }`}
+          >
+            <UserPlus className="w-4 h-4" />
+            <span>Create Game Room</span>
+          </button>
+        </div>
+
         {/* Bet Amount Section */}
         <div className="p-6 border-b border-emerald-500/10">
           <h3 className="text-emerald-400/80 text-sm font-medium mb-4 tracking-wider">PLACE YOUR BET</h3>
@@ -167,13 +202,17 @@ const LobbyDetails: React.FC<LobbyDetailsProps> = ({
           <button
             onClick={() => {
               startGameSound.current.play();
-              playGame(gridSize, bombs, minPlayers);
+              if (activeTab === 'random') {
+                playGame(gridSize, bombs, minPlayers);
+              } else {
+                createGameRoom(gridSize, bombs, minPlayers);
+              }
             }}
             disabled={!isConnected || betAmount <= 0 || betAmount > walletBalance}
             className="w-full bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 disabled:hover:bg-emerald-500
               text-black font-bold py-3 rounded-lg transition-all duration-300 transform hover:scale-[1.02] shadow-lg shadow-emerald-500/20"
           >
-            START GAME
+            {activeTab === 'random' ? 'JOIN RANDOM GAME' : 'CREATE GAME ROOM'}
           </button>
         </div>
       </div>

@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import useWebSocket from '../../hooks/useWebSocket';
 import { useParticles } from '../../components/GameComponents/Background/GameBackgroundParticles';
@@ -7,6 +8,8 @@ import GameStatus from '../../components/GameComponents/GameStatus/GameStatus';
 import LobbyDetails from '../../components/GameComponents/LobbyDetails/LobbyDetails';
 import EnhancedTurnIndicator from '../../components/GameComponents/EnhancedTurnIndicator/EnhancedTurnIndicator';
 import MatchmakingAnimation from '../../components/GameComponents/MatchmakingAnimation/MatchmakingAnimation'
+import GameRoomShare from '../../components/GameComponents/GameRoomShare/GameRoomShare';
+import JoiningGameIndicator from '../../components/GameComponents/JoiningGameIndicator/JoiningGameIndicator';
 import { GameState, GameMessage } from '../../types/gameTypes';
 import { useWalletStore } from '../../stores/walletStore';
 
@@ -45,6 +48,14 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
   const locksRemainingRef = useRef<number>(0);
   const totalGameLocksUsedRef = useRef<number>(0);
   const lastRevealedCountRef = useRef<number>(0);
+  const { gameId } = useParams<{ gameId: string }>();
+  const navigate = useNavigate();
+  const [showShareOverlay, setShowShareOverlay] = useState<boolean>(false);
+  const [gameRoomId, setGameRoomId] = useState<string | null>(null);
+  const [, setIsCreatingRoom] = useState<boolean>(false);
+  const [isJoiningGame, setIsJoiningGame] = useState<boolean>(false);
+  const didJoinGameRef = useRef<boolean>(false);
+  const isCreatingRoomRef = useRef<boolean>(false);
   // First, add a new ref to track if a player has made a move in their current turn
   const playerMadeMoveRef = useRef<boolean>(false);
 
@@ -129,11 +140,50 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
   
     if ('GameUpdate' in message) {
       const newGameState = message.GameUpdate;
+    
+      // // Add extensive debug logging
+      // console.log("===== GAME UPDATE RECEIVED =====");
+      // if (newGameState) {
+      //   console.log("Game State:", 
+      //     'WAITING' in newGameState ? "WAITING" : 
+      //     'RUNNING' in newGameState ? "RUNNING" : 
+      //     'FINISHED' in newGameState ? "FINISHED" : 
+      //     'ABORTED' in newGameState ? "ABORTED" : "Unknown");
+        
+      //   if ('WAITING' in newGameState) {
+      //     console.log("Game ID:", newGameState.WAITING.game_id);
+      //   }
+      // }
+      // console.log("isCreatingRoomRef:", isCreatingRoomRef.current);
+      // console.log("isCreatingRoom state:", isCreatingRoom);
+      
+      // Update the game state
       setGameState(newGameState ?? null);
       
-      // Clear matchmaking parameters when game state changes from WAITING
+      // Hide joining indicator when we receive any game state
+      if (newGameState) {
+        setIsJoiningGame(false);
+      }
+
+      // IMPORTANT: Check using the ref for reliability
+      if (newGameState && 'WAITING' in newGameState) {
+        if (isCreatingRoomRef.current) {
+          console.log("✅ SHOWING SHARE OVERLAY - Creating room + WAITING state");
+          const roomId = newGameState.WAITING.game_id;
+          setGameRoomId(roomId);
+          setShowShareOverlay(true);
+          
+          // Update URL
+          // navigate(`/multiplayer/${roomId}`, { replace: true });
+        } else {
+          console.log("❌ NOT showing share overlay - not in creation mode");
+        }
+      }
+      
+      // Clear matchmaking parameters when game state changes from WAITING to something else
       if (newGameState && ('RUNNING' in newGameState || 'FINISHED' in newGameState)) {
         setMatchmakingParams(null);
+        setShowShareOverlay(false);
       }
       
       if (newGameState) {
@@ -316,6 +366,49 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
     };
   }, []);
 
+  // 3. Add an additional effect to reset the join flag when URL changes
+  useEffect(() => {
+    // If we're on the base multiplayer route (no gameId in URL)
+    // Make sure didJoinGameRef is reset
+    if (!gameId && window.location.pathname === '/multiplayer') {
+      didJoinGameRef.current = false;
+      setIsJoiningGame(false);
+    }
+  }, [gameId]);
+
+  // 2. Update the joining effect to be more precise about when to join
+  useEffect(() => {
+    // Only attempt to join if:
+    // 1. We have a gameId in the URL
+    // 2. We have user data
+    // 3. We're connected to the server
+    // 4. We haven't already tried to join
+    // 5. We're not already in a game
+    // 6. We're actually on the gameId route (not the base multiplayer route)
+    if (
+      gameId && 
+      userData?.id && 
+      isConnected && 
+      !didJoinGameRef.current && 
+      !gameState &&
+      window.location.pathname.includes(`/multiplayer/${gameId}`) // Check we're on the game route
+    ) {
+      console.log(`Attempting to join game with ID: ${gameId}`);
+      didJoinGameRef.current = true;
+      setIsJoiningGame(true);
+      
+      // Send the join message to the server
+      sendMessage({
+        Join: {
+          player_id: userData.id.toString(),
+          game_id: gameId,
+          name: userData.name
+        }
+      });
+    }
+  }, [gameId, userData, isConnected, sendMessage, gameState]);
+
+
   const handleMove = useCallback((x: number, y: number) => {
     if (!gameState || !('RUNNING' in gameState)) return;
   
@@ -345,7 +438,7 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
     
     // If the cell is a bomb, don't enter lock phase - instead show a brief pause
     if (isBomb) {
-      console.log("Player hit a bomb! Pausing before next turn...");
+      // console.log("Player hit a bomb! Pausing before next turn...");
       
       // Don't enter lock phase
       setIsLockPhase(false);
@@ -515,15 +608,56 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
     lastRevealedCountRef.current = 0;
     locksRemainingRef.current = 0;
     previousTurnIdxRef.current = -1;
+    didJoinGameRef.current = false;
+    setGameRoomId(null);
+    setShowShareOverlay(false);
+    setIsCreatingRoom(false);
+    setIsJoiningGame(false);
+    isCreatingRoomRef.current = false;
   }, []);
 
   const playGame = useCallback((gridSize: number, bombs: number, minPlayers: number) => {
     if (!userData?.id) return;
+    
+    console.log("===== JOIN RANDOM GAME CLICKED =====");
+    
     resetGameState();
   
+    // Set BOTH the ref and the state to false
+    isCreatingRoomRef.current = false;
+    setIsCreatingRoom(false);
+    console.log("isCreatingRoomRef set to:", isCreatingRoomRef.current);
+    
     // Store matchmaking parameters
     setMatchmakingParams({ gridSize, bombs, betAmount });
+  
+    sendMessage({
+      Play: {
+        player_id: userData.id.toString(),
+        single_bet_size: betAmount,
+        name: userData.name.toString(),
+        grid: gridSize,
+        bombs,
+        min_players: minPlayers
+      },
+    });
+  }, [userData, betAmount, sendMessage, resetGameState]);
 
+  // 3. Make sure the createGameRoom function explicitly sets isCreatingRoom to true
+  const createGameRoom = useCallback((gridSize: number, bombs: number, minPlayers: number) => {
+    if (!userData?.id) return;
+    
+    console.log("===== CREATE GAME ROOM CLICKED =====");
+    
+    // Clear everything and start fresh
+    resetGameState();
+    
+    // Set BOTH the ref and the state for redundancy
+    isCreatingRoomRef.current = true;
+    setIsCreatingRoom(true);
+    console.log("isCreatingRoomRef set to:", isCreatingRoomRef.current);
+    
+    // Send the Play message to create a game
     sendMessage({
       Play: {
         player_id: userData.id.toString(),
@@ -547,6 +681,32 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
           betAmount={matchmakingParams.betAmount}
         />
       )}
+      
+      {/* Game room sharing overlay */}
+      {showShareOverlay && gameRoomId && (
+        <GameRoomShare 
+          gameId={gameRoomId} 
+          onClose={() => setShowShareOverlay(false)}
+          onCancel={() => {
+            // Cancel the game and reset
+            if (gameState && 'WAITING' in gameState) {
+              sendMessage({
+                Stop: {
+                  game_id: gameState.WAITING.game_id,
+                  abort: true,
+                },
+              });
+            }
+            resetGameState();
+            navigate('/multiplayer', { replace: true });
+          }}
+        />
+      )}
+
+      {/* Joining Game Indicator */}
+      {isJoiningGame && gameId && (
+        <JoiningGameIndicator gameId={gameId} />
+      )}
 
       {ParticlesComponent}
       
@@ -564,6 +724,7 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
             betAmount={betAmount}
             setBetAmount={setBetAmount}
             playGame={playGame}
+            createGameRoom={createGameRoom}
             isConnected={isConnected}
           />
         )}
@@ -615,10 +776,19 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
 
         {(gameState && ('FINISHED' in gameState || 'ABORTED' in gameState)) && (
           <button
-            onClick={resetGameState}
+            onClick={() => {
+              // Reset the game state
+              resetGameState();
+              
+              // Clear the didJoinGameRef to prevent auto-join on navigation
+              didJoinGameRef.current = false;
+              
+              // Navigate to the base multiplayer route, replacing the current URL
+              navigate('/multiplayer', { replace: true });
+            }}
             className="w-full py-3 px-6 mt-6 rounded-lg font-medium transition-all duration-200 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 border border-emerald-500/30"
           >
-            Play Again
+            Back to Lobby
           </button>
         )}
       </div>

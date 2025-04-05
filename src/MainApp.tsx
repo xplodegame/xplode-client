@@ -287,6 +287,22 @@ const MainApp: React.FC = () => {
                     </ProtectedRoute>
                   }
                 />
+                {/* New route for direct game joining */}
+                <Route
+                  path="/multiplayer/:gameId"
+                  element={
+                    <ProtectedRoute>
+                      <UsernameRequiredWrapper
+                        userData={userData}
+                        isUsernameModalOpen={isUsernameModalOpen}
+                        setIsUsernameModalOpen={setIsUsernameModalOpen}
+                        handleUsernameSet={handleUsernameSet}
+                      >
+                        <MultiplayerGame userData={userData} />
+                      </UsernameRequiredWrapper>
+                    </ProtectedRoute>
+                  }
+                />
                 <Route
                   path="/leaderboard"
                   element={
