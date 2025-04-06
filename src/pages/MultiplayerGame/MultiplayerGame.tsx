@@ -2,6 +2,7 @@ import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import useWebSocket from '../../hooks/useWebSocket';
+import { motion } from 'framer-motion';
 import { useParticles } from '../../components/GameComponents/Background/GameBackgroundParticles';
 import GameBoard from '../../components/GameComponents/GameBoard/GameBoard';
 import GameStatus from '../../components/GameComponents/GameStatus/GameStatus';
@@ -344,7 +345,23 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
         }
       }
     } else if ('Error' in message) {
-      setError(typeof message.Error === 'string' ? message.Error : 'An error occurred');
+      const errorMessage = typeof message.Error === 'string' ? message.Error : 'An error occurred';
+      setError(errorMessage);
+      
+      // Add these lines to handle join errors
+      if (
+        errorMessage.includes("not accepting players") || 
+        errorMessage.includes("game not found") ||
+        errorMessage.includes("game is over")
+      ) {
+        console.log("Game cannot be joined, redirecting to lobby");
+        // Hide the joining indicator
+        setIsJoiningGame(false);
+        // Reset the join flag
+        didJoinGameRef.current = false;
+        // Navigate to lobby
+        navigate('/multiplayer', { replace: true });
+      }
     }
   }, [calculateMaxLocks, countRevealedCells]);
 
@@ -376,7 +393,7 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
     }
   }, [gameId]);
 
-  // 2. Update the joining effect to be more precise about when to join
+  // Update the joining effect to be more precise about when to join
   useEffect(() => {
     // Only attempt to join if:
     // 1. We have a gameId in the URL
@@ -406,8 +423,35 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
         }
       });
     }
-  }, [gameId, userData, isConnected, sendMessage, gameState]);
+  }, [gameId, userData, isConnected, sendMessage, gameState, navigate]);
 
+  // Add a timeout for join attempts
+  useEffect(() => {
+    if (isJoiningGame) {
+      // If we're trying to join a game, set a timeout to redirect if it takes too long
+      const joinTimeout = setTimeout(() => {
+        console.log("Join attempt timed out, redirecting to lobby");
+        setIsJoiningGame(false);
+        didJoinGameRef.current = false;
+        setError("Unable to join game - the game may have ended or is not accepting players.");
+        navigate('/multiplayer', { replace: true });
+      }, 5000); // 5 second timeout
+      
+      return () => clearTimeout(joinTimeout);
+    }
+  }, [isJoiningGame, navigate]);
+
+  // First, add a useEffect to automatically clear error messages after 3 seconds
+  useEffect(() => {
+    if (error) {
+      const timer = setTimeout(() => {
+        setError('');
+      }, 5000);
+      
+      // Cleanup function to clear timer if component unmounts or error changes
+      return () => clearTimeout(timer);
+    }
+  }, [error]);
 
   const handleMove = useCallback((x: number, y: number) => {
     if (!gameState || !('RUNNING' in gameState)) return;
@@ -714,9 +758,14 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
         <h1 className="text-3xl font-bold mb-12 text-center bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent invisible">Diamond Hunters</h1>
 
         {error && (
-          <div className="text-red-400 text-sm mb-6 bg-red-950/30 border border-red-900/50 rounded-lg p-3">
+          <motion.div 
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="text-red-400 text-sm mb-6 bg-red-950/30 border border-red-900/50 rounded-lg p-3"
+          >
             {error}
-          </div>
+          </motion.div>
         )}
 
         {(!gameState || 'ABORTED' in gameState) && (
