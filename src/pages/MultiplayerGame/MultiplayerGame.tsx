@@ -308,40 +308,35 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
           });
           setRevealedCells(newRevealedCells);
 
-          // Create a separate async function for the API call
-          const updateUserBalance = async () => {
-            const currentUserData = userDataRef.current;
-            try {
-              const newUserData = {
-                privy_id: currentUserData?.privy_id,
-                email: currentUserData?.email,
-                name: currentUserData?.name || '',
-              };
-
-              const userDetailsResponse = await fetch(import.meta.env.VITE_USER_DETAILS_ENDPOINT_URL, {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(newUserData),
-              });
-
-              if (!userDetailsResponse.ok) {
-                throw new Error(`HTTP error! status: ${userDetailsResponse.status}`);
-              }
-
-              const userDetailsData = await userDetailsResponse.json();
-
-              // Update the global store
-              setBalance(userDetailsData.balance);
-              console.log("Balance update of the user after the game is finished: ", userDetailsData)
-            } catch (error) {
-              console.error('Failed to update user balance:', error);
-            }
+          // Prepare the request data
+          const currentUserData = userDataRef.current;
+          const newUserData = {
+            privy_id: currentUserData?.privy_id,
+            email: currentUserData?.email,
+            name: currentUserData?.name || '',
           };
-
-          // Call the async function
-          updateUserBalance();
+          
+          // Add delay and make the direct API call
+          setTimeout(() => {
+            fetch(import.meta.env.VITE_USER_DETAILS_ENDPOINT_URL, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify(newUserData),
+            })
+            .then(response => {
+              if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+              return response.json();
+            })
+            .then(userDetailsData => {
+              setBalance(userDetailsData.balance);
+              console.log("Balance update of the user after the game is finished: ", userDetailsData);
+            })
+            .catch(error => {
+              console.error('Failed to update user balance:', error);
+            });
+          }, 3000);
         }
       }
     } else if ('Error' in message) {
