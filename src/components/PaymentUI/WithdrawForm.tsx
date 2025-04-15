@@ -128,7 +128,7 @@ export const WithdrawForm: React.FC<WithdrawFormProps> = ({
                    focus:outline-none focus:border-emerald-500
                    focus:ring-2 focus:ring-emerald-500/20
                    transition-all duration-200 backdrop-blur-sm"
-          placeholder="Enter your Solana wallet address"
+          placeholder="Enter your Monad wallet address"
           required
         />
       </div>
