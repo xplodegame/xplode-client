@@ -14,7 +14,7 @@ interface LobbyDetailsProps {
 const LobbyDetails: React.FC<LobbyDetailsProps> = ({
   betAmount,
   setBetAmount,
-  playGame,
+  // playGame,
   createGameRoom,
   isConnected,
 }) => {
