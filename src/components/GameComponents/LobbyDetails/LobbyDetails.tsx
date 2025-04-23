@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { Coins, Grid, Bomb, Users, UserPlus } from 'lucide-react';
 import { useWalletStore } from '../../../stores/walletStore';
+import MaintenanceModal from '../MaintenanceModal/MaintenanceModal';
 
 interface LobbyDetailsProps {
   betAmount: number;
@@ -22,6 +23,7 @@ const LobbyDetails: React.FC<LobbyDetailsProps> = ({
   const [bombs, setBombs] = useState<number>(3);
   const [minPlayers, setMinPlayers] = useState<number>(2);
   const [activeTab, setActiveTab] = useState<'random' | 'create'>('random');
+  const [modalOpen, setModalOpen] = useState<boolean>(false);
 
   const handleBetChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -203,7 +205,9 @@ const LobbyDetails: React.FC<LobbyDetailsProps> = ({
             onClick={() => {
               startGameSound.current.play();
               if (activeTab === 'random') {
-                playGame(gridSize, bombs, minPlayers);
+                // playGame(gridSize, bombs, minPlayers);
+                // Instead of directly calling playGame, show the modal
+                setModalOpen(true);
               } else {
                 createGameRoom(gridSize, bombs, minPlayers);
               }
@@ -216,8 +220,14 @@ const LobbyDetails: React.FC<LobbyDetailsProps> = ({
           </button>
         </div>
       </div>
+
+      <MaintenanceModal 
+        isOpen={modalOpen} 
+        onClose={() => setModalOpen(false)} 
+      />
     </div>
   );
-};
+}
+
 
 export default React.memo(LobbyDetails);
