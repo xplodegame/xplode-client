@@ -14,7 +14,7 @@ interface LobbyDetailsProps {
 const LobbyDetails: React.FC<LobbyDetailsProps> = ({
   betAmount,
   setBetAmount,
-  // playGame,
+  playGame,
   createGameRoom,
   isConnected,
 }) => {
@@ -205,9 +205,9 @@ const LobbyDetails: React.FC<LobbyDetailsProps> = ({
             onClick={() => {
               startGameSound.current.play();
               if (activeTab === 'random') {
-                // playGame(gridSize, bombs, minPlayers);
+                playGame(gridSize, bombs, minPlayers);
                 // Instead of directly calling playGame, show the modal
-                setModalOpen(true);
+                // setModalOpen(true);
               } else {
                 createGameRoom(gridSize, bombs, minPlayers);
               }

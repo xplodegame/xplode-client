@@ -16,6 +16,7 @@ import { useWalletStore } from '../../stores/walletStore';
 
 const MOVE_TIMEOUT = 30000; // 30 seconds
 const LOCK_PHASE_TIMEOUT = 5000; // 5 seconds
+const WAIT_TIMEOUT = 60000 // 60 seconds
 
 interface MultiplayerGameProps {
   userData?: { 
@@ -46,6 +47,7 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
 
   const moveTimeoutRef = useRef<number>();
   const lockTimeoutRef = useRef<number>();
+  const waitTimeoutRef = useRef<number>();
   const locksRemainingRef = useRef<number>(0);
   const totalGameLocksUsedRef = useRef<number>(0);
   const lastRevealedCountRef = useRef<number>(0);
@@ -282,7 +284,7 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
             lockTimeoutRef.current = undefined;
           }
         } else if ('WAITING' in newGameState) {
-          moveTimeoutRef.current = window.setTimeout(() => {
+          waitTimeoutRef.current = window.setTimeout(() => {
             sendMessage({
               Stop: {
                 game_id: newGameState.WAITING.game_id,
@@ -294,7 +296,7 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
             
             // Clear matchmaking overlay
             setMatchmakingParams(null);
-          }, MOVE_TIMEOUT);
+          }, WAIT_TIMEOUT);
         } else if ('FINISHED' in newGameState) {
           // Handle finished state
           const newRevealedCells = new Set<string>();
