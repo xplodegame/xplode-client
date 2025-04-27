@@ -195,6 +195,12 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
         }
   
         if ('RUNNING' in newGameState) {
+          // Clear the wait timeout if game has started running
+          if (waitTimeoutRef.current) {
+            clearTimeout(waitTimeoutRef.current);
+            waitTimeoutRef.current = undefined;
+          }
+
           const currentUserData = userDataRef.current;
           const currentTurnIdx = newGameState.RUNNING.turn_idx;
           const currentPlayer = newGameState.RUNNING.players[currentTurnIdx];
@@ -284,6 +290,10 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
             lockTimeoutRef.current = undefined;
           }
         } else if ('WAITING' in newGameState) {
+          // Set wait timeout only when in WAITING state
+          if (waitTimeoutRef.current) {
+            clearTimeout(waitTimeoutRef.current);
+          }
           waitTimeoutRef.current = window.setTimeout(() => {
             sendMessage({
               Stop: {
@@ -376,6 +386,9 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
       }
       if (lockTimeoutRef.current) {
         clearTimeout(lockTimeoutRef.current);
+      }
+      if (waitTimeoutRef.current) {
+        clearTimeout(waitTimeoutRef.current);
       }
     };
   }, []);
