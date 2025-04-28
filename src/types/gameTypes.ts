@@ -89,7 +89,7 @@ export type GameMessage =
   | {
       RematchRequest: {
         game_id: string;
-        requester: string; // Player ID of the player requesting rematch
+        requester_id: string; // Player ID of the player requesting rematch
       };
     }
   | {

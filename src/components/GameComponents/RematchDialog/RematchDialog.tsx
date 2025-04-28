@@ -9,7 +9,7 @@ interface RematchDialogProps {
   onDecline: () => void;
   isRequesting: boolean;
   onRequestRematch: () => void;
-  rematchRequest: { game_id: string; requester: string } | null;
+  rematchRequest: { game_id: string; requester_id: string } | null;
 }
 
 const RematchDialog: React.FC<RematchDialogProps> = ({
@@ -25,7 +25,7 @@ const RematchDialog: React.FC<RematchDialogProps> = ({
   
   // Play notification sound when rematch request is received
   useEffect(() => {
-    if (rematchRequest && userData?.id?.toString() !== rematchRequest.requester) {
+    if (rematchRequest && userData?.id?.toString() !== rematchRequest.requester_id) {
       notificationSound.current.play().catch(console.error);
     }
   }, [rematchRequest, userData]);
@@ -49,7 +49,7 @@ const RematchDialog: React.FC<RematchDialogProps> = ({
   const hasAccepted = isRematchState && currentPlayerIndex !== -1 && acceptedPlayers[currentPlayerIndex] === 1;
   
   // Don't show the request dialog to the player who made the request
-  const isRequester = rematchRequest && rematchRequest.requester === userData.id?.toString();
+  const isRequester = rematchRequest && rematchRequest.requester_id === userData.id?.toString();
 
   // Reusable cosmic particles component
   const CosmicParticles = () => (
@@ -142,7 +142,7 @@ const RematchDialog: React.FC<RematchDialogProps> = ({
                 
                 <p className="text-zinc-300 mt-2 text-center leading-relaxed">
                   <span className="text-emerald-400 font-medium">
-                    {players.find(p => p.id?.toString() === rematchRequest.requester)?.name || 'A cosmic explorer'}
+                    {players.find(p => p.id?.toString() === rematchRequest.requester_id)?.name || 'A cosmic explorer'}
                   </span>{' '}
                   invites you to a rematch among the stars! Ready for another cosmic duel?
                 </p>

@@ -47,7 +47,7 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
   const [lockEndTime, setLockEndTime] = useState<number>(0);
   const setBalance = useWalletStore(state => state.setBalance);
   const [isRequestingRematch, setIsRequestingRematch] = useState<boolean>(false);
-  const [rematchRequest, setRematchRequest] = useState<{ game_id: string; requester: string } | null>(null);
+  const [rematchRequest, setRematchRequest] = useState<{ game_id: string; requester_id: string } | null>(null);
   const [previousGameId, setPreviousGameId] = useState<string | null>(null);
 
   // Sound references
@@ -415,7 +415,7 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
       }
       
       // Don't show the request if the current user is the requester
-      if (userData?.id?.toString() !== request.requester) {
+      if (userData?.id?.toString() !== request.requester_id) {
         // Play notification sound for the receiver
         notificationSound.current.play().catch(console.error);
         setRematchRequest(request);
@@ -758,7 +758,7 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
     // Store the request locally to show the waiting UI to the requester
     const request = {
       game_id: gameState.FINISHED.game_id,
-      requester: userData.id.toString(),
+      requester_id: userData.id.toString(),
     };
     
     setRematchRequest(request);
@@ -833,7 +833,7 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
     setRematchRequest(null);
     
     // Only navigate to lobby if we're declining (not canceling our own request)
-    if (!rematchRequest || userData.id.toString() !== rematchRequest.requester) {
+    if (!rematchRequest || userData.id.toString() !== rematchRequest.requester_id) {
       // Reset the game state
       resetGameState();
       
