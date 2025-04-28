@@ -12,6 +12,8 @@ import MatchmakingAnimation from '../../components/GameComponents/MatchmakingAni
 import GameRoomShare from '../../components/GameComponents/GameRoomShare/GameRoomShare';
 import JoiningGameIndicator from '../../components/GameComponents/JoiningGameIndicator/JoiningGameIndicator';
 import { GameState, GameMessage } from '../../types/gameTypes';
+import RematchDialog from '../../components/GameComponents/RematchDialog/RematchDialog';
+
 import { useWalletStore } from '../../stores/walletStore';
 
 const MOVE_TIMEOUT = 30000; // 30 seconds
@@ -44,6 +46,15 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
   const [moveEndTime, setMoveEndTime] = useState<number>(0);
   const [lockEndTime, setLockEndTime] = useState<number>(0);
   const setBalance = useWalletStore(state => state.setBalance);
+  const [isRequestingRematch, setIsRequestingRematch] = useState<boolean>(false);
+  const [rematchRequest, setRematchRequest] = useState<{ game_id: string; requester: string } | null>(null);
+  const [previousGameId, setPreviousGameId] = useState<string | null>(null);
+
+  // Sound references
+  const notificationSound = useRef(new Audio('/assets/sounds/notification.mp3'));
+  const startGameSound = useRef(new Audio('/assets/sounds/start_game.wav'));
+  // const defeatSound = useRef(new Audio('/assets/sounds/defeatSound.mp3'));
+  // const victorySound = useRef(new Audio('/assets/sounds/victorySound.mp3'));
 
   const moveTimeoutRef = useRef<number>();
   const lockTimeoutRef = useRef<number>();
@@ -143,23 +154,7 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
   
     if ('GameUpdate' in message) {
       const newGameState = message.GameUpdate;
-    
-      // // Add extensive debug logging
-      // console.log("===== GAME UPDATE RECEIVED =====");
-      // if (newGameState) {
-      //   console.log("Game State:", 
-      //     'WAITING' in newGameState ? "WAITING" : 
-      //     'RUNNING' in newGameState ? "RUNNING" : 
-      //     'FINISHED' in newGameState ? "FINISHED" : 
-      //     'ABORTED' in newGameState ? "ABORTED" : "Unknown");
-        
-      //   if ('WAITING' in newGameState) {
-      //     console.log("Game ID:", newGameState.WAITING.game_id);
-      //   }
-      // }
-      // console.log("isCreatingRoomRef:", isCreatingRoomRef.current);
-      // console.log("isCreatingRoom state:", isCreatingRoom);
-      
+
       // Update the game state
       setGameState(newGameState ?? null);
       
@@ -206,8 +201,20 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
           const currentPlayer = newGameState.RUNNING.players[currentTurnIdx];
           const isCurrentPlayerTurn = currentPlayer.id === currentUserData?.id?.toString();
 
-          // Check if turn has changed
-          if (previousTurnIdxRef.current !== currentTurnIdx) {
+          // Save game ID for potential rematch
+          if (previousGameId !== newGameState.RUNNING.game_id) {
+            setPreviousGameId(newGameState.RUNNING.game_id);
+          }
+
+          // Add this special handling for rematch games:
+          // Special handling for new games or rematch games - IMPORTANT FOR TIMER ISSUES
+          const isNewGameOrRematch = previousTurnIdxRef.current === -1;
+
+          // // Check if turn has changed
+          // if (previousTurnIdxRef.current !== currentTurnIdx) {
+          // Check if turn has changed or if this is a new/rematch game
+          if (previousTurnIdxRef.current !== currentTurnIdx || isNewGameOrRematch) {
+            console.log("Turn changed or new game detected, resetting timer");
             // For all players: set move timer and exit lock phase
             setMoveEndTime(Date.now() + MOVE_TIMEOUT);
             setIsLockPhase(false);
@@ -249,7 +256,13 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
 
           // Set move timeout only for the current player
           if (isCurrentPlayerTurn) {
+            // Clear any existing timeout before setting a new one
+            if (moveTimeoutRef.current) {
+              clearTimeout(moveTimeoutRef.current);
+            }
+
             moveTimeoutRef.current = window.setTimeout(() => {
+              console.log("###### Aborting due to movetimeout")
               setTurnCount((prevCount) => {
                 const abort = prevCount === 0;
                 sendMessage({
@@ -320,6 +333,10 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
           });
           setRevealedCells(newRevealedCells);
 
+          // Reset rematch state when game finishes
+          setIsRequestingRematch(false);
+          setRematchRequest(null);
+
           // Prepare the request data
           const currentUserData = userDataRef.current;
           const newUserData = {
@@ -349,11 +366,69 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
               console.error('Failed to update user balance:', error);
             });
           }, 3000);
+        } else if ('REMATCH' in newGameState) {
+          // Handle rematch state
+          setIsRequestingRematch(false);
+
+          // Clear any existing move timeout - IMPORTANT FOR TIMER ISSUES
+          if (moveTimeoutRef.current) {
+            clearTimeout(moveTimeoutRef.current);
+            moveTimeoutRef.current = undefined;
+          }
+
+          // Reset move end time to ensure a fresh timer when transitioning to RUNNING
+          setMoveEndTime(0);
+
+          // Reset the turn index reference to ensure a fresh turn detection
+          previousTurnIdxRef.current = -1;
+          
+          // Reset the player made move flag to ensure proper lock phase detection
+          playerMadeMoveRef.current = false;
+          
+          const newRevealedCells = new Set<string>();
+          const board = newGameState.REMATCH.board;
+          board.grid.forEach((row, x) => {
+            row.forEach((cell, y) => {
+              if (cell === 'Mined' || cell === 'Revealed') {
+                newRevealedCells.add(`${x}-${y}`);
+              }
+            });
+          });
+          setRevealedCells(newRevealedCells);
+          
+          // Check if all players have accepted and the game should transition to RUNNING state
+          const allPlayersAccepted = newGameState.REMATCH.accepted.every(status => status === 1);
+          if (allPlayersAccepted) {
+            // The server should transition the game to RUNNING state
+            console.log("All players accepted rematch, waiting for server to transition to RUNNING state");
+          }
         }
+      } 
+    } else if ('RematchRequest' in message) {
+      // Show rematch dialog when receiving a rematch request
+      const request = message.RematchRequest;
+
+      // Clear any existing move timeout to prevent timer issues
+      if (moveTimeoutRef.current) {
+        clearTimeout(moveTimeoutRef.current);
+        moveTimeoutRef.current = undefined;
+      }
+      
+      // Don't show the request if the current user is the requester
+      if (userData?.id?.toString() !== request.requester) {
+        // Play notification sound for the receiver
+        notificationSound.current.play().catch(console.error);
+        setRematchRequest(request);
       }
     } else if ('Error' in message) {
       const errorMessage = typeof message.Error === 'string' ? message.Error : 'An error occurred';
       setError(errorMessage);
+
+      // Reset rematch state if there's an error with the rematch
+      if (errorMessage.includes("rematch")) {
+        setIsRequestingRematch(false);
+        setRematchRequest(null);
+      }
       
       // Add these lines to handle join errors
       if (
@@ -668,8 +743,108 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
     setIsCreatingRoom(false);
     setIsJoiningGame(false);
     isCreatingRoomRef.current = false;
+    
+    // Reset rematch state
+    setIsRequestingRematch(false);
+    setRematchRequest(null);
   }, []);
 
+  // Add these handler functions for rematch functionality
+  const handleRequestRematch = useCallback(() => {
+    if (!gameState || !('FINISHED' in gameState) || !userData?.id) return;
+  
+    setIsRequestingRematch(true);
+    
+    // Store the request locally to show the waiting UI to the requester
+    const request = {
+      game_id: gameState.FINISHED.game_id,
+      requester: userData.id.toString(),
+    };
+    
+    setRematchRequest(request);
+    
+    // Clear any existing move timeout to prevent timer issues
+    if (moveTimeoutRef.current) {
+      clearTimeout(moveTimeoutRef.current);
+      moveTimeoutRef.current = undefined;
+    }
+    
+    // Reset turn tracking to force fresh timer on new game
+    previousTurnIdxRef.current = -1;
+    
+    // Play notification sound for the requester
+    notificationSound.current.play().catch(console.error);
+    
+    // Send the rematch request to the server
+    sendMessage({
+      RematchRequest: request
+    });
+  }, [gameState, userData, sendMessage]);
+  
+  const handleAcceptRematch = useCallback(() => {
+    // We can accept a direct rematch request or a rematch state
+    const gameId = rematchRequest?.game_id || 
+                  (gameState && 'REMATCH' in gameState ? gameState.REMATCH.game_id : null);
+    
+    if (!gameId || !userData?.id) return;
+  
+    // Clear any existing move timeout to prevent timer issues
+    if (moveTimeoutRef.current) {
+      clearTimeout(moveTimeoutRef.current);
+      moveTimeoutRef.current = undefined;
+    }
+    
+    // Reset the turn index reference to ensure fresh turn detection
+    previousTurnIdxRef.current = -1;
+    
+    // Play notification sound for the requester
+    startGameSound.current.play().catch(console.error);
+  
+    sendMessage({
+      RematchResponse: {
+        game_id: gameId,
+        player_id: userData.id.toString(),
+        want_rematch: true,
+      },
+    });
+    
+    // Only clear the direct request if it exists
+    if (rematchRequest) {
+      setRematchRequest(null);
+    }
+  }, [rematchRequest, gameState, userData, sendMessage]);
+  
+  const handleDeclineRematch = useCallback(() => {
+    // We can decline a direct rematch request or a rematch state
+    const gameId = rematchRequest?.game_id || 
+                  (gameState && 'REMATCH' in gameState ? gameState.REMATCH.game_id : null);
+    
+    if (!gameId || !userData?.id) return;
+  
+    sendMessage({
+      RematchResponse: {
+        game_id: gameId,
+        player_id: userData.id.toString(),
+        want_rematch: false,
+      },
+    });
+    
+    // Clear the request and go back to lobby
+    setRematchRequest(null);
+    
+    // Only navigate to lobby if we're declining (not canceling our own request)
+    if (!rematchRequest || userData.id.toString() !== rematchRequest.requester) {
+      // Reset the game state
+      resetGameState();
+      
+      // Clear the didJoinGameRef to prevent auto-join on navigation
+      didJoinGameRef.current = false;
+      
+      // Navigate to the base multiplayer route, replacing the current URL
+      // navigate('/multiplayer', { replace: true });
+    }
+  }, [rematchRequest, gameState, userData, sendMessage, resetGameState]);
+  
   const playGame = useCallback((gridSize: number, bombs: number, minPlayers: number) => {
     if (!userData?.id) return;
     
@@ -762,6 +937,16 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
         <JoiningGameIndicator gameId={gameId} />
       )}
 
+      <RematchDialog
+        gameState={gameState}
+        userData={userData}
+        onAccept={handleAcceptRematch}
+        onDecline={handleDeclineRematch}
+        isRequesting={isRequestingRematch}
+        onRequestRematch={handleRequestRematch}
+        rematchRequest={rematchRequest}
+      />
+
       {ParticlesComponent}
       
       <div className="relative w-full max-w-md z-10">
@@ -833,22 +1018,43 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
           </div>
         )}
 
-        {(gameState && ('FINISHED' in gameState || 'ABORTED' in gameState)) && (
-          <button
-            onClick={() => {
-              // Reset the game state
-              resetGameState();
-              
-              // Clear the didJoinGameRef to prevent auto-join on navigation
-              didJoinGameRef.current = false;
-              
-              // Navigate to the base multiplayer route, replacing the current URL
-              navigate('/multiplayer', { replace: true });
-            }}
-            className="w-full py-3 px-6 mt-6 rounded-lg font-medium transition-all duration-200 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 border border-emerald-500/30"
-          >
-            Back to Lobby
-          </button>
+        {(gameState && (('FINISHED' in gameState) || ('ABORTED' in gameState)) && !rematchRequest) && (
+          <div className="flex gap-3 w-full mt-6">
+            {/* Rematch Button (only show for FINISHED state, not ABORTED) */}
+            {'FINISHED' in gameState && (
+              <button
+                onClick={handleRequestRematch}
+                disabled={isRequestingRematch}
+                className={`flex-1 py-3 rounded-lg font-medium transition-all duration-200 ${
+                  isRequestingRematch
+                    ? 'bg-zinc-700 text-zinc-400 cursor-not-allowed'
+                    : 'bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 border border-emerald-500/30'
+                }`}
+              >
+                {isRequestingRematch ? 'Requesting Rematch...' : 'Rematch'}
+              </button>
+            )}
+            {'FINISHED' in gameState && (
+              <button
+              onClick={() => {
+                // Reset the game state
+                resetGameState();
+                
+                // Clear the didJoinGameRef to prevent auto-join on navigation
+                didJoinGameRef.current = false;
+                
+                // Navigate to the base multiplayer route, replacing the current URL
+                navigate('/multiplayer', { replace: true });
+              }}
+              className="flex-1 py-3 px-6 rounded-lg font-medium transition-all duration-200 bg-zinc-500/10 text-zinc-400 hover:bg-zinc-500/20 border border-zinc-500/30"
+            >
+              Back to Lobby
+            </button>
+            )}
+            
+            {/* Back to Lobby Button */}
+            
+          </div>
         )}
       </div>
     </div>

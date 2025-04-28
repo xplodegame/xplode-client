@@ -1,10 +1,11 @@
+// Complete updated gameTypes.ts file for reference
 // Types matching Rust backend exactly
 export type Player = {
+  id?: number;
   privy_id: string;
   email: string;
   name: string;
   wallet_balance?: number;
-  id?: number;
 };
 
 export type Board = {
@@ -41,6 +42,15 @@ export type GameState =
         single_bet_size: number;
       };
     }
+  | {
+      REMATCH: {
+        game_id: string;
+        players: Player[];
+        board: Board;
+        single_bet_size: number;
+        accepted: number[]; // Array tracking which players have accepted (1 for accepted, 0 for not yet)
+      };
+    }
   | { ABORTED: { game_id: string } };
 
 export type GameMessage =
@@ -74,5 +84,18 @@ export type GameMessage =
       RedirectToServer: {
         game_id: string;
         machine_id: string;
+      };
+    }
+  | {
+      RematchRequest: {
+        game_id: string;
+        requester: string; // Player ID of the player requesting rematch
+      };
+    }
+  | {
+      RematchResponse: {
+        game_id: string;
+        player_id: string;
+        want_rematch: boolean; // true for accept, false for decline
       };
     };
