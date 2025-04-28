@@ -30,13 +30,13 @@ const GameStatus: React.FC<GameStatusProps> = ({ gameState, userData }) => {
     );
   }
 
-  if ('ABORTED' in gameState) {
-    return (
-      <div className="text-xl mb-8 font-medium text-yellow-400">
-        Game Aborted Due to Inactivity
-      </div>
-    );
-  }
+  // if ('ABORTED' in gameState) {
+  //   return (
+  //     <div className="text-xl mb-8 font-medium text-yellow-400">
+  //       Game Aborted Due to Inactivity
+  //     </div>
+  //   );
+  // }
 
   return null;
 };

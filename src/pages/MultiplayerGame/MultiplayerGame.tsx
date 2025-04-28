@@ -18,7 +18,7 @@ import { useWalletStore } from '../../stores/walletStore';
 
 const MOVE_TIMEOUT = 30000; // 30 seconds
 const LOCK_PHASE_TIMEOUT = 5000; // 5 seconds
-const WAIT_TIMEOUT = 60000 // 60 seconds
+const WAIT_TIMEOUT = 20000 // 60 seconds
 
 interface MultiplayerGameProps {
   userData?: { 
@@ -49,6 +49,8 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
   const [isRequestingRematch, setIsRequestingRematch] = useState<boolean>(false);
   const [rematchRequest, setRematchRequest] = useState<{ game_id: string; requester_id: string } | null>(null);
   const [previousGameId, setPreviousGameId] = useState<string | null>(null);
+  const [showRematchDeclinedMessage, setShowRematchDeclinedMessage] = useState<boolean>(false);
+  const [showGameAbortedMessage, setShowGameAbortedMessage] = useState<boolean>(false);
 
   // Sound references
   const notificationSound = useRef(new Audio('/assets/sounds/notification.mp3'));
@@ -153,6 +155,35 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
     }
   
     if ('GameUpdate' in message) {
+      const updateData = message.GameUpdate;
+      if (updateData && typeof updateData === 'object' && 'RematchRejected' in updateData) {
+        console.log("Rematch was rejected:", updateData.RematchRejected);
+        
+        // Clear rematch state
+        setRematchRequest(null);
+        setIsRequestingRematch(false);
+        
+        // Show rematch declined message
+        setShowRematchDeclinedMessage(true);
+        
+        // Clear message after 5 seconds
+        setTimeout(() => {
+          setShowRematchDeclinedMessage(false);
+        }, 5000);
+        
+        // Reset game state to show lobby
+        resetGameState();
+        
+        // Explicitly set game state to null to force lobby display
+        setGameState(null);
+        
+        // Navigate to multiplayer route
+        navigate('/multiplayer', { replace: true });
+        
+        // Return early since we've handled this message type
+        return;
+      }
+
       const newGameState = message.GameUpdate;
 
       // Update the game state
@@ -161,6 +192,16 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
       // Hide joining indicator when we receive any game state
       if (newGameState) {
         setIsJoiningGame(false);
+      }
+
+      if (newGameState && 'ABORTED' in newGameState) {
+        // Show game aborted message
+        setShowGameAbortedMessage(true);
+        
+        // Clear message after 5 seconds
+        setTimeout(() => {
+          setShowGameAbortedMessage(false);
+        }, 5000);
       }
 
       // IMPORTANT: Check using the ref for reliability
@@ -315,7 +356,7 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
               },
             });
             resetGameState();
-            setError('Game aborted due to inactivity.');
+            // setError('Game aborted due to inactivity.');
             
             // Clear matchmaking overlay
             setMatchmakingParams(null);
@@ -768,6 +809,11 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
       clearTimeout(moveTimeoutRef.current);
       moveTimeoutRef.current = undefined;
     }
+
+    setTotalGameLocksUsed(0);
+    setLocksRemaining(0);
+    totalGameLocksUsedRef.current = 0;
+    locksRemainingRef.current = 0;
     
     // Reset turn tracking to force fresh timer on new game
     previousTurnIdxRef.current = -1;
@@ -793,6 +839,11 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
       clearTimeout(moveTimeoutRef.current);
       moveTimeoutRef.current = undefined;
     }
+
+    setTotalGameLocksUsed(0);
+    setLocksRemaining(0);
+    totalGameLocksUsedRef.current = 0;
+    locksRemainingRef.current = 0;
     
     // Reset the turn index reference to ensure fresh turn detection
     previousTurnIdxRef.current = -1;
@@ -960,6 +1011,27 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
             className="text-red-400 text-sm mb-6 bg-red-950/30 border border-red-900/50 rounded-lg p-3"
           >
             {error}
+          </motion.div>
+        )}
+        {showRematchDeclinedMessage && (
+          <motion.div 
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="text-yellow-400 text-sm mb-6 bg-yellow-950/30 border border-yellow-900/50 rounded-lg p-3"
+          >
+            Rematch request declined
+          </motion.div>
+        )}
+
+        {showGameAbortedMessage && (
+          <motion.div 
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="text-orange-400 text-sm mb-6 bg-orange-950/30 border border-orange-900/50 rounded-lg p-3"
+          >
+            Game aborted due to inactivity
           </motion.div>
         )}
 
