@@ -25,13 +25,26 @@ const LobbyDetails: React.FC<LobbyDetailsProps> = ({
   const [activeTab, setActiveTab] = useState<'random' | 'create'>('random');
   const [modalOpen, setModalOpen] = useState<boolean>(false);
 
+  const findClosestQuickBet = (bet: number) => {
+    let closestQuickBet = 0;
+    for (let i = quickBets.length - 1; i >= 0; i--) {
+      if (quickBets[i] <= bet) {
+        closestQuickBet = quickBets[i];
+        break;  
+      }
+    }
+    return closestQuickBet;
+  };
+
   const handleBetChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     const numValue = value === "" ? 0 : Number(value);
-    setBetAmount(Math.min(numValue, walletBalance));
+
+    const closestQuickBet = findClosestQuickBet(Math.min(numValue, walletBalance));
+    setBetAmount(closestQuickBet);
   };
 
-  const quickBets = [0.01, 0.05, 0.1, 0.25, 0.5, 1, 2];
+  const quickBets = [0.25, 0.5, 1, 2, 5, 10];
   const gridSizes = [3, 4, 5, 6, 7, 8];
 
   const clickSound = useRef(new Audio('/assets/sounds/click.wav'));
@@ -107,7 +120,7 @@ const LobbyDetails: React.FC<LobbyDetailsProps> = ({
                   key={bet}
                   onClick={() => {
                     playClickSound();
-                    setBetAmount(Math.min(bet, walletBalance));
+                    handleBetChange({ target: { value: bet.toString() } } as unknown as React.ChangeEvent<HTMLInputElement>);
                   }}
                   className="py-2 font-mono text-sm bg-black/40 text-emerald-400/80 border border-emerald-500/20 rounded-lg hover:bg-emerald-500/10 hover:border-emerald-500/40 transition-all duration-300"
                 >
