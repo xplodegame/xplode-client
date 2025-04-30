@@ -65,6 +65,7 @@ export type GameMessage =
         min_players: number;
         bombs: number;
         grid: number;
+        is_creating_room: boolean;
       };
     }
   | {

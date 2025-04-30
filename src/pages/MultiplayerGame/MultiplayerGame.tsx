@@ -918,7 +918,8 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
         name: userData.name.toString(),
         grid: gridSize,
         bombs,
-        min_players: minPlayers
+        min_players: minPlayers,
+        is_creating_room: false
       },
     });
   }, [userData, betAmount, sendMessage, resetGameState]);
@@ -945,7 +946,8 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
         name: userData.name.toString(),
         grid: gridSize,
         bombs,
-        min_players: minPlayers
+        min_players: minPlayers,
+        is_creating_room: true
       },
     });
   }, [userData, betAmount, sendMessage, resetGameState]);
