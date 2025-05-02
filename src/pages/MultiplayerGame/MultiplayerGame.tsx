@@ -18,7 +18,7 @@ import { useWalletStore } from '../../stores/walletStore';
 
 const MOVE_TIMEOUT = 30000; // 30 seconds
 const LOCK_PHASE_TIMEOUT = 5000; // 5 seconds
-const WAIT_TIMEOUT = 20000 // 60 seconds
+const WAIT_TIMEOUT = 50000 // 50 seconds
 
 interface MultiplayerGameProps {
   userData?: { 
