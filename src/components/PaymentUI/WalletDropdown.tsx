@@ -5,7 +5,7 @@ import { WithdrawForm } from './WithdrawForm';
 import { usePayment } from '../../hooks/usePayment';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useWalletStore } from '../../stores/walletStore';
-import { useWallets } from '@privy-io/react-auth'; // Use Privy's wallet hook
+import { useSolanaWallets } from '@privy-io/react-auth'; // Use Privy's wallet hook
 
 type StatusType = 'success' | 'error' | 'processing' | null;
 interface StatusMessage {
@@ -32,13 +32,13 @@ export const WalletDropdown: React.FC<WalletDropdownProps> = ({ userData }) => {
   const walletBalance = useWalletStore(state => state.balance);
 
   // Use Privy's wallet hook to check if a wallet is connected
-  const { wallets } = useWallets();
+  const { wallets } = useSolanaWallets();
   const isWalletConnected = wallets.length > 0; // Check if any wallet is connected via Privy
 
   // console.log("userID: ",userData?.id);
   const {
-    monadAmount,
-    setMonadAmount,
+    solanaAmount,
+    setSolanaAmount,
     handlePayment,
     handleWithdraw,
     paymentStatus,
@@ -47,6 +47,7 @@ export const WalletDropdown: React.FC<WalletDropdownProps> = ({ userData }) => {
     processingWithdraw,
   } = usePayment({
     userId: userData?.id,
+    tx_type: "DEPOSIT"
   });
 
   useEffect(() => {
@@ -137,7 +138,7 @@ export const WalletDropdown: React.FC<WalletDropdownProps> = ({ userData }) => {
         className="bg-black/40 backdrop-blur-sm px-4 py-2 rounded-lg border border-emerald-500/20"
       >
         <p className="text-emerald-400 font-medium">
-          {walletBalance.toFixed(2)} <span className="text-sm">MONAD</span>
+          {walletBalance.toFixed(2)} <span className="text-sm">SOLANA</span>
         </p>
       </motion.div>
 
@@ -218,8 +219,8 @@ export const WalletDropdown: React.FC<WalletDropdownProps> = ({ userData }) => {
               <AnimatePresence mode="wait">
                 {activeTab === 'deposit' ? (
                   <PaymentForm
-                    monadAmount={monadAmount}
-                    onAmountChange={setMonadAmount}
+                    solanaAmount={solanaAmount}
+                    onAmountChange={setSolanaAmount}
                     onSubmit={handlePayment}
                     processingPayment={processingPayment}
                     isWalletConnected={isWalletConnected} // Pass the Privy wallet connection status

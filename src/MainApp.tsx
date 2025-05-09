@@ -4,23 +4,23 @@ import { usePrivy } from '@privy-io/react-auth';
 import Navbar from './components/Navbar/Navbar';
 import MultiplayerGame from './pages/MultiplayerGame/MultiplayerGame';
 import Leaderboard from './pages/Leaderboard/Leaderboard';
+import CosmicGifMarketplace from './pages/MarketPlace/MarketPlace.tsx';
 import CosmicUsernameModal from './components/GameComponents/CosmicUsernameModal/CosmicUsernameModal';
 import Home from './pages/Home/Home';
 import './index.css';
 import { useWalletStore } from './stores/walletStore';
-import { WagmiProvider, http } from 'wagmi';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import '@rainbow-me/rainbowkit/styles.css';
-import { createConfig } from 'wagmi';
-import { monadNetwork } from './chains';
-import {useWallets} from '@privy-io/react-auth';
+import {useSolanaWallets} from '@privy-io/react-auth';
+import { ConnectionProvider } from '@solana/wallet-adapter-react';
+import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
+import { clusterApiUrl } from '@solana/web3.js';
 
-const config = createConfig({
-  chains: [monadNetwork],
-  transports: {
-    [monadNetwork.id]: http('https://testnet-rpc.monad.xyz/'),
-  },
-});
+
+// Configure Solana connection
+const solanaNetwork = WalletAdapterNetwork.Mainnet; // Or use WalletAdapterNetwork.Devnet for testing
+const endpoint = import.meta.env.VITE_SOLANA_RPC_URL || clusterApiUrl(solanaNetwork);
+
 
 const queryClient = new QueryClient();
 
@@ -98,7 +98,7 @@ const MainApp: React.FC = () => {
   const [isUsernameModalOpen, setIsUsernameModalOpen] = useState(false);
   
   const setBalance = useWalletStore((state) => state.setBalance);
-  const {wallets} = useWallets();
+  const {wallets} = useSolanaWallets();
 
   useEffect(() => {
     if (authenticated && wallets.length === 0) {
@@ -198,7 +198,7 @@ const MainApp: React.FC = () => {
     };
   
     fetchUserData();
-  }, [authenticated, user, wallets, setBalance]);
+  }, [authenticated, user, wallets[0]?.address, setBalance]);
 
   // Handle username setting
   const handleUsernameSet = async (username: string) => {
@@ -266,12 +266,13 @@ const MainApp: React.FC = () => {
 
   return (
     <Router>
-      <WagmiProvider config={config}>
+      <ConnectionProvider endpoint={endpoint}>
         <QueryClientProvider client={queryClient}>
             <div className="bg-gray-900 min-h-screen">
               <Navbar userData={userData} />
               <Routes>
                 <Route path="/" element={<Home />} />
+                <Route path="/marketplace" element={<CosmicGifMarketplace />} />
                 <Route
                   path="/multiplayer"
                   element={
@@ -322,9 +323,8 @@ const MainApp: React.FC = () => {
               <div id="modal-root" />
             </div>
         </QueryClientProvider>
-      </WagmiProvider>
+      </ConnectionProvider>
     </Router>
   );
 };
-
 export default MainApp;

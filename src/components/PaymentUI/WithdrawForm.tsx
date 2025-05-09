@@ -114,7 +114,7 @@ export const WithdrawForm: React.FC<WithdrawFormProps> = ({
 
       <div>
         <label htmlFor="withdraw-address" className="text-emerald-400 text-sm font-medium">
-          Monad Wallet Address
+          Solana Wallet Address
         </label>
         <input
           id="withdraw-address"
@@ -128,7 +128,7 @@ export const WithdrawForm: React.FC<WithdrawFormProps> = ({
                    focus:outline-none focus:border-emerald-500
                    focus:ring-2 focus:ring-emerald-500/20
                    transition-all duration-200 backdrop-blur-sm"
-          placeholder="Enter your Monad wallet address"
+          placeholder="Enter your Solana wallet address"
           required
         />
       </div>

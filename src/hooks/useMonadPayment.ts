@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useSendTransaction } from "wagmi";
 import { parseEther } from "viem";
-import { useWallets } from "@privy-io/react-auth";
+import { useSolanaWallets } from "@privy-io/react-auth";
 
 interface UseMonadPaymentProps {
   userId?: number;
@@ -19,7 +19,7 @@ export const useMonadPayment = ({
   const { sendTransactionAsync } = useSendTransaction();
 
   // Use Privy's wallet hook to get the connected wallet
-  const { wallets } = useWallets();
+  const { wallets } = useSolanaWallets();
   const wallet = wallets[0]; // Assuming the first wallet is the one connected via Privy
   const walletAddress = wallet?.address;
 
