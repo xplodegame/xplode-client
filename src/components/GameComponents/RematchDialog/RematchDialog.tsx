@@ -10,6 +10,8 @@ interface RematchDialogProps {
   isRequesting: boolean;
   onRequestRematch: () => void;
   rematchRequest: { game_id: string; requester_id: string } | null;
+  playerHasSufficientFunds: boolean;
+  betAmount: number;
 }
 
 const RematchDialog: React.FC<RematchDialogProps> = ({
@@ -17,9 +19,11 @@ const RematchDialog: React.FC<RematchDialogProps> = ({
   userData,
   onAccept,
   onDecline,
-//   isRequesting,
-//   onRequestRematch,
+  isRequesting,
+  onRequestRematch,
   rematchRequest,
+  playerHasSufficientFunds,
+  betAmount,
 }) => {
   const notificationSound = useRef(new Audio('/assets/sounds/notification.mp3'));
   
@@ -148,12 +152,27 @@ const RematchDialog: React.FC<RematchDialogProps> = ({
                 </p>
               </div>
 
+              {/* Add insufficient funds warning */}
+              {!playerHasSufficientFunds && (
+                <div className="bg-red-900/30 border border-red-500/30 rounded-lg p-4 mt-2">
+                  <p className="text-red-300 text-sm text-center">
+                    <span className="block font-semibold">Insufficient Funds Alert</span>
+                    You need {betAmount.toFixed(2)} SOL to join this cosmic adventure.
+                  </p>
+                </div>
+              )}
+
               <div className="flex gap-3 mt-6">
                 <motion.button
                   onClick={onAccept}
-                  whileHover={{ scale: 1.03, boxShadow: "0 0 15px rgba(16, 185, 129, 0.5)" }}
-                  whileTap={{ scale: 0.97 }}
-                  className="flex-1 py-3 rounded-lg font-medium bg-gradient-to-r from-emerald-600 to-emerald-500 text-white shadow-lg shadow-emerald-600/20 border border-emerald-500/50"
+                  disabled={!playerHasSufficientFunds}
+                  whileHover={playerHasSufficientFunds ? { scale: 1.03, boxShadow: "0 0 15px rgba(16, 185, 129, 0.5)" } : {}}
+                  whileTap={playerHasSufficientFunds ? { scale: 0.97 } : {}}
+                  className={`flex-1 py-3 rounded-lg font-medium ${
+                    playerHasSufficientFunds
+                      ? "bg-gradient-to-r from-emerald-600 to-emerald-500 text-white shadow-lg shadow-emerald-600/20 border border-emerald-500/50"
+                      : "bg-zinc-800 text-zinc-500 cursor-not-allowed border border-zinc-700"
+                  }`}
                 >
                   Accept Rematch
                 </motion.button>
@@ -238,13 +257,28 @@ const RematchDialog: React.FC<RematchDialogProps> = ({
                 ))}
               </div>
 
+              {/* Add insufficient funds warning when applicable */}
+              {!playerHasSufficientFunds && !hasAccepted && (
+                <div className="bg-red-900/30 border border-red-500/30 rounded-lg p-4 mt-2">
+                  <p className="text-red-300 text-sm text-center">
+                    <span className="block font-semibold">Insufficient Funds Alert</span>
+                    You need {betAmount.toFixed(2)} SOL to join this cosmic adventure.
+                  </p>
+                </div>
+              )}
+
               {!hasAccepted && (
                 <div className="flex gap-3 mt-4">
                   <motion.button
                     onClick={onAccept}
-                    whileHover={{ scale: 1.03, boxShadow: "0 0 15px rgba(16, 185, 129, 0.5)" }}
-                    whileTap={{ scale: 0.97 }}
-                    className="flex-1 py-3 rounded-lg font-medium bg-gradient-to-r from-emerald-600 to-emerald-500 text-white shadow-lg shadow-emerald-600/20 border border-emerald-500/50"
+                    disabled={!playerHasSufficientFunds}
+                    whileHover={playerHasSufficientFunds ? { scale: 1.03, boxShadow: "0 0 15px rgba(16, 185, 129, 0.5)" } : {}}
+                    whileTap={playerHasSufficientFunds ? { scale: 0.97 } : {}}
+                    className={`flex-1 py-3 rounded-lg font-medium ${
+                      playerHasSufficientFunds
+                        ? "bg-gradient-to-r from-emerald-600 to-emerald-500 text-white shadow-lg shadow-emerald-600/20 border border-emerald-500/50"
+                        : "bg-zinc-800 text-zinc-500 cursor-not-allowed border border-zinc-700"
+                    }`}
                   >
                     Ready for Rematch
                   </motion.button>
