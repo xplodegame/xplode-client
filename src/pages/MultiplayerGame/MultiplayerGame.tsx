@@ -36,6 +36,8 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
   const [, setTurnCount] = useState<number>(0);
   const [error, setError] = useState<string>('');
   const [betAmount, setBetAmount] = useState<number>(0);
+  const [playerHasSufficientFunds, setPlayerHasSufficientFunds] = useState<boolean>(true);
+  const balance = useWalletStore(state => state.balance);
   const [revealedCells, setRevealedCells] = useState<Set<string>>(new Set());
   const [lockedCells, setLockedCells] = useState<Set<string>>(new Set());
   const [isLockPhase, setIsLockPhase] = useState<boolean>(false);
@@ -74,6 +76,26 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
   const isCreatingRoomRef = useRef<boolean>(false);
   // First, add a new ref to track if a player has made a move in their current turn
   const playerMadeMoveRef = useRef<boolean>(false);
+  const betAmountRef = useRef<number>(0);
+  const balanceRef = useRef<number>(0);
+  // Add a ref to ensure balance update only runs once per game
+  const balanceUpdateCounterRef = useRef<number>(0);
+  
+  // Keep the balance ref updated
+  useEffect(() => {
+    balanceRef.current = balance;
+  }, [balance]);
+
+  useEffect(() => {
+    betAmountRef.current = betAmount;
+  }, [betAmount]);
+
+  // Ensure the playerHasSufficientFunds state is updated when balance changes
+  useEffect(() => {
+    if (betAmount > 0) {
+      setPlayerHasSufficientFunds(balance >= betAmountRef.current);
+    }
+  }, [balance, betAmount]);
 
   const lockSound = useRef(new Audio('/assets/sounds/lockSound.wav'));
 
@@ -146,6 +168,7 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
   
 
   const handleGameMessage = useCallback((message: GameMessage) => {
+    console.log("balanceref in handleGamemessage", balanceRef.current)
     if (typeof message === "string") {
       if (message === "Pong") {
         console.log("Received pong from server");
@@ -231,6 +254,9 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
         }
   
         if ('RUNNING' in newGameState) {
+          // Reset the balance update counter for a new game
+          balanceUpdateCounterRef.current = 0;
+
           // Clear the wait timeout if game has started running
           if (waitTimeoutRef.current) {
             clearTimeout(waitTimeoutRef.current);
@@ -378,35 +404,68 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
           setIsRequestingRematch(false);
           setRematchRequest(null);
 
-          // Prepare the request data
-          const currentUserData = userDataRef.current;
-          const newUserData = {
-            privy_id: currentUserData?.privy_id,
-            email: currentUserData?.email,
-            name: currentUserData?.name || '',
-          };
-          
-          // Add delay and make the direct API call
-          setTimeout(() => {
-            fetch(import.meta.env.VITE_USER_DETAILS_ENDPOINT_URL, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify(newUserData),
-            })
-            .then(response => {
-              if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-              return response.json();
-            })
-            .then(userDetailsData => {
-              setBalance(userDetailsData.balance);
-              console.log("Balance update of the user after the game is finished: ", userDetailsData);
-            })
-            .catch(error => {
-              console.error('Failed to update user balance:', error);
-            });
-          }, 3000);
+          // Only run the balance update code once per game
+          if (balanceUpdateCounterRef.current === 0) {
+            balanceUpdateCounterRef.current = 1;
+            // Identify winner and loser for balance updates
+            const isLoser = newGameState.FINISHED.players[newGameState.FINISHED.loser_idx].id === userDataRef.current?.id?.toString();
+            
+            const currentBetAmount = betAmountRef.current
+            const currentBalance = balanceRef.current;
+
+            // Update the local balance immediately based on win/loss
+            if (isLoser) {
+              // This player lost - decrease balance by bet amount
+              // Use the balance from ref to ensure we have the latest value
+              console.log("Current balance before update:", currentBalance);
+              const newBalance = Math.max(currentBalance - currentBetAmount, 0);
+              setBalance(newBalance);
+              console.log("Updated balance after loss:", newBalance);
+              // Check if they still have sufficient funds for a rematch
+              setPlayerHasSufficientFunds(newBalance >= currentBetAmount);
+            } else {
+              // This player won - increase balance
+              // Calculate winnings: betting amount divided by (number of players - 1)
+              const numberOfPlayers = newGameState.FINISHED.players.length;
+              const winAmount = currentBetAmount / (numberOfPlayers - 1);
+              console.log("Current balance before update:", currentBalance);
+              const newBalance = currentBalance + winAmount;
+              setBalance(newBalance);
+              console.log("Updated balance after win:", newBalance);
+              // They have sufficient funds since they won
+              setPlayerHasSufficientFunds(true);
+            }
+
+            // // Prepare the request data
+            // const currentUserData = userDataRef.current;
+            // const newUserData = {
+            //   privy_id: currentUserData?.privy_id,
+            //   email: currentUserData?.email,
+            //   name: currentUserData?.name || '',
+            // };
+            
+            // // Add delay and make the direct API call
+            // setTimeout(() => {
+            //   fetch(import.meta.env.VITE_USER_DETAILS_ENDPOINT_URL, {
+            //     method: 'POST',
+            //     headers: {
+            //       'Content-Type': 'application/json',
+            //     },
+            //     body: JSON.stringify(newUserData),
+            //   })
+            //   .then(response => {
+            //     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            //     return response.json();
+            //   })
+            //   .then(userDetailsData => {
+            //     setBalance(userDetailsData.balance);
+            //     console.log("Balance update of the user after the game is finished (server responded): ", userDetailsData);
+            //   })
+            //   .catch(error => {
+            //     console.error('Failed to update user balance:', error);
+            //   });
+            // }, 3000);
+          }
         } else if ('REMATCH' in newGameState) {
           // Handle rematch state
           setIsRequestingRematch(false);
@@ -477,7 +536,7 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
         errorMessage.includes("game not found") ||
         errorMessage.includes("game is over")
       ) {
-        console.log("Game cannot be joined, redirecting to lobby");
+        // console.log("Game cannot be joined, redirecting to lobby");
         // Hide the joining indicator
         setIsJoiningGame(false);
         // Reset the join flag
@@ -493,7 +552,6 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
     onError: setError,
     gameState
   });
-
 
   useEffect(() => {
     return () => {
@@ -762,7 +820,7 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
     setIsLockPhase(false);
     setCurrentPlayerLockedCells(new Set());
     setError('');
-    setBetAmount(0);
+    // setBetAmount(0);
     
     // Reset the move and lock end times
     setMoveEndTime(0);
@@ -793,6 +851,12 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
   // Add these handler functions for rematch functionality
   const handleRequestRematch = useCallback(() => {
     if (!gameState || !('FINISHED' in gameState) || !userData?.id) return;
+
+    // Check if player has sufficient funds
+    if (balanceRef.current < betAmount) {
+      setError('Insufficient funds for rematch.');
+      return
+    }
   
     setIsRequestingRematch(true);
     
@@ -825,7 +889,7 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
     sendMessage({
       RematchRequest: request
     });
-  }, [gameState, userData, sendMessage]);
+  }, [gameState, userData, sendMessage, playerHasSufficientFunds]);
   
   const handleAcceptRematch = useCallback(() => {
     // We can accept a direct rematch request or a rematch state
@@ -833,6 +897,23 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
                   (gameState && 'REMATCH' in gameState ? gameState.REMATCH.game_id : null);
     
     if (!gameId || !userData?.id) return;
+
+    // Check if player has sufficient funds
+    if (balanceRef.current < betAmount) {
+      setError(`Insufficient funds to accept rematch. You need ${betAmount} SOL.`);
+      // Automatically decline the rematch
+      sendMessage({
+        RematchResponse: {
+          game_id: gameId,
+          player_id: userData.id.toString(),
+          want_rematch: false,
+        },
+      });
+      
+      // Clear the request
+      setRematchRequest(null);
+      return;
+    }
   
     // Clear any existing move timeout to prevent timer issues
     if (moveTimeoutRef.current) {
@@ -863,7 +944,7 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
     if (rematchRequest) {
       setRematchRequest(null);
     }
-  }, [rematchRequest, gameState, userData, sendMessage]);
+  }, [rematchRequest, gameState, userData, sendMessage, betAmount]);
   
   const handleDeclineRematch = useCallback(() => {
     // We can decline a direct rematch request or a rematch state
@@ -898,8 +979,6 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
   
   const playGame = useCallback((gridSize: number, bombs: number, minPlayers: number) => {
     if (!userData?.id) return;
-    
-    console.log("===== JOIN RANDOM GAME CLICKED =====");
     
     resetGameState();
   
@@ -997,6 +1076,8 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
         onDecline={handleDeclineRematch}
         isRequesting={isRequestingRematch}
         onRequestRematch={handleRequestRematch}
+        playerHasSufficientFunds={playerHasSufficientFunds}
+        betAmount={betAmount}
         rematchRequest={rematchRequest}
       />
 
@@ -1092,10 +1173,10 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
           </div>
         )}
 
-        {(gameState && (('FINISHED' in gameState) || ('ABORTED' in gameState)) && !rematchRequest) && (
+        {(gameState && ((('FINISHED' in gameState) || ('ABORTED' in gameState)) && !rematchRequest)) && (
           <div className="flex gap-3 w-full mt-6">
-            {/* Rematch Button (only show for FINISHED state, not ABORTED) */}
-            {'FINISHED' in gameState && (
+            {/* Rematch Button (only show for FINISHED state, not ABORTED, and only if playerHasSufficientFunds) */}
+            {'FINISHED' in gameState && playerHasSufficientFunds && (
               <button
                 onClick={handleRequestRematch}
                 disabled={isRequestingRematch}
@@ -1108,26 +1189,19 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
                 {isRequestingRematch ? 'Requesting Rematch...' : 'Rematch'}
               </button>
             )}
+            {/* Back to Lobby Button remains unchanged */}
             {'FINISHED' in gameState && (
               <button
-              onClick={() => {
-                // Reset the game state
-                resetGameState();
-                
-                // Clear the didJoinGameRef to prevent auto-join on navigation
-                didJoinGameRef.current = false;
-                
-                // Navigate to the base multiplayer route, replacing the current URL
-                navigate('/multiplayer', { replace: true });
-              }}
-              className="flex-1 py-3 px-6 rounded-lg font-medium transition-all duration-200 bg-zinc-500/10 text-zinc-400 hover:bg-zinc-500/20 border border-zinc-500/30"
-            >
-              Back to Lobby
-            </button>
+                onClick={() => {
+                  resetGameState();
+                  didJoinGameRef.current = false;
+                  navigate('/multiplayer', { replace: true });
+                }}
+                className="flex-1 py-3 px-6 rounded-lg font-medium transition-all duration-200 bg-zinc-500/10 text-zinc-400 hover:bg-zinc-500/20 border border-zinc-500/30"
+              >
+                Back to Lobby
+              </button>
             )}
-            
-            {/* Back to Lobby Button */}
-            
           </div>
         )}
       </div>
