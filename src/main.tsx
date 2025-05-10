@@ -19,11 +19,9 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
       config={{
         appearance: {
           theme: 'dark',
-          showWalletLoginFirst: true,
-          // logo: 'https://ibb.co/1YDLXsFX', 
-          // landingHeader: 'Xplode', 
-          // loginMessage: 'Welcome Gaurdian!', 
-          walletChainType: 'ethereum-and-solana'
+          // Use 'solana-only' or 'ethereum-and-solana'
+          walletChainType: 'solana-only',
+          walletList: ['backpack', 'phantom']
         },
         externalWallets: {
           solana: {connectors: solanaConnectors}
@@ -42,3 +40,35 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     </PrivyProvider>
   </React.StrictMode>
 )
+
+// ReactDOM.createRoot(document.getElementById('root')!).render(
+//   <React.StrictMode>
+//     {/* <PrivyProvider appId={PRIVVY_APP_ID}> */}
+//     <PrivyProvider
+//       appId={PRIVVY_APP_ID}
+//       config={{
+//         appearance: {
+//           theme: 'dark',
+//           showWalletLoginFirst: true,
+//           // logo: 'https://ibb.co/1YDLXsFX', 
+//           // landingHeader: 'Xplode', 
+//           // loginMessage: 'Welcome Gaurdian!', 
+//           walletChainType: 'ethereum-and-solana'
+//         },
+//         externalWallets: {
+//           solana: {connectors: solanaConnectors}
+//         },
+//         // embeddedWallets: { 
+//         //   ethereum: { 
+//         //     createOnLogin: 'users-without-wallets', // defaults to 'off'
+//         //   }, 
+//         //   solana: { 
+//         //     createOnLogin: 'users-without-wallets', // defaults to 'off'
+//         //   }, 
+//         // }, 
+//       }}
+//     >
+//       <MainApp />
+//     </PrivyProvider>
+//   </React.StrictMode>
+// )
