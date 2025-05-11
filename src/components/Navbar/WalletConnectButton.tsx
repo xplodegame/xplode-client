@@ -1,10 +1,10 @@
-import { usePrivy } from '@privy-io/react-auth';
+import { usePrivy, useSolanaWallets } from '@privy-io/react-auth';
 import { Wallet } from 'lucide-react';
-import { solanaNetwork } from '../../chains';
 import { useEffect } from 'react';
 
 export const WalletConnectButton = () => {
-  const { login, connectWallet, ready, authenticated, user, wallets } = usePrivy();
+  const { login, connectWallet, ready, authenticated, user } = usePrivy();
+  const { wallets } = useSolanaWallets();
 
   // Log Privy state and connected wallets for debugging
   useEffect(() => {
@@ -24,10 +24,7 @@ export const WalletConnectButton = () => {
       }
       
       // Connect specifically to a Solana wallet
-      await connectWallet({
-        chainName: "solana",
-        wallet: "solana",
-      });
+      await connectWallet();
       
       console.log("Requested Solana wallet connection");
     } catch (error) {
