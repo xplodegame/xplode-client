@@ -99,4 +99,20 @@ export type GameMessage =
         player_id: string;
         want_rematch: boolean; // true for accept, false for decline
       };
-    };
+    }
+  |
+    {
+      Gif: {
+        game_id: string;
+        player_id?: string;
+        gif_id: number;
+      }
+    }
+  | 
+    {
+      BlockchainUpdate: {
+        game_id: string;
+        update_type: "MoveRecorded" | "LockRecorded" | "GameStarted" | "GameFinished";
+        transaction_hash: string;
+      };
+    }

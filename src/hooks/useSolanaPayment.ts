@@ -174,7 +174,7 @@ export const useSolanaPayment = ({
       const depositData = {
         user_id: userId,
         amount: Number(amount),
-        currency: "MON",
+        currency: "SOL",
         tx_type: tx_type,
         gif_id: gif_id,
         tx_hash: txHash,
