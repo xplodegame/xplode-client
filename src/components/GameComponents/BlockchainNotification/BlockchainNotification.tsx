@@ -104,9 +104,29 @@ const BlockchainNotification: React.FC<BlockchainNotificationProps> = ({
                   >
                     {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
                   </button>
-                  
-                  <a
-                    href={`https://explorer.monad.xyz/tx/${transactionHash}`}
+                  {updateType === 'GameInitialized' ? (
+                    <a
+                      href={`https://solscan.io/tx/${transactionHash}?cluster=devnet`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="p-1 rounded-md hover:bg-emerald-500/10 text-emerald-400/80 hover:text-emerald-400 transition-colors"
+                      title="View on explorer"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </a>
+                  ) : (
+                    <a
+                      href={`https://solscan.io/tx/${transactionHash}?cluster=custom&customUrl=https%3A%2F%2Fdevnet.magicblock.app`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="p-1 rounded-md hover:bg-emerald-500/10 text-emerald-400/80 hover:text-emerald-400 transition-colors"
+                      title="View on explorer"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </a>
+                  )}
+                  {/* <a
+                    href={`${import.meta.env.SOL_EXPLORER}/tx/${transactionHash}?cluster=devnet`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="p-1 rounded-md hover:bg-emerald-500/10 text-emerald-400/80 hover:text-emerald-400 transition-colors"
@@ -114,6 +134,15 @@ const BlockchainNotification: React.FC<BlockchainNotificationProps> = ({
                   >
                     <ExternalLink className="w-3.5 h-3.5" />
                   </a>
+                  <a
+                    href={`${import.meta.env.SOL_EXPLORER}/tx/${transactionHash}?cluster=custom&customUrl=${import.meta.env.ER_RPC}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-1 rounded-md hover:bg-emerald-500/10 text-emerald-400/80 hover:text-emerald-400 transition-colors"
+                    title="View on explorer"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </a> */}
                 </div>
               </div>
               
