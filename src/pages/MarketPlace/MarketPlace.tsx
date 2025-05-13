@@ -299,7 +299,45 @@ export default function CosmicGifMarketplace() {
           setIsConfirmModalOpen(false);
           setSelectedGif(null);
         }, 2000);
+
+        try {
+          if (!userId) {
+            throw new Error("No user ID available");
+          }
+    
+          const mintData = {
+            user_id: userId,
+            mint_amount: Number(selectedGif.price),
+            currency: "SOL",
+            tx_type: "PURCHASE",
+            gif_id: selectedGif.id,
+            tx_hash: result.txid,
+          };
+    
+          console.log("Sending mint deposit data:", mintData);
+    
+          const response = await fetch(
+            import.meta.env.VITE_MINTING_ENDPOINT_URL,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(mintData),
+            }
+          );
+
+          console.log("minting succesfully updated in db", response)
+    
+          if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Deposit failed: ${errorText}`);
+          }
+        } catch (err) {
+          console.log(err)
+        }
       }
+
     } catch (error) {
       console.error("Failed to mint NFT:", error);
       setTransactionResult('failed');

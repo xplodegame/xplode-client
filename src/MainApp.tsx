@@ -15,6 +15,7 @@ import {useSolanaWallets} from '@privy-io/react-auth';
 import { ConnectionProvider } from '@solana/wallet-adapter-react';
 import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
 import { clusterApiUrl } from '@solana/web3.js';
+import { Currency } from 'lucide-react';
 
 
 // Configure Solana connection
@@ -31,6 +32,7 @@ interface UserData {
   name: string;
   wallet_balance: number;
   deposit_address?: string;
+  gifs?: [number];
 }
 
 // Original ProtectedRoute without modifications
@@ -118,7 +120,10 @@ const MainApp: React.FC = () => {
         privy_id: user.id,
         email: "exampl@gmail.com",
         name: "", // Start with empty name
+        currency: "SOL"
       };
+
+      console.log("seding this data to the user details endpoint: ", newUserData)
   
       let retryCount = 0;
       const maxRetries = 3;
@@ -139,6 +144,7 @@ const MainApp: React.FC = () => {
           }
   
           const userDetailsData = await userDetailsResponse.json();
+          console.log("this is the backend response", userDetailsData)
           // console.log(`Attempt ${retryCount + 1} - User details response:`, userDetailsData);
           
           // Check if all required fields are present
@@ -165,7 +171,8 @@ const MainApp: React.FC = () => {
             id: userDetailsData.id,
             wallet_balance: userDetailsData.balance,
             deposit_address: userDetailsData.wallet_address || "",
-            name: userDetailsData.name || ""
+            name: userDetailsData.name || "",
+            gifs: userDetailsData.gifs || []
           };
   
           // Store userData in localStorage for persistence
@@ -272,7 +279,7 @@ const MainApp: React.FC = () => {
               <Navbar userData={userData} />
               <Routes>
                 <Route path="/" element={<Home />} />
-                <Route path="/marketplace" element={<CosmicGifMarketplace />} />
+                {/* <Route path="/marketplace" element={<CosmicGifMarketplace />} /> */}
                 <Route
                   path="/multiplayer"
                   element={
@@ -315,6 +322,21 @@ const MainApp: React.FC = () => {
                         handleUsernameSet={handleUsernameSet}
                       >
                         <Leaderboard />
+                      </UsernameRequiredWrapper>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/marketplace"
+                  element={
+                    <ProtectedRoute>
+                      <UsernameRequiredWrapper
+                        userData={userData}
+                        isUsernameModalOpen={isUsernameModalOpen}
+                        setIsUsernameModalOpen={setIsUsernameModalOpen}
+                        handleUsernameSet={handleUsernameSet}
+                      >
+                        <CosmicGifMarketplace />
                       </UsernameRequiredWrapper>
                     </ProtectedRoute>
                   }
