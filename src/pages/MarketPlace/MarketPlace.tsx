@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Star, Sparkles, ChevronLeft, ChevronRight, Search, X, AlertTriangle, CheckCircle2, Zap } from 'lucide-react';
 import { useParticles } from '../../components/LandingPage/Particles';
 import { usePayment } from '../../hooks/usePayment';
+import { useNftMint } from '../../hooks/useNftMint';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // Define types to fix TypeScript errors
@@ -44,17 +45,17 @@ export default function CosmicGifMarketplace() {
       console.error('Error parsing userData from localStorage:', error);
     }
   }, []);
-  
+
   const {
     solanaAmount,
     setSolanaAmount,
-    handlePayment,
     paymentStatus,
     processingPayment,
     isWalletConnected,
     handleCancelPayment
   } = usePayment({ userId, tx_type: "PURCHASE", gif_id: selectedGif?.id});
 
+  const { mintNft, isWalletConnected: isNftWalletConnected } = useNftMint();
 
   // Reset transaction result when modal is closed
   useEffect(() => {
@@ -283,20 +284,27 @@ export default function CosmicGifMarketplace() {
     setIsConfirmModalOpen(true);
   }, [userId, isWalletConnected, setSolanaAmount]);
 
-  const handleInitiatePayment = useCallback(() => {
-    if (!selectedGif || !userId || !isWalletConnected) return;
+  const handleInitiatePayment = useCallback(async () => {
+    if (!selectedGif || !userId || !isNftWalletConnected) return;
 
     try {
-      // Make sure the correct amount is set
-      setSolanaAmount(selectedGif.price.toString());
+      const result = await mintNft();
       
-      // Start the payment process
-      handlePayment();
+      if (result.success) {
+        // Update UI state
+        setTransactionResult('success');
+        
+        // Auto close after success with a delay
+        setTimeout(() => {
+          setIsConfirmModalOpen(false);
+          setSelectedGif(null);
+        }, 2000);
+      }
     } catch (error) {
-      console.error("Failed to initiate payment:", error);
+      console.error("Failed to mint NFT:", error);
       setTransactionResult('failed');
     }
-  }, [selectedGif, userId, isWalletConnected, setSolanaAmount, handlePayment]);
+  }, [selectedGif, userId, isNftWalletConnected, mintNft]);
 
   const handleCancelTransaction = useCallback(() => {
     // Cancel any pending payment
@@ -577,7 +585,7 @@ export default function CosmicGifMarketplace() {
                         >
                           <CheckCircle2 className="w-10 h-10 text-black" />
                         </motion.div>
-                        <h2 className="text-xl font-bold text-emerald-400 mb-1">Purchase Successful!</h2>
+                        <h2 className="text-xl font-bold text-emerald-400 mb-1">Mint Successful!</h2>
                         <p className="text-emerald-300/80">Your NFT has been minted to your wallet</p>
                       </div>
                     ) : (
@@ -590,7 +598,7 @@ export default function CosmicGifMarketplace() {
                         >
                           <AlertTriangle className="w-10 h-10 text-black" />
                         </motion.div>
-                        <h2 className="text-xl font-bold text-red-400 mb-1">Transaction Failed</h2>
+                        <h2 className="text-xl font-bold text-red-400 mb-1">Mint Failed</h2>
                         <p className="text-red-300/80">Please try again later</p>
                       </div>
                     )}
@@ -621,22 +629,22 @@ export default function CosmicGifMarketplace() {
                       {selectedGif.rarity}
                     </div>
                     <div className="text-emerald-400 font-mono font-medium text-xl">
-                      {selectedGif.price.toFixed(2)} MON
+                      {selectedGif.price.toFixed(2)} SOL
                     </div>
                   </div>
                 </div>
                 
                 <div className="mt-6 space-y-4">
-                  <h4 className="text-white font-medium">Confirm Purchase</h4>
+                  <h4 className="text-white font-medium">Confirm Mint</h4>
                   <p className="text-zinc-400 text-sm">
-                    This GIF will be minted as an NFT to your wallet address after payment.
+                    This GIF will be minted as an NFT to your wallet address.
                   </p>
                   
                   {/* Processing Indicator */}
                   {processingPayment && (
                     <div className="bg-black/40 rounded-lg p-3 flex items-center">
                       <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-emerald-500 mr-3"></div>
-                      <span className="text-emerald-400 text-sm">Processing transaction...</span>
+                      <span className="text-emerald-400 text-sm">Processing mint...</span>
                     </div>
                   )}
                   
@@ -664,7 +672,7 @@ export default function CosmicGifMarketplace() {
                         ) : (
                           <>
                             <Zap className="w-4 h-4 mr-2" />
-                            Confirm Purchase
+                            Mint NFT
                           </>
                         )}
                       </button>
@@ -691,25 +699,12 @@ export default function CosmicGifMarketplace() {
         )}
       </AnimatePresence>
 
-      {/* Debug Console for Development */}
-      {/* {process.env.NODE_ENV === 'development' && (
-        <div className="fixed bottom-4 right-4 z-50 bg-black/80 border border-emerald-500/30 rounded-lg p-2 text-xs text-emerald-400 max-w-xs">
-          <div>Wallet Connected: {isWalletConnected ? 'Yes' : 'No'}</div>
-          <div>Payment Status: {paymentStatus || 'idle'}</div>
-          <div>Processing: {processingPayment ? 'Yes' : 'No'}</div>
-          <div>SOL Amount: {solanaAmount}</div>
-          <div>User ID: {userId !== undefined ? userId : 'Not found'}</div>
-          <div>Selected GIF: {selectedGif?.name || 'None'}</div>
-          <div>Transaction Result: {transactionResult}</div>
-        </div>
-      )} */}
-      
       {/* Wallet connection notice */}
       {!isWalletConnected && (
         <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-black/80 border border-emerald-500/30 rounded-lg px-4 py-2 text-white z-50 shadow-lg shadow-emerald-500/20">
           <div className="flex items-center">
             <div className="w-2 h-2 rounded-full bg-red-500 mr-2 animate-pulse"></div>
-            <span>Connect your wallet to purchase GIF NFTs</span>
+            <span>Connect your wallet to mint GIF NFTs</span>
           </div>
         </div>
       )}
