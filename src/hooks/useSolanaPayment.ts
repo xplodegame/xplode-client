@@ -166,51 +166,99 @@ export const useSolanaPayment = ({
   };
 
   const verifyTransaction = async (txHash: string, amount: string, tx_type?: string, gif_id?: number) => {
-    try {
-      if (!userId) {
-        throw new Error("No user ID available");
-      }
-
-      const depositData = {
-        user_id: userId,
-        amount: Number(amount),
-        currency: "SOL",
-        tx_type: tx_type,
-        gif_id: gif_id,
-        tx_hash: txHash,
-      };
-
-      console.log("Sending deposit data:", depositData);
-
-      const response = await fetch(
-        import.meta.env.VITE_PAYMENT_DEPOSIT_ENDPOINT_URL,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(depositData),
+    if (tx_type == "DEPOSIT") {
+      try {
+        if (!userId) {
+          throw new Error("No user ID available");
         }
-      );
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Deposit failed: ${errorText}`);
+  
+        const depositData = {
+          user_id: userId,
+          amount: Number(amount),
+          currency: "SOL",
+          tx_type: tx_type,
+          tx_hash: txHash,
+        };
+  
+        console.log("Sending deposit data:", depositData);
+  
+        const response = await fetch(
+          import.meta.env.VITE_PAYMENT_DEPOSIT_ENDPOINT_URL,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(depositData),
+          }
+        );
+  
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`Deposit failed: ${errorText}`);
+        }
+  
+        const result = await response.json();
+  
+        if (typeof result.balance === "number") {
+          onPaymentComplete(result.balance);
+          setPaymentStatus("completed");
+        } else {
+          throw new Error("Invalid balance received from server");
+        }
+      } catch (err) {
+        setPaymentStatus("failed");
+        onPaymentFailed(
+          err instanceof Error ? err.message : "Failed to process deposit"
+        );
       }
-
-      const result = await response.json();
-
-      if (typeof result.balance === "number") {
-        onPaymentComplete(result.balance);
-        setPaymentStatus("completed");
-      } else {
-        throw new Error("Invalid balance received from server");
+    } else {
+      try {
+        if (!userId) {
+          throw new Error("No user ID available");
+        }
+  
+        const depositData = {
+          user_id: userId,
+          mint_amount: Number(amount),
+          currency: "SOL",
+          tx_type: tx_type,
+          gif_id: gif_id,
+          tx_hash: txHash,
+        };
+  
+        console.log("Sending deposit data:", depositData);
+  
+        const response = await fetch(
+          import.meta.env.VITE_MINTING_ENDPOINT_URL,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(depositData),
+          }
+        );
+  
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`Deposit failed: ${errorText}`);
+        }
+  
+        const result = await response.json();
+  
+        if (typeof result.balance === "number") {
+          onPaymentComplete(result.balance);
+          setPaymentStatus("completed");
+        } else {
+          throw new Error("Invalid balance received from server");
+        }
+      } catch (err) {
+        setPaymentStatus("failed");
+        onPaymentFailed(
+          err instanceof Error ? err.message : "Failed to process deposit"
+        );
       }
-    } catch (err) {
-      setPaymentStatus("failed");
-      onPaymentFailed(
-        err instanceof Error ? err.message : "Failed to process deposit"
-      );
     }
   };
 

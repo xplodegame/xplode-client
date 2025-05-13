@@ -53,7 +53,7 @@ export default function CosmicGifMarketplace() {
     processingPayment,
     isWalletConnected,
     handleCancelPayment
-  } = usePayment({ userId, tx_type: "PURCHASE", gif_id: selectedGif?.id});
+  } = usePayment({ userId, tx_type: "MINT", gif_id: selectedGif?.id});
 
   const { mintNft, isWalletConnected: isNftWalletConnected } = useNftMint();
 
