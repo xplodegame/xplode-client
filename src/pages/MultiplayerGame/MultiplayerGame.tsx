@@ -30,6 +30,7 @@ interface MultiplayerGameProps {
     wallet_balance: number;
     id?: number;
     deposit_address?: string;
+    gif_ids?: [number];
   };
 }
 
@@ -122,33 +123,107 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
   }, [userData]);
 
   // Add this effect to fetch owned GIFs from localStorage or API
-  useEffect(() => {
-    // For demonstration, we'll use GIFs from marketplace as owned GIFs
-    // In a real implementation, you would fetch this from an API based on user ownership
-    try {
-      // This is just a mock implementation - replace with actual API call
-      const mockOwnedGifs = [
-        {
-          id: 1,
-          name: "Adult Dance",
-          price: 0.15,
-          url: "/assets/gifs/Adult Swim Dance GIF.gif",
-          rarity: "Rare"
-        },
-        {
-          id: 5,
-          name: "Opponent Down",
-          price: 0.20,
-          url: "/assets/gifs/Celebrate Good Game GIF by Nounish.gif",
-          rarity: "Epic"
-        }
-      ];
-      
-      setOwnedGifs(mockOwnedGifs);
-    } catch (error) {
-      console.error("Failed to load owned GIFs:", error);
+useEffect(() => {
+  try {
+    // Add these two free GIFs for every user
+    const freeGifs = [
+      {
+        id: 18,
+        name: "Angry Squidward",
+        price: 0,
+        url: "/assets/gifs/Angry Spongebob Squarepants GIF.gif",
+        rarity: "Epic"
+      },
+      {
+        id: 19,
+        name: "The Booty Shake",
+        price: 0,
+        url: "/assets/gifs/The Simpsons Dance GIF.gif",
+        rarity: "Epic"
+      }
+    ];
+    
+    // Start with the free GIFs that every user gets
+    let userGifs = [...freeGifs];
+    
+    // If user has owned GIFs from backend (userData.gif_ids), add those to their collection
+    if (userData?.gif_ids && userData.gif_ids.length > 0) {
+      // Import GIF data from gifData.ts
+      import('../../data/gifData').then(({ gifNfts }) => {
+        // Find GIFs that match the IDs in userData.gif_ids
+        const ownedGifs = userData.gif_ids
+          .map(id => gifNfts.find(gif => gif.id === id))
+          .filter(Boolean) // Remove any undefined entries
+          .map(gif => ({
+            id: gif?.id || 0,
+            name: gif?.name || "",
+            price: gif?.price || 0,
+            url: gif?.url || "",
+            rarity: gif?.rarity || "Common"
+          }));
+          
+        // Combine free GIFs with owned GIFs
+        userGifs = [...userGifs, ...ownedGifs];
+        setOwnedGifs(userGifs);
+      }).catch(error => {
+        console.error("Failed to import GIF data:", error);
+        // If import fails, at least give them the free GIFs
+        setOwnedGifs(userGifs);
+      });
+    } else {
+      // If user doesn't have any purchased GIFs, just set the free ones
+      setOwnedGifs(userGifs);
     }
-  }, [userData?.id]);
+  } catch (error) {
+    console.error("Failed to load owned GIFs:", error);
+    // In case of any error, at least set the free GIFs
+    setOwnedGifs([
+      {
+        id: 18,
+        name: "Angry Squidward",
+        price: 0,
+        url: "/assets/gifs/Angry Spongebob Squarepants GIF.gif",
+        rarity: "Epic"
+      },
+      {
+        id: 19,
+        name: "The Booty Shake",
+        price: 0,
+        url: "/assets/gifs/The Simpsons Dance GIF.gif",
+        rarity: "Epic"
+      }
+    ]);
+  }
+}, [userData?.id, userData?.gif_ids]);
+
+  // // Add this effect to fetch owned GIFs from localStorage or API
+  // useEffect(() => {
+  //   // For demonstration, we'll use GIFs from marketplace as owned GIFs
+  //   // In a real implementation, you would fetch this from an API based on user ownership
+  //   try {
+  //     // This is just a mock implementation - replace with actual API call
+  //     const mockOwnedGifs = [
+  //       {
+  //         id: 1,
+  //         name: "Adult Dance",
+  //         price: 0.15,
+  //         url: "/assets/gifs/Adult Swim Dance GIF.gif",
+  //         rarity: "Rare"
+  //       },
+  //       {
+  //         id: 5,
+  //         name: "Opponent Down",
+  //         price: 0.20,
+  //         url: "/assets/gifs/Celebrate Good Game GIF by Nounish.gif",
+  //         rarity: "Epic"
+  //       }
+  //     ];
+      
+  //     setOwnedGifs(mockOwnedGifs);
+  //   } catch (error) {
+  //     console.error("Failed to load owned GIFs:", error);
+  //   }
+  // }, [userData?.id]);
 
   const [matchmakingParams, setMatchmakingParams] = useState<{
     gridSize: number;
@@ -240,9 +315,9 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
       const senderId = gifData.player_id;
       
       // Don't show your own GIFs as incoming
-      if (senderId === userData?.id?.toString()) {
-        return;
-      }
+      // if (senderId === userData?.id?.toString()) {
+      //   return;
+      // }
       
       // Find the GIF URL from the GIF ID
       // This is a mock implementation - you should adjust based on your actual GIF data structure
@@ -252,7 +327,20 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
         3: "/assets/gifs/Animation Smile by Mashed.gif",
         4: "/assets/gifs/Bear Reaction GIF - The Comedy Bar.gif",
         5: "/assets/gifs/Celebrate Good Game GIF by Nounish.gif",
-        // add more mappings as needed
+        6: "/assets/gifs/Dick Armstrong GIF by gifnews.gif",
+        7: "/assets/gifs/Excited Shake It GIF by Sherchle.gif",
+        8: "/assets/gifs/Happy Excitement GIF.gif",
+        9: "/assets/gifs/Happy Robot GIF.gif",
+        10: "/assets/gifs/Homer Simpson Reaction GIF.gif",
+        11: "/assets/gifs/Middle Finger GIF.gif",
+        12: "/assets/gifs/Sad Cry SpongeBob GIF.gif",
+        13: "/assets/gifs/Suck It Ha Ha GIF Pudgy Penguins.gif",
+        14: "/assets/gifs/Sexy Funny Face GIF by Globkins.gif",
+        15: "/assets/gifs/Suck It Ha Ha GIF Pudgy Penguins.gif",
+        16: "/assets/gifs/Teenage Mutant Ninja Turtles GIF.gif",
+        17: "/assets/gifs/Valentines Day Love GIF.gif",
+        18: "/assets/gifs/Angry Spongebob Squarepants GIF.gif",
+        19: "/assets/gifs/The Simpsons Dance GIF.gif",
       };
       
       // Find the sender player name

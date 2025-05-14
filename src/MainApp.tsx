@@ -15,7 +15,7 @@ import {useSolanaWallets} from '@privy-io/react-auth';
 import { ConnectionProvider } from '@solana/wallet-adapter-react';
 import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
 import { clusterApiUrl } from '@solana/web3.js';
-import { Currency } from 'lucide-react';
+import NFTGallery from './pages/NFTGallery/NFTGallery';
 
 
 // Configure Solana connection
@@ -32,7 +32,7 @@ interface UserData {
   name: string;
   wallet_balance: number;
   deposit_address?: string;
-  gifs?: [number];
+  gif_ids?: [number];
 }
 
 // Original ProtectedRoute without modifications
@@ -123,7 +123,7 @@ const MainApp: React.FC = () => {
         currency: "SOL"
       };
 
-      console.log("seding this data to the user details endpoint: ", newUserData)
+      // console.log("seding this data to the user details endpoint: ", newUserData)
   
       let retryCount = 0;
       const maxRetries = 3;
@@ -144,7 +144,7 @@ const MainApp: React.FC = () => {
           }
   
           const userDetailsData = await userDetailsResponse.json();
-          console.log("this is the backend response", userDetailsData)
+          // console.log("this is the backend response", userDetailsData)
           // console.log(`Attempt ${retryCount + 1} - User details response:`, userDetailsData);
           
           // Check if all required fields are present
@@ -172,7 +172,7 @@ const MainApp: React.FC = () => {
             wallet_balance: userDetailsData.balance,
             deposit_address: userDetailsData.wallet_address || "",
             name: userDetailsData.name || "",
-            gifs: userDetailsData.gifs || []
+            gif_ids: userDetailsData.gif_ids || []
           };
   
           // Store userData in localStorage for persistence
@@ -341,6 +341,21 @@ const MainApp: React.FC = () => {
                     </ProtectedRoute>
                   }
                 />
+                <Route
+                path="/nfts"
+                element={
+                  <ProtectedRoute>
+                    <UsernameRequiredWrapper
+                      userData={userData}
+                      isUsernameModalOpen={isUsernameModalOpen}
+                      setIsUsernameModalOpen={setIsUsernameModalOpen}
+                      handleUsernameSet={handleUsernameSet}
+                    >
+                      <NFTGallery />
+                    </UsernameRequiredWrapper>
+                  </ProtectedRoute>
+                }
+              />
               </Routes>
               <div id="modal-root" />
             </div>

@@ -4,15 +4,7 @@ import { useParticles } from '../../components/LandingPage/Particles';
 import { usePayment } from '../../hooks/usePayment';
 import { useNftMint } from '../../hooks/useNftMint';
 import { motion, AnimatePresence } from 'framer-motion';
-
-// Define types to fix TypeScript errors
-interface GifNft {
-  id: number;
-  name: string;
-  price: number;
-  url: string;
-  rarity: "Common" | "Rare" | "Epic" | "Legendary" | "Mythic";
-}
+import { gifNfts, GifNft } from '../../data/gifData'; // Import from our new file
 
 export default function CosmicGifMarketplace() {
   const [currentPage, setCurrentPage] = useState(0);
@@ -55,6 +47,7 @@ export default function CosmicGifMarketplace() {
     handleCancelPayment
   } = usePayment({ userId, tx_type: "MINT", gif_id: selectedGif?.id});
 
+  // Initialize with no custom candy machine ID initially
   const { mintNft, isWalletConnected: isNftWalletConnected } = useNftMint();
 
   // Reset transaction result when modal is closed
@@ -87,130 +80,6 @@ export default function CosmicGifMarketplace() {
       setSolanaAmount(selectedGif.price.toString());
     }
   }, [selectedGif, setSolanaAmount]);
-
-  // GIF NFT data with paths updated to use public assets folder
-  const gifNfts: GifNft[] = [
-    {
-      id: 1,
-      name: "Adult Dance",
-      price: 0.15,
-      url: "/assets/gifs/Adult Swim Dance GIF.gif",
-      rarity: "Rare"
-    },
-    {
-      id: 2,
-      name: "Angry Lizard",
-      price: 0.25,
-      url: "/assets/gifs/Angry GIF.gif",
-      rarity: "Legendary"
-    },
-    {
-      id: 3,
-      name: "Take This L",
-      price: 0.12,
-      url: "/assets/gifs/Animation Smile by Mashed.gif",
-      rarity: "Common"
-    },
-    {
-      id: 4,
-      name: "Chad Eyebrow",
-      price: 0.30,
-      url: "/assets/gifs/Bear Reaction GIF - The Comedy Bar.gif",
-      rarity: "Mythic"
-    },
-    {
-      id: 5,
-      name: "Opponent Down",
-      price: 0.20,
-      url: "/assets/gifs/Celebrate Good Game GIF by Nounish.gif",
-      rarity: "Epic"
-    },
-    {
-      id: 6,
-      name: "Come to Papa",
-      price: 0.25,
-      url: "assets/gifs/Dick Armstrong GIF by gifnews.gif",
-      rarity: "Legendary"
-    },
-    {
-      id: 7,
-      name: "Shake It",
-      price: 0.10,
-      url: "/assets/gifs/Excited Shake It GIF by Sherchle.gif",
-      rarity: "Common"
-    },
-    {
-      id: 8,
-      name: "",
-      price: 0.18,
-      url: "/assets/gifs/Happy Excitement GIF.gif",
-      rarity: "Rare"
-    },
-    {
-      id: 9,
-      name: "Happy Robot",
-      price: 0.22,
-      url: "/assets/gifs/Happy Robot GIF.gif",
-      rarity: "Epic"
-    },
-    {
-      id: 10,
-      name: "Simpson Ahhhhh!",
-      price: 0.35,
-      url: "/assets/gifs/Homer Simpson Reaction GIF.gif",
-      rarity: "Mythic"
-    },
-    {
-      id: 11,
-      name: "Middle Finger",
-      price: 0.15,
-      url: "/assets/gifs/Middle Finger GIF.gif",
-      rarity: "Rare"
-    },
-    {
-      id: 12,
-      name: "Sad SpongeBob",
-      price: 0.20,
-      url: "/assets/gifs/Sad Cry SpongeBob GIF.gif",
-      rarity: "Epic"
-    },
-    {
-      id: 13,
-      name: "Stellar Genesis",
-      price: 0.20,
-      url: "/assets/gifs/Suck It Ha Ha GIF Pudgy Penguins.gif",
-      rarity: "Epic"
-    },
-    {
-      id: 14,
-      name: "Saw That",
-      price: 0.20,
-      url: "/assets/gifs/Sexy Funny Face GIF by Globkins.gif",
-      rarity: "Epic"
-    },
-    {
-      id: 15,
-      name: "Cute Penguin",
-      price: 0.20,
-      url: "/assets/gifs/Suck It Ha Ha GIF Pudgy Penguins.gif",
-      rarity: "Epic"
-    },
-    {
-      id: 16,
-      name: "Thinking Ninja",
-      price: 0.20,
-      url: "/assets/gifs/Teenage Mutant Ninja Turtles GIF.gif",
-      rarity: "Epic"
-    },
-    {
-      id: 17,
-      name: "Only Love",
-      price: 0.20,
-      url: "/assets/gifs/Valentines Day Love GIF.gif",
-      rarity: "Epic"
-    }
-  ];
-
 
   const itemsPerPage = 6;
   const maxPage = Math.ceil(gifNfts.length / itemsPerPage);
@@ -288,7 +157,8 @@ export default function CosmicGifMarketplace() {
     if (!selectedGif || !userId || !isNftWalletConnected) return;
 
     try {
-      const result = await mintNft();
+      // Pass the specific candy machine ID for the selected GIF
+      const result = await mintNft(selectedGif.candyMachineId);
       
       if (result.success) {
         // Update UI state
@@ -312,6 +182,7 @@ export default function CosmicGifMarketplace() {
             tx_type: "PURCHASE",
             gif_id: selectedGif.id,
             tx_hash: result.txid,
+            candy_machine_id: selectedGif.candyMachineId // Include candy machine ID in the data
           };
     
           console.log("Sending mint deposit data:", mintData);
@@ -327,7 +198,7 @@ export default function CosmicGifMarketplace() {
             }
           );
 
-          console.log("minting succesfully updated in db", response)
+          console.log("minting successfully updated in db", response)
     
           if (!response.ok) {
             const errorText = await response.text();
@@ -499,7 +370,7 @@ export default function CosmicGifMarketplace() {
 
                       <div className="flex items-center justify-between">
                         <div className="text-emerald-400 font-mono">
-                          {nft.price.toFixed(2)} MON
+                          {nft.price.toFixed(2)} SOL
                         </div>
                         
                         <div className={`text-xs ${rarityColors[nft.rarity].text} border ${rarityColors[nft.rarity].border} rounded-full px-2 py-1 ${rarityColors[nft.rarity].bg}`}>
@@ -675,7 +546,7 @@ export default function CosmicGifMarketplace() {
                 <div className="mt-6 space-y-4">
                   <h4 className="text-white font-medium">Confirm Mint</h4>
                   <p className="text-zinc-400 text-sm">
-                    This GIF will be minted as an NFT to your wallet address.
+                    This GIF will be minted as an NFT to your wallet address from Candy Machine: {selectedGif.candyMachineId.substring(0, 8)}...
                   </p>
                   
                   {/* Processing Indicator */}
