@@ -12,6 +12,8 @@ export default function CosmicGifMarketplace() {
   const [selectedGif, setSelectedGif] = useState<GifNft | null>(null);
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [transactionResult, setTransactionResult] = useState<'none' | 'success' | 'failed'>('none');
+  // Add a new state to track which NFT is currently being processed
+  const [processingNftId, setProcessingNftId] = useState<number | null>(null);
   const Particles = useParticles();
   
   // Get userId as number from userData stored in localStorage
@@ -56,6 +58,8 @@ export default function CosmicGifMarketplace() {
       // Give some time for animation to complete
       setTimeout(() => {
         setTransactionResult('none');
+        // Also clear processing NFT when modal is closed
+        setProcessingNftId(null);
       }, 300);
     }
   }, [isConfirmModalOpen]);
@@ -68,9 +72,11 @@ export default function CosmicGifMarketplace() {
       setTimeout(() => {
         setIsConfirmModalOpen(false);
         setSelectedGif(null);
+        setProcessingNftId(null); // Clear processing state
       }, 2000);
     } else if (paymentStatus === 'failed') {
       setTransactionResult('failed');
+      setProcessingNftId(null); // Clear processing state on failure too
     }
   }, [paymentStatus]);
   
@@ -156,6 +162,9 @@ export default function CosmicGifMarketplace() {
   const handleInitiatePayment = useCallback(async () => {
     if (!selectedGif || !userId || !isNftWalletConnected) return;
 
+    // Set processing state as soon as payment is initiated
+    setProcessingNftId(selectedGif.id);
+    
     try {
       // Pass the specific candy machine ID for the selected GIF
       const result = await mintNft(selectedGif.candyMachineId);
@@ -168,6 +177,7 @@ export default function CosmicGifMarketplace() {
         setTimeout(() => {
           setIsConfirmModalOpen(false);
           setSelectedGif(null);
+          setProcessingNftId(null); // Clear processing state
         }, 2000);
 
         try {
@@ -212,6 +222,7 @@ export default function CosmicGifMarketplace() {
     } catch (error) {
       console.error("Failed to mint NFT:", error);
       setTransactionResult('failed');
+      setProcessingNftId(null); // Clear processing state on error
     }
   }, [selectedGif, userId, isNftWalletConnected, mintNft]);
 
@@ -221,6 +232,9 @@ export default function CosmicGifMarketplace() {
     
     // Close the modal
     setIsConfirmModalOpen(false);
+    
+    // Clear the processing state
+    setProcessingNftId(null);
     
     // Clear the selected GIF after a delay to allow animation
     setTimeout(() => setSelectedGif(null), 300);
@@ -381,17 +395,26 @@ export default function CosmicGifMarketplace() {
                       {/* Purchase Button */}
                       <button
                         onClick={() => openPurchaseModal(nft)}
-                        disabled={processingPayment || !isWalletConnected}
+                        disabled={processingPayment || !isWalletConnected || processingNftId === nft.id}
                         className={`w-full mt-3 py-2 rounded-lg font-medium flex items-center justify-center transition-all ${
-                          processingPayment
+                          processingPayment || processingNftId === nft.id
                             ? "bg-emerald-500/10 text-emerald-400/50 cursor-not-allowed"
                             : isWalletConnected
                               ? "bg-emerald-500 text-black hover:bg-emerald-400"
                               : "bg-red-500/20 border border-red-500/40 text-red-400 cursor-not-allowed"
                         }`}
                       >
-                        <Zap className="w-4 h-4 mr-2" />
-                        {processingPayment ? "Processing..." : "Purchase GIF"}
+                        {processingNftId === nft.id ? (
+                          <>
+                            <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-emerald-400 mr-2"></div>
+                            Processing...
+                          </>
+                        ) : (
+                          <>
+                            <Zap className="w-4 h-4 mr-2" />
+                            Purchase GIF
+                          </>
+                        )}
                       </button>
                     </div>
                   </motion.div>
@@ -459,7 +482,7 @@ export default function CosmicGifMarketplace() {
               <button 
                 onClick={handleCancelTransaction}
                 className="absolute top-3 right-3 z-50 p-1 rounded-full bg-black/50 text-white/70 hover:text-white hover:bg-black/70 transition-all"
-                disabled={processingPayment}
+                disabled={processingPayment || processingNftId !== null}
               >
                 <X className="w-5 h-5" />
               </button>
@@ -550,10 +573,10 @@ export default function CosmicGifMarketplace() {
                   </p>
                   
                   {/* Processing Indicator */}
-                  {processingPayment && (
+                  {(processingPayment || processingNftId !== null) && (
                     <div className="bg-black/40 rounded-lg p-3 flex items-center">
                       <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-emerald-500 mr-3"></div>
-                      <span className="text-emerald-400 text-sm">Processing mint...</span>
+                      <span className="text-emerald-400 text-sm">Processing mint transaction...</span>
                     </div>
                   )}
                   
@@ -562,7 +585,7 @@ export default function CosmicGifMarketplace() {
                     <div className="flex gap-3">
                       <button
                         onClick={handleCancelTransaction}
-                        disabled={processingPayment}
+                        disabled={processingPayment || processingNftId !== null}
                         className="flex-1 py-2 rounded-lg border border-zinc-700 text-zinc-300 hover:bg-zinc-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         Cancel
@@ -570,10 +593,10 @@ export default function CosmicGifMarketplace() {
                       
                       <button
                         onClick={handleInitiatePayment}
-                        disabled={processingPayment || !isWalletConnected}
+                        disabled={processingPayment || !isWalletConnected || processingNftId !== null}
                         className="flex-1 py-2 rounded-lg bg-emerald-500 text-black font-medium hover:bg-emerald-400 transition-all disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center"
                       >
-                        {processingPayment ? (
+                        {processingPayment || processingNftId !== null ? (
                           <>
                             <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-black mr-2"></div>
                             Processing...

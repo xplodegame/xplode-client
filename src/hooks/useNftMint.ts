@@ -138,7 +138,7 @@ export const fetchNFTs = async (address: string) => {
     const connection = new Connection(quicknodeEndpoint);
     const metaplex = new Metaplex(connection);
 
-    console.log("Wallet public key:", wallet_pubkey.toBase58());
+    // console.log("Wallet public key:", wallet_pubkey.toBase58());
 
     // Fetch all NFTs owned by the wallet
     const ownedNFTs = await metaplex
@@ -149,14 +149,14 @@ export const fetchNFTs = async (address: string) => {
     
     // Get all collection IDs to check against
     const allCollectionIds = getAllCollectionIds();
-    console.log("All collection IDs to check:", allCollectionIds);
+    // console.log("All collection IDs to check:", allCollectionIds);
 
     // Filter NFTs from our collections (any of our collection IDs)
     const collectionNFTs = ownedNFTs.filter(nft => {
       if (!nft.collection?.address) return false;
       
       const nftCollectionId = nft.collection.address.toBase58();
-      console.log(`NFT ${nft.address.toBase58()} has collection: ${nftCollectionId}`);
+      // console.log(`NFT ${nft.address.toBase58()} has collection: ${nftCollectionId}`);
       
       return allCollectionIds.includes(nftCollectionId);
     });

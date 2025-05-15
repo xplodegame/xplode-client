@@ -521,9 +521,9 @@ useEffect(() => {
             }
 
             moveTimeoutRef.current = window.setTimeout(() => {
-              console.log("###### Aborting due to movetimeout")
               setTurnCount((prevCount) => {
                 const abort = prevCount === 0;
+                console.log("###### Aborting due to movetimeout this is the turn count: ", prevCount)
                 sendMessage({
                   Stop: {
                     game_id: newGameState.RUNNING.game_id,
@@ -567,6 +567,7 @@ useEffect(() => {
             clearTimeout(waitTimeoutRef.current);
           }
           waitTimeoutRef.current = window.setTimeout(() => {
+            console.log("###### Aborting due to waitTimeOut")
             sendMessage({
               Stop: {
                 game_id: newGameState.WAITING.game_id,

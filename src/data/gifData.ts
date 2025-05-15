@@ -117,7 +117,7 @@ export const gifNfts: GifNft[] = [
     id: 11,
     name: "Middle Finger",
     price: 1,
-    url: "/assets/gifs/Middle Finger GIF.gif",
+    url: "/assets/gifs/Middle Finger GIF.webp",
     rarity: "Rare",
     count: 500,
     collectionMintId: import.meta.env.VITE_COLLECTION_ID_11 || "",

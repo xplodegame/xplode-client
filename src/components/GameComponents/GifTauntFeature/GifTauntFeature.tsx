@@ -213,7 +213,7 @@ const GifTauntFeature: React.FC<GifTauntProps> = ({
                   <p className="text-xs text-emerald-400">{getSenderName()}</p>
                 </div>
                 
-                <div className="text-xs text-emerald-500/70">INCOMING</div>
+                <div className="text-xs text-emerald-500/70">BROADCASTING</div>
               </div>
               
               {/* GIF with scan effect */}

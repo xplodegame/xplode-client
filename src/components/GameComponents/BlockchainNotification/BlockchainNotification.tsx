@@ -149,7 +149,7 @@ const BlockchainNotification: React.FC<BlockchainNotificationProps> = ({
               {/* Success message */}
               <div className="text-[10px] text-zinc-400 flex items-center">
                 <div className="w-1 h-1 rounded-full bg-emerald-500 mr-1"></div>
-                Transaction confirmed on Monad blockchain
+                Transaction confirmed on Solana blockchain
               </div>
             </div>
           </div>

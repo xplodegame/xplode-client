@@ -5,6 +5,7 @@ import Navbar from './components/Navbar/Navbar';
 import MultiplayerGame from './pages/MultiplayerGame/MultiplayerGame';
 import Leaderboard from './pages/Leaderboard/Leaderboard';
 import CosmicGifMarketplace from './pages/MarketPlace/MarketPlace.tsx';
+import ProfilePage from './pages/Profile/ProfilePage';
 import CosmicUsernameModal from './components/GameComponents/CosmicUsernameModal/CosmicUsernameModal';
 import Home from './pages/Home/Home';
 import './index.css';
@@ -352,6 +353,21 @@ const MainApp: React.FC = () => {
                       handleUsernameSet={handleUsernameSet}
                     >
                       <NFTGallery />
+                    </UsernameRequiredWrapper>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/profile"
+                element={
+                  <ProtectedRoute>
+                    <UsernameRequiredWrapper
+                      userData={userData}
+                      isUsernameModalOpen={isUsernameModalOpen}
+                      setIsUsernameModalOpen={setIsUsernameModalOpen}
+                      handleUsernameSet={handleUsernameSet}
+                    >
+                      <ProfilePage />
                     </UsernameRequiredWrapper>
                   </ProtectedRoute>
                 }
