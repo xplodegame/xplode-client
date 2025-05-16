@@ -28,7 +28,7 @@ export default function CosmicGifMarketplace() {
         // Ensure userId is a number
         if (userData?.id && typeof userData.id === 'number') {
           setUserId(userData.id);
-          console.log('Retrieved userId from localStorage:', userData.id);
+          // console.log('Retrieved userId from localStorage:', userData.id);
         } else {
           console.error('Invalid userId in localStorage userData:', userData?.id);
         }

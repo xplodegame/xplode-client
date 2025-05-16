@@ -10,7 +10,7 @@ export const WalletConnectButton = () => {
   useEffect(() => {
     if (ready) {
       // console.log("Privy state:", { authenticated, userId: user?.id });
-      console.log("Connected wallets:", wallets);
+      // console.log("Connected wallets:", wallets);
     }
   }, [ready, authenticated, user, wallets]);
 

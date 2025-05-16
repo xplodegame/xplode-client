@@ -28,7 +28,7 @@ const LeaderboardPage: React.FC = () => {
     fetchLeaderboardData();
   }, [timeframe]);
 
-  const currency = 'MON';
+  const currency = 'SOL';
 
   const fetchLeaderboardData = async () => {
     try {
@@ -42,7 +42,7 @@ const LeaderboardPage: React.FC = () => {
       // The API expects /leaderboard/{network}/{timeframe} not /leaderboard/leaderboard/{network}/{timeframe}
       const endpoint = `${cleanBaseUrl}/${currency}/${timeframe}`;
       
-      console.log("Fetching from:", endpoint);
+    //   console.log("Fetching from:", endpoint);
       const response = await fetch(endpoint);
       
       if (!response.ok) {
@@ -50,7 +50,7 @@ const LeaderboardPage: React.FC = () => {
       }
       
       const data = await response.json();
-      console.log("################################: ", data);
+    //   console.log("################################: ", data);
       setLeaderboardData(data);
     } catch (error) {
       console.error('Error fetching leaderboard data:', error);
@@ -202,8 +202,8 @@ const LeaderboardPage: React.FC = () => {
                         <h3 className="text-zinc-400 text-sm font-medium">Highest Profit</h3>
                         <p className="text-2xl font-bold text-white">
                         {leaderboardData.length > 0 ? 
-                            `${leaderboardData.sort((a, b) => b.total_profit - a.total_profit)[0].total_profit.toFixed(3)} MON` : 
-                            '0 MON'}
+                            `${leaderboardData.sort((a, b) => b.total_profit - a.total_profit)[0].total_profit.toFixed(3)} SOL` : 
+                            '0 SOL'}
                         </p>
                     </div>
                     </div>
@@ -319,7 +319,7 @@ const LeaderboardPage: React.FC = () => {
                                     <div className="flex items-center">
                                         <Coins className="h-4 w-4 text-emerald-400 mr-2" />
                                         <span className={`font-mono ${(player.total_profit ?? 0) >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                                        {(player.total_profit ?? 0) >= 0 ? '+' : ''}{(player.total_profit ?? 0).toFixed(3)} MON
+                                        {(player.total_profit ?? 0) >= 0 ? '+' : ''}{(player.total_profit ?? 0).toFixed(3)} SOL
                                         </span>
                                     </div>
                                     </td>

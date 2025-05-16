@@ -13,7 +13,7 @@ export const getPaymentConfig = (depositAddress: string | undefined) => {
     PAYMENT_CHECK_INTERVAL: 1000,
     LABELS: {
       GAME_DEPOSIT: "Game Wallet Deposit",
-      DEPOSIT_MESSAGE: "Deposit MON to game wallet",
+      DEPOSIT_MESSAGE: "Deposit SOL to game wallet",
     },
   };
 };

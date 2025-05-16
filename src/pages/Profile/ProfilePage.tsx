@@ -172,7 +172,7 @@ const ProfilePage: React.FC = () => {
     try {
       // Construct the API endpoint URL
       const apiEndpoint = `${import.meta.env.VITE_API_BASE_URL || ''}/game_pnl/${userId}`;
-      console.log("Fetching game PnL data from:", apiEndpoint);
+      // console.log("Fetching game PnL data from:", apiEndpoint);
       
       const response = await fetch(apiEndpoint);
       
@@ -181,7 +181,7 @@ const ProfilePage: React.FC = () => {
       }
       
       const data: GamePnl[] = await response.json();
-      console.log("Game PnL data received:", data);
+      // console.log("Game PnL data received:", data);
       setUserGamePnl(data);
       
       // Calculate statistics from game PnL data
@@ -610,7 +610,7 @@ const ProfilePage: React.FC = () => {
                           <div className="flex items-center justify-center md:justify-start gap-2">
                             <Wallet className="w-4 h-4 text-emerald-400" />
                             <span className="text-zinc-300 text-sm">
-                              Balance: {balance.toFixed(3)} MON
+                              Balance: {balance.toFixed(3)} SOL
                             </span>
                           </div>
                         </div>
@@ -625,7 +625,7 @@ const ProfilePage: React.FC = () => {
                         <div className="text-center">
                           <p className="text-zinc-400 text-sm">Total Profit</p>
                           <p className={`text-2xl font-bold ${getProfitColorClass(gameStats.totalProfit)}`}>
-                            {gameStats.totalProfit > 0 ? '+' : ''}{gameStats.totalProfit.toFixed(3)} MON
+                            {gameStats.totalProfit > 0 ? '+' : ''}{gameStats.totalProfit.toFixed(3)} SOL
                           </p>
                         </div>
                         <div className="text-center">
@@ -734,21 +734,21 @@ const ProfilePage: React.FC = () => {
                             <div>
                               <p className="text-zinc-400 text-sm mb-1">Biggest Win:</p>
                               <p className="text-emerald-400 font-mono text-xl font-medium">
-                                +{gameStats.biggestWin.toFixed(3)} MON
+                                +{gameStats.biggestWin.toFixed(3)} SOL
                               </p>
                             </div>
                             
                             <div>
                               <p className="text-zinc-400 text-sm mb-1">Biggest Loss:</p>
                               <p className="text-red-400 font-mono text-xl font-medium">
-                                {gameStats.biggestLoss.toFixed(3)} MON
+                                {gameStats.biggestLoss.toFixed(3)} SOL
                               </p>
                             </div>
                             
                             <div>
                               <p className="text-zinc-400 text-sm mb-1">Average Profit:</p>
                               <p className={`font-mono text-xl font-medium ${getProfitColorClass(gameStats.averageProfit)}`}>
-                                {gameStats.averageProfit > 0 ? '+' : ''}{gameStats.averageProfit.toFixed(3)} MON
+                                {gameStats.averageProfit > 0 ? '+' : ''}{gameStats.averageProfit.toFixed(3)} SOL
                               </p>
                             </div>
                           </div>

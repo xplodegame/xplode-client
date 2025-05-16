@@ -79,19 +79,20 @@ export default function Features() {
     },
     {
       icon: Trophy,
-      title: 'Cosmic Risk-Reward',
-      description: "Balance stellar riches against black hole disasters on Monad's hyperspace network.",
+      title: 'Blazing Through the Stars',
+      description: "Harness Solana’s lightning-fast finality to race, raid, and rule without delay.",
     },
     {
       icon: Shield,
-      title: 'Planetary Defense',
-      description: 'Deploy gravity locks to strategically block rival explorers from your celestial path.',
+      title: 'Secure Skirmishes',
+      description: 'Rely on Solana’s robust validator set to defend your assets and outmaneuver foes.',
     },
     {
       icon: Zap,
-      title: 'Superluminal Speed',
-      description: "Experience warp-speed gameplay with Monad's 10,000+ TPS quantum blockchain.",
+      title: 'Low-Fee Galactic Warfare',
+      description: "Launch battles, trades, and traps at scale thanks to Solana’s near-zero txn costs.",
     },
+    
   ];
 
   return (
