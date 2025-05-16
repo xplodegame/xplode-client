@@ -35,7 +35,7 @@ export default function Footer() {
               <div className="flex gap-6">
                 {[
                     { icon: Github, link: "#", id: "github" },
-                    { icon: Twitter, link: "#", id: "twitter" },
+                    { icon: Twitter, link: "https://x.com/xplode_game", id: "twitter" },
                     { icon: Discord, link: "#", id: "discord" },
                 ].map(({ icon: Icon, link, id}) => (
                   <motion.a
