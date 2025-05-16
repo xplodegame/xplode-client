@@ -953,7 +953,7 @@ const ProfilePage: React.FC = () => {
                               { 
                                 name: "Collection Started", 
                                 description: "Own your first NFT GIF", 
-                                unlocked: ownedGifs.length > 0 
+                                unlocked: ownedGifs.length > 2 
                               },
                               { 
                                 name: "Veteran Voyager", 

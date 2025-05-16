@@ -31,9 +31,11 @@ export const useWithdraw = ({
       const withdrawData = {
         user_id: userId,
         amount: Number(amount),
-        currency: "MON",
+        currency: "SOL",
         withdraw_address: withdrawAddress,
       };
+
+      console.log("this is the withdraw req payload: ", withdrawData)
 
       const response = await fetch(
         import.meta.env.VITE_PAYMENT_WITHDRAW_ENDPOINT_URL,
