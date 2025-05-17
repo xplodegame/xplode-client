@@ -169,16 +169,6 @@ export default function CosmicGifMarketplace() {
       const result = await mintNft(selectedGif.candyMachineId);
       
       if (result.success) {
-        // Update UI state
-        setTransactionResult('success');
-        
-        // Auto close after success with a delay
-        setTimeout(() => {
-          setIsConfirmModalOpen(false);
-          setSelectedGif(null);
-          setProcessingNftId(null); // Clear processing state
-        }, 2000);
-
         try {
           if (!userId) {
             throw new Error("No user ID available");
@@ -207,15 +197,76 @@ export default function CosmicGifMarketplace() {
             }
           );
 
-          console.log("minting successfully updated in db", response)
-    
           if (!response.ok) {
             const errorText = await response.text();
             throw new Error(`Deposit failed: ${errorText}`);
           }
+          
+          console.log("Minting successfully updated in db");
+          
+          // After successful minting, fetch updated user details
+          // try {
+          // Get current user data from localStorage
+          const userDataStr = localStorage.getItem('userData');
+          if (!userDataStr) throw new Error("No user data in localStorage");
+          
+          const storedUserData = JSON.parse(userDataStr);
+          
+          // Create request payload for user details endpoint
+          const userDetailsPayload = {
+            privy_id: storedUserData.privy_id,
+            email: storedUserData.email,
+            name: storedUserData.name,
+            currency: "SOL"
+          };
+          
+          console.log("Fetching updated user details after mint");
+          
+          // Call the user details endpoint to get updated data
+          const userDetailsResponse = await fetch(import.meta.env.VITE_USER_DETAILS_ENDPOINT_URL, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(userDetailsPayload),
+          });
+          
+          if (!userDetailsResponse.ok) {
+            throw new Error(`Failed to fetch updated user details: ${userDetailsResponse.status}`);
+          }
+          
+          const userDetailsData = await userDetailsResponse.json();
+          console.log("Received updated user details:", userDetailsData);
+          
+          // Update user data in localStorage with the new data
+          const updatedUserData = {
+            ...storedUserData,
+            wallet_balance: userDetailsData.balance,
+            gif_ids: userDetailsData.gif_ids || []
+          };
+          
+          // Update localStorage
+          localStorage.setItem('userData', JSON.stringify(updatedUserData));
+          console.log('User data updated in localStorage after mint');
+          // } catch (updateError) {
+          //   console.error("Error updating user data after mint:", updateError);
+          //   // Continue with success flow even if update fails
+          // }
+          
         } catch (err) {
-          console.log(err)
+          console.error("Error updating backend after mint:", err);
+          // Not failing the overall transaction if backend update fails
         }
+        
+        // Update UI state
+        setTransactionResult('success');
+        
+        // Auto close after success with a delay
+        setTimeout(() => {
+          setIsConfirmModalOpen(false);
+          setSelectedGif(null);
+          setProcessingNftId(null); // Clear processing state
+        }, 2000);
       }
 
     } catch (error) {
@@ -224,6 +275,7 @@ export default function CosmicGifMarketplace() {
       setProcessingNftId(null); // Clear processing state on error
     }
   }, [selectedGif, userId, isNftWalletConnected, mintNft]);
+
 
   const handleCancelTransaction = useCallback(() => {
     // Cancel any pending payment
