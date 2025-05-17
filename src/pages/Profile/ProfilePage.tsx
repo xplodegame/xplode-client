@@ -38,37 +38,23 @@ interface OwnedGif {
   price?: number;
 }
 
-const rarityColors = {
-  "Common": {
-    bg: "bg-emerald-500/30",
-    text: "text-emerald-400",
-    border: "border-emerald-500/40",
-    glow: "shadow-emerald-500/30"
-  },
-  "Rare": {
-    bg: "bg-blue-500/30",
-    text: "text-blue-400",
-    border: "border-blue-500/40",
-    glow: "shadow-blue-500/30"
-  },
-  "Epic": {
-    bg: "bg-purple-500/30", 
-    text: "text-purple-400",
-    border: "border-purple-500/40",
-    glow: "shadow-purple-500/30"
-  },
-  "Legendary": {
-    bg: "bg-yellow-500/30",
-    text: "text-yellow-400",
-    border: "border-yellow-500/40",
-    glow: "shadow-yellow-500/30"
-  },
-  "Mythic": {
-    bg: "bg-red-500/30",
-    text: "text-red-400",
-    border: "border-red-500/40",
-    glow: "shadow-red-500/30"
-  }
+type RarityType = 'Common' | 'Rare' | 'Epic' | 'Legendary' | 'Mythic';
+
+interface RarityColors {
+  [key: string]: {
+    bg: string;
+    text: string;
+    border: string;
+    glow: string;
+  };
+}
+
+const rarityColors: RarityColors = {
+  Common: { bg: 'bg-gray-500', text: 'text-white', border: 'border-gray-500', glow: 'shadow-gray-500/50' },
+  Rare: { bg: 'bg-blue-500', text: 'text-white', border: 'border-blue-500', glow: 'shadow-blue-500/50' },
+  Epic: { bg: 'bg-purple-500', text: 'text-white', border: 'border-purple-500', glow: 'shadow-purple-500/50' },
+  Legendary: { bg: 'bg-yellow-500', text: 'text-white', border: 'border-yellow-500', glow: 'shadow-yellow-500/50' },
+  Mythic: { bg: 'bg-red-500', text: 'text-white', border: 'border-red-500', glow: 'shadow-red-500/50' }
 };
 
 const ProfilePage: React.FC = () => {
@@ -313,24 +299,24 @@ const ProfilePage: React.FC = () => {
     });
   };
   
-  const generateSampleData = () => {
-    // We no longer need sample data as we're using the actual 
-    // calculated values from the game_pnl endpoint
+  // const generateSampleData = () => {
+  //   // We no longer need sample data as we're using the actual 
+  //   // calculated values from the game_pnl endpoint
     
-    // If there's no data yet, just show zeros
-    setGameStats({
-      totalMatches: 0,
-      winRate: 0,
-      totalProfit: 0,
-      biggestWin: 0,
-      biggestLoss: 0,
-      averageProfit: 0,
-      wins: 0,
-      losses: 0,
-      mostActiveDay: 'Unknown',
-      accountCreated: '15/05/2025' // Current date as fallback
-    });
-  };
+  //   // If there's no data yet, just show zeros
+  //   setGameStats({
+  //     totalMatches: 0,
+  //     winRate: 0,
+  //     totalProfit: 0,
+  //     biggestWin: 0,
+  //     biggestLoss: 0,
+  //     averageProfit: 0,
+  //     wins: 0,
+  //     losses: 0,
+  //     mostActiveDay: 'Unknown',
+  //     accountCreated: '15/05/2025' // Current date as fallback
+  //   });
+  // };
 
   // Get the user's rank label based on their stats
   const getUserRank = () => {
@@ -897,7 +883,7 @@ const ProfilePage: React.FC = () => {
                                   initial={{ opacity: 0, scale: 0.9 }}
                                   animate={{ opacity: 1, scale: 1 }}
                                   transition={{ duration: 0.3, delay: index * 0.1 }}
-                                  className={`relative rounded-lg overflow-hidden border ${rarityColors[gif.rarity].border} ${rarityColors[gif.rarity].glow}`}
+                                  className={`relative rounded-lg overflow-hidden border ${rarityColors[gif.rarity as RarityType].border} ${rarityColors[gif.rarity as RarityType].glow}`}
                                 >
                                   <div className="aspect-square">
                                     <img 
@@ -911,7 +897,7 @@ const ProfilePage: React.FC = () => {
                                       }}
                                     />
                                   </div>
-                                  <div className={`absolute top-1 right-1 ${rarityColors[gif.rarity].bg} px-2 py-0.5 rounded-full text-xs ${rarityColors[gif.rarity].text}`}>
+                                  <div className={`absolute top-1 right-1 ${rarityColors[gif.rarity as RarityType].bg} px-2 py-0.5 rounded-full text-xs ${rarityColors[gif.rarity as RarityType].text}`}>
                                     {gif.rarity}
                                   </div>
                                 </motion.div>
@@ -1036,13 +1022,13 @@ const ProfilePage: React.FC = () => {
                                 initial={{ opacity: 0, y: 10 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ duration: 0.3, delay: Math.min(index * 0.05, 1) }}
-                                className={`relative overflow-hidden rounded-lg border ${rarityColors[gif.rarity].border} bg-black/60 backdrop-blur-sm transition-all hover:shadow-lg ${rarityColors[gif.rarity].glow} transform hover:scale-[1.02]`}
+                                className={`relative overflow-hidden rounded-lg border ${rarityColors[gif.rarity as RarityType].border} bg-black/60 backdrop-blur-sm transition-all hover:shadow-lg ${rarityColors[gif.rarity as RarityType].glow} transform hover:scale-[1.02]`}
                               >
                                 {/* Animated Border Glow */}
                                 <div className="absolute inset-0 -z-10 bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent animate-gradient-x rounded-lg"></div>
                                 
                                 {/* Rarity Badge */}
-                                <div className={`absolute top-2 right-2 z-20 px-2 py-0.5 rounded-full text-xs font-medium ${rarityColors[gif.rarity].bg} ${rarityColors[gif.rarity].text}`}>
+                                <div className={`absolute top-2 right-2 z-20 px-2 py-0.5 rounded-full text-xs font-medium ${rarityColors[gif.rarity as RarityType].bg} ${rarityColors[gif.rarity as RarityType].text}`}>
                                   {gif.rarity}
                                 </div>
                                 

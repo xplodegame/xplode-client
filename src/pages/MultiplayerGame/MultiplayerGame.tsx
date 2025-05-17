@@ -11,7 +11,7 @@ import EnhancedTurnIndicator from '../../components/GameComponents/EnhancedTurnI
 import MatchmakingAnimation from '../../components/GameComponents/MatchmakingAnimation/MatchmakingAnimation'
 import GameRoomShare from '../../components/GameComponents/GameRoomShare/GameRoomShare';
 import JoiningGameIndicator from '../../components/GameComponents/JoiningGameIndicator/JoiningGameIndicator';
-import { GameState, GameMessage } from '../../types/gameTypes';
+import { GameState, GameMessage, Board, Player } from '../../types/gameTypes';
 import RematchDialog from '../../components/GameComponents/RematchDialog/RematchDialog';
 import GifTauntFeature from '../../components/GameComponents/GifTauntFeature/GifTauntFeature';
 import BlockchainNotification from '../../components/GameComponents/BlockchainNotification/BlockchainNotification';
@@ -56,7 +56,7 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
   const [previousGameId, setPreviousGameId] = useState<string | null>(null);
   const [showRematchDeclinedMessage, setShowRematchDeclinedMessage] = useState<boolean>(false);
   const [showGameAbortedMessage, setShowGameAbortedMessage] = useState<boolean>(false);
-  const [ownedGifs, setOwnedGifs] = useState<Array<{id: number, name: string, url: string, rarity: string}>>([]);
+  const [ownedGifs, setOwnedGifs] = useState<Array<{id: number, name: string, url: string, rarity: string, price: number}>>([]);
   const [incomingGif, setIncomingGif] = useState<{id: number, url: string, playerId: string, playerName: string} | null>(null);
   const [showTauntButton, setShowTauntButton] = useState<boolean>(false);
 
@@ -71,7 +71,7 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
   const startGameSound = useRef(new Audio('/assets/sounds/start_game.wav'));
   // const defeatSound = useRef(new Audio('/assets/sounds/defeatSound.mp3'));
   // const victorySound = useRef(new Audio('/assets/sounds/victorySound.mp3'));
-  const transactionSound = useRef(new Audio('/assets/sounds/transaction_notification.wav'));
+  // const transactionSound = useRef(new Audio('/assets/sounds/transaction_notification.wav'));
 
 
   const moveTimeoutRef = useRef<number>();
@@ -151,16 +151,18 @@ useEffect(() => {
       // Import GIF data from gifData.ts
       import('../../data/gifData').then(({ gifNfts }) => {
         // Find GIFs that match the IDs in userData.gif_ids
-        const ownedGifs = userData.gif_ids
-          .map(id => gifNfts.find(gif => gif.id === id))
-          .filter(Boolean) // Remove any undefined entries
-          .map(gif => ({
-            id: gif?.id || 0,
-            name: gif?.name || "",
-            price: gif?.price || 0,
-            url: gif?.url || "",
-            rarity: gif?.rarity || "Common"
-          }));
+        const ownedGifs = userData?.gif_ids
+          ? userData.gif_ids
+              .map(id => gifNfts.find(gif => gif.id === id))
+              .filter(Boolean) // Remove any undefined entries
+              .map(gif => ({
+                id: gif?.id || 0,
+                name: gif?.name || "",
+                price: gif?.price || 0,
+                url: gif?.url || "",
+                rarity: gif?.rarity || "Common"
+              }))
+          : [];
           
         // Combine free GIFs with owned GIFs
         userGifs = [...userGifs, ...ownedGifs];
@@ -232,11 +234,11 @@ useEffect(() => {
   } | null>(null);
 
   // Helper function to count revealed cells
-  const countRevealedCells = useCallback((board: any) => {
+  const countRevealedCells = useCallback((board: Board) => {
     if (!board || !board.grid) return 0;
     let count = 0;
-    board.grid.forEach((row: any) => {
-      row.forEach((cell: any) => {
+    board.grid.forEach((row: ("Hidden" | "Revealed" | "Mined")[]) => {
+      row.forEach((cell: "Hidden" | "Revealed" | "Mined") => {
         if (cell === 'Mined' || cell === 'Revealed') {
           count++;
         }
@@ -1307,7 +1309,7 @@ useEffect(() => {
           onSelectGif={handleSendGif}
           ownedGifs={ownedGifs}
           incomingGif={incomingGif}
-          players={gameState && 'RUNNING' in gameState ? gameState.RUNNING.players : []}
+          players={gameState && 'RUNNING' in gameState ? (gameState as { RUNNING: { players: Player[] } }).RUNNING.players : []}
         />
       )}
 
@@ -1420,7 +1422,7 @@ useEffect(() => {
                 onSelectGif={handleSendGif}
                 ownedGifs={ownedGifs}
                 incomingGif={incomingGif}
-                players={gameState && 'RUNNING' in gameState ? gameState.RUNNING.players : []}
+                players={gameState && 'RUNNING' in gameState ? (gameState as { RUNNING: { players: Player[] } }).RUNNING.players : []}
               />
             )}
             <div className="flex gap-3 w-full mt-6">

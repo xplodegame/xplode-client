@@ -28,19 +28,19 @@ const treasury = publicKey(import.meta.env.VITE_TREASURY);
 // Get all collection IDs from env variables
 const getAllCollectionIds = () => {
   const collectionIds = [];
-  
+
   // Add the default collection ID if it exists
   if (import.meta.env.VITE_COLLECTION_ID) {
     collectionIds.push(import.meta.env.VITE_COLLECTION_ID);
   }
-  
+
   // Add all numbered collection IDs from gifNfts
   for (const gif of gifNfts) {
     if (gif.collectionMintId && !collectionIds.includes(gif.collectionMintId)) {
       collectionIds.push(gif.collectionMintId);
     }
   }
-  
+
   return collectionIds;
 };
 
@@ -48,82 +48,86 @@ export const useNftMint = () => {
   const { wallets } = useSolanaWallets();
   const wallet = wallets[0];
   const wallet_pubkey = wallet ? new PublicKey(wallet.address) : null;
-  
+
   // Create an Umi instance
-  const umi = useMemo(
-    () => {
-      if (!wallet_pubkey) return null;
-      
-      return createUmi(quicknodeEndpoint)
-        .use(
-          walletAdapterIdentity({
-            publicKey: wallet_pubkey,
-            signTransaction: wallet.signTransaction,
-            signMessage: wallet.signMessage,
-          })
-        )
-        .use(mplCandyMachine())
-        .use(mplTokenMetadata());
-    },
-    [wallet, wallet_pubkey]
-  );
+  const umi = useMemo(() => {
+    if (!wallet_pubkey) return null;
 
-  const mintNft = useCallback(async (candyMachineIdToUse: string) => {
-    if (!wallet_pubkey) {
-      throw new Error("Wallet not connected!");
-    }
+    return createUmi(quicknodeEndpoint)
+      .use(
+        walletAdapterIdentity({
+          publicKey: wallet_pubkey,
+          signTransaction: wallet.signTransaction,
+          signMessage: wallet.signMessage,
+        })
+      )
+      .use(mplCandyMachine())
+      .use(mplTokenMetadata());
+  }, [wallet, wallet_pubkey]);
 
-    try {
-      // Use the provided candy machine ID, or fall back to default
-      const candyMachineIdStr = candyMachineIdToUse
-      console.log("Using candy machine ID:", candyMachineIdStr);
-      
-      // Convert to UMI publicKey
-      const candyMachineAddress = publicKey(candyMachineIdStr);
+  const mintNft = useCallback(
+    async (candyMachineIdToUse: string) => {
+      if (!wallet_pubkey) {
+        throw new Error("Wallet not connected!");
+      }
 
-      // Fetch the Candy Machine
-      const candyMachine = await fetchCandyMachine(umi, candyMachineAddress);
+      if (!umi) {
+        throw new Error("Umi instance not initialized!");
+      }
 
-      // Fetch the Candy Guard
-      const candyGuard = await safeFetchCandyGuard(
-        umi,
-        candyMachine.mintAuthority
-      );
+      try {
+        // Use the provided candy machine ID, or fall back to default
+        const candyMachineIdStr = candyMachineIdToUse;
+        console.log("Using candy machine ID:", candyMachineIdStr);
 
-      // Generate a new NFT mint
-      const nftMint = generateSigner(umi);
-      console.log("NFT Mint Address:", nftMint.publicKey);
+        // Convert to UMI publicKey
+        const candyMachineAddress = publicKey(candyMachineIdStr);
 
-      // Create and send the mint transaction
-      const transaction = transactionBuilder()
-        .add(setComputeUnitLimit(umi, { units: 800_000 }))
-        .add(
-          mintV2(umi, {
-            candyMachine: candyMachine.publicKey,
-            candyGuard: candyGuard?.publicKey,
-            nftMint,
-            collectionMint: candyMachine.collectionMint,
-            collectionUpdateAuthority: candyMachine.authority,
-            mintArgs: {
-              solPayment: some({ destination: treasury }),
-            },
-          })
+        // Fetch the Candy Machine
+        const candyMachine = await fetchCandyMachine(umi, candyMachineAddress);
+
+        // Fetch the Candy Guard
+        const candyGuard = await safeFetchCandyGuard(
+          umi,
+          candyMachine.mintAuthority
         );
 
-      // Send and confirm the transaction
-      const { signature } = await transaction.sendAndConfirm(umi, {
-        confirm: { commitment: "confirmed" },
-      });
+        // Generate a new NFT mint
+        const nftMint = generateSigner(umi);
+        console.log("NFT Mint Address:", nftMint.publicKey);
 
-      const txid = bs58.default.encode(signature);
-      console.log("Mint successful! Transaction ID:", txid);
+        // Create and send the mint transaction
+        const transaction = transactionBuilder()
+          .add(setComputeUnitLimit(umi, { units: 800_000 }))
+          .add(
+            mintV2(umi, {
+              candyMachine: candyMachine.publicKey,
+              candyGuard: candyGuard?.publicKey,
+              nftMint,
+              collectionMint: candyMachine.collectionMint,
+              collectionUpdateAuthority: candyMachine.authority,
+              mintArgs: {
+                solPayment: some({ destination: treasury }),
+              },
+            })
+          );
 
-      return { success: true, txid };
-    } catch (error) {
-      console.error("Failed to mint NFT:", error);
-      throw error;
-    }
-  }, [umi, wallet_pubkey]);
+        // Send and confirm the transaction
+        const { signature } = await transaction.sendAndConfirm(umi, {
+          confirm: { commitment: "confirmed" },
+        });
+
+        const txid = bs58.default.encode(signature);
+        console.log("Mint successful! Transaction ID:", txid);
+
+        return { success: true, txid };
+      } catch (error) {
+        console.error("Failed to mint NFT:", error);
+        throw error;
+      }
+    },
+    [umi, wallet_pubkey]
+  );
 
   return {
     mintNft,
@@ -132,7 +136,7 @@ export const useNftMint = () => {
 };
 
 export const fetchNFTs = async (address: string) => {
-  console.log("for wallet: ", address)
+  console.log("for wallet: ", address);
   try {
     const wallet_pubkey = new PublicKey(address);
     const connection = new Connection(quicknodeEndpoint);
@@ -146,18 +150,18 @@ export const fetchNFTs = async (address: string) => {
       .findAllByOwner({ owner: wallet_pubkey });
 
     console.log("Owned NFTs:", ownedNFTs);
-    
+
     // Get all collection IDs to check against
     const allCollectionIds = getAllCollectionIds();
     // console.log("All collection IDs to check:", allCollectionIds);
 
     // Filter NFTs from our collections (any of our collection IDs)
-    const collectionNFTs = ownedNFTs.filter(nft => {
+    const collectionNFTs = ownedNFTs.filter((nft) => {
       if (!nft.collection?.address) return false;
-      
+
       const nftCollectionId = nft.collection.address.toBase58();
       // console.log(`NFT ${nft.address.toBase58()} has collection: ${nftCollectionId}`);
-      
+
       return allCollectionIds.includes(nftCollectionId);
     });
 
@@ -165,7 +169,9 @@ export const fetchNFTs = async (address: string) => {
 
     // If no collection NFTs found, try to match by the NFT addresses directly
     if (collectionNFTs.length === 0) {
-      console.log("No NFTs found by collection ID. Attempting to identify NFTs by metadata...");
+      console.log(
+        "No NFTs found by collection ID. Attempting to identify NFTs by metadata..."
+      );
     }
 
     // Fetch metadata for each NFT
@@ -175,12 +181,14 @@ export const fetchNFTs = async (address: string) => {
           // Handle case where URI might be missing
           if (!nft.uri) {
             console.log(`No URI for NFT ${nft.address.toBase58()}`);
-            
+
             // Try to find a matching GIF from our data by matching collection ID
             if (nft.collection?.address) {
               const collectionId = nft.collection.address.toBase58();
-              const matchingGif = gifNfts.find(gif => gif.collectionMintId === collectionId);
-              
+              const matchingGif = gifNfts.find(
+                (gif) => gif.collectionMintId === collectionId
+              );
+
               if (matchingGif) {
                 return {
                   name: matchingGif.name,
@@ -189,14 +197,14 @@ export const fetchNFTs = async (address: string) => {
                 };
               }
             }
-            
+
             return {
               name: nft.name || "Unknown NFT",
               image: "",
               mint: nft.address.toBase58(),
             };
           }
-          
+
           const response = await fetch(nft.uri);
           const metadata = await response.json();
           return {
@@ -217,7 +225,7 @@ export const fetchNFTs = async (address: string) => {
         }
       })
     );
-    
+
     console.log("NFTs:", nftData);
     return nftData;
   } catch (error) {

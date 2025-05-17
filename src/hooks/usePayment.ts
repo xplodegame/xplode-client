@@ -9,7 +9,7 @@ interface UsePaymentProps {
   gif_id?: number;
 }
 
-export const usePayment = ({ userId, tx_type, gif_id }: UsePaymentProps) => {
+export const usePayment = ({ userId }: UsePaymentProps) => {
   const [solanaAmount, setSolanaAmount] = useState("");
   const setBalance = useWalletStore((state) => state.setBalance);
 
@@ -21,8 +21,6 @@ export const usePayment = ({ userId, tx_type, gif_id }: UsePaymentProps) => {
     isWalletConnected,
   } = useSolanaPayment({
     userId,
-    tx_type,
-    gif_id,
     onPaymentComplete: (balance) => {
       setBalance(balance); // Update global store
       setSolanaAmount("");
@@ -54,7 +52,7 @@ export const usePayment = ({ userId, tx_type, gif_id }: UsePaymentProps) => {
     }
 
     try {
-      await initiatePayment(solanaAmount, tx_type, gif_id);
+      await initiatePayment(solanaAmount);
     } catch (error) {
       console.error("Error initiating payment:", error);
       // if (error instanceof Error) {

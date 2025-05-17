@@ -40,8 +40,7 @@ export default function CosmicGifMarketplace() {
     }
   }, []);
 
-  const {
-    solanaAmount,
+  const {  
     setSolanaAmount,
     paymentStatus,
     processingPayment,

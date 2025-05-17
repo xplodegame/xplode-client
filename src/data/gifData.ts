@@ -13,16 +13,16 @@ export interface GifNft {
 
 // GIF NFT data with paths updated to use public assets folder and candy machine IDs from env variables
 export const gifNfts: GifNft[] = [
-  {
-    id: 1,
-    name: "Adult Dance",
-    price: 1,
-    url: "/assets/gifs/Adult Swim Dance GIF.gif",
-    rarity: "Rare",
-    count: 500,
-    collectionMintId: import.meta.env.VITE_COLLECTION_ID_1 || "",
-    candyMachineId: import.meta.env.VITE_CANDY_MACHINE_ID_1 || ""
-  },
+  // {
+  //   id: 1,
+  //   name: "Adult Dance",
+  //   price: 1,
+  //   url: "/assets/gifs/Adult Swim Dance GIF.gif",
+  //   rarity: "Rare",
+  //   count: 500,
+  //   collectionMintId: import.meta.env.VITE_COLLECTION_ID_1 || "",
+  //   candyMachineId: import.meta.env.VITE_CANDY_MACHINE_ID_1 || ""
+  // },
   {
     id: 2,
     name: "Angry Lizard",
@@ -31,7 +31,7 @@ export const gifNfts: GifNft[] = [
     rarity: "Legendary",
     count: 50,
     collectionMintId: import.meta.env.VITE_COLLECTION_ID_2 || "",
-    candyMachineId: import.meta.env.VITE_CANDY_MACHINE_ID_2 || ""
+    candyMachineId: import.meta.env.VITE_CANDY_MACHINE_ID_2 || "",
   },
   {
     id: 3,
@@ -41,7 +41,7 @@ export const gifNfts: GifNft[] = [
     rarity: "Common",
     count: 100,
     collectionMintId: import.meta.env.VITE_COLLECTION_ID_3 || "",
-    candyMachineId: import.meta.env.VITE_CANDY_MACHINE_ID_3 || ""
+    candyMachineId: import.meta.env.VITE_CANDY_MACHINE_ID_3 || "",
   },
   {
     id: 4,
@@ -51,7 +51,7 @@ export const gifNfts: GifNft[] = [
     rarity: "Mythic",
     count: 10,
     collectionMintId: import.meta.env.VITE_COLLECTION_ID_4 || "",
-    candyMachineId: import.meta.env.VITE_CANDY_MACHINE_ID_4 || ""
+    candyMachineId: import.meta.env.VITE_CANDY_MACHINE_ID_4 || "",
   },
   {
     id: 5,
@@ -61,18 +61,18 @@ export const gifNfts: GifNft[] = [
     rarity: "Epic",
     count: 100,
     collectionMintId: import.meta.env.VITE_COLLECTION_ID_5 || "",
-    candyMachineId: import.meta.env.VITE_CANDY_MACHINE_ID_5 || ""
+    candyMachineId: import.meta.env.VITE_CANDY_MACHINE_ID_5 || "",
   },
-  {
-    id: 6,
-    name: "Come to Papa",
-    price: 10,
-    url: "/assets/gifs/Dick Armstrong GIF by gifnews.gif",
-    rarity: "Legendary",
-    count: 50,
-    collectionMintId: import.meta.env.VITE_COLLECTION_ID_6 || "",
-    candyMachineId: import.meta.env.VITE_CANDY_MACHINE_ID_6 || ""
-  },
+  // {
+  //   id: 6,
+  //   name: "Come to Papa",
+  //   price: 10,
+  //   url: "/assets/gifs/Dick Armstrong GIF by gifnews.gif",
+  //   rarity: "Legendary",
+  //   count: 50,
+  //   collectionMintId: import.meta.env.VITE_COLLECTION_ID_6 || "",
+  //   candyMachineId: import.meta.env.VITE_CANDY_MACHINE_ID_6 || ""
+  // },
   {
     id: 7,
     name: "Shake It",
@@ -81,7 +81,7 @@ export const gifNfts: GifNft[] = [
     rarity: "Common",
     count: 100,
     collectionMintId: import.meta.env.VITE_COLLECTION_ID_7 || "",
-    candyMachineId: import.meta.env.VITE_CANDY_MACHINE_ID_7 || ""
+    candyMachineId: import.meta.env.VITE_CANDY_MACHINE_ID_7 || "",
   },
   {
     id: 8,
@@ -91,7 +91,7 @@ export const gifNfts: GifNft[] = [
     rarity: "Rare",
     count: 100,
     collectionMintId: import.meta.env.VITE_COLLECTION_ID_8 || "",
-    candyMachineId: import.meta.env.VITE_CANDY_MACHINE_ID_8 || ""
+    candyMachineId: import.meta.env.VITE_CANDY_MACHINE_ID_8 || "",
   },
   {
     id: 9,
@@ -101,7 +101,7 @@ export const gifNfts: GifNft[] = [
     rarity: "Epic",
     count: 100,
     collectionMintId: import.meta.env.VITE_COLLECTION_ID_9 || "",
-    candyMachineId: import.meta.env.VITE_CANDY_MACHINE_ID_9 || ""
+    candyMachineId: import.meta.env.VITE_CANDY_MACHINE_ID_9 || "",
   },
   {
     id: 10,
@@ -111,7 +111,7 @@ export const gifNfts: GifNft[] = [
     rarity: "Mythic",
     count: 10,
     collectionMintId: import.meta.env.VITE_COLLECTION_ID_10 || "",
-    candyMachineId: import.meta.env.VITE_CANDY_MACHINE_ID_10 || ""
+    candyMachineId: import.meta.env.VITE_CANDY_MACHINE_ID_10 || "",
   },
   {
     id: 11,
@@ -121,7 +121,7 @@ export const gifNfts: GifNft[] = [
     rarity: "Rare",
     count: 500,
     collectionMintId: import.meta.env.VITE_COLLECTION_ID_11 || "",
-    candyMachineId: import.meta.env.VITE_CANDY_MACHINE_ID_11 || ""
+    candyMachineId: import.meta.env.VITE_CANDY_MACHINE_ID_11 || "",
   },
   {
     id: 12,
@@ -131,18 +131,18 @@ export const gifNfts: GifNft[] = [
     rarity: "Epic",
     count: 100,
     collectionMintId: import.meta.env.VITE_COLLECTION_ID_12 || "",
-    candyMachineId: import.meta.env.VITE_CANDY_MACHINE_ID_12 || ""
+    candyMachineId: import.meta.env.VITE_CANDY_MACHINE_ID_12 || "",
   },
-  {
-    id: 13,
-    name: "Stellar Genesis",
-    price: 5,
-    url: "/assets/gifs/Suck It Ha Ha GIF Pudgy Penguins.gif",
-    rarity: "Epic",
-    count: 100,
-    collectionMintId: import.meta.env.VITE_COLLECTION_ID_13 || "",
-    candyMachineId: import.meta.env.VITE_CANDY_MACHINE_ID_13 || ""
-  },
+  // {
+  //   id: 13,
+  //   name: "Stellar Genesis",
+  //   price: 5,
+  //   url: "/assets/gifs/Suck It Ha Ha GIF Pudgy Penguins.gif",
+  //   rarity: "Epic",
+  //   count: 100,
+  //   collectionMintId: import.meta.env.VITE_COLLECTION_ID_13 || "",
+  //   candyMachineId: import.meta.env.VITE_CANDY_MACHINE_ID_13 || "",
+  // },
   {
     id: 14,
     name: "Saw That",
@@ -151,7 +151,7 @@ export const gifNfts: GifNft[] = [
     rarity: "Epic",
     count: 100,
     collectionMintId: import.meta.env.VITE_COLLECTION_ID_14 || "",
-    candyMachineId: import.meta.env.VITE_CANDY_MACHINE_ID_14 || ""
+    candyMachineId: import.meta.env.VITE_CANDY_MACHINE_ID_14 || "",
   },
   {
     id: 15,
@@ -161,7 +161,7 @@ export const gifNfts: GifNft[] = [
     rarity: "Epic",
     count: 100,
     collectionMintId: import.meta.env.VITE_COLLECTION_ID_15 || "",
-    candyMachineId: import.meta.env.VITE_CANDY_MACHINE_ID_15 || ""
+    candyMachineId: import.meta.env.VITE_CANDY_MACHINE_ID_15 || "",
   },
   {
     id: 16,
@@ -171,7 +171,7 @@ export const gifNfts: GifNft[] = [
     rarity: "Epic",
     count: 100,
     collectionMintId: import.meta.env.VITE_COLLECTION_ID_16 || "",
-    candyMachineId: import.meta.env.VITE_CANDY_MACHINE_ID_16 || ""
+    candyMachineId: import.meta.env.VITE_CANDY_MACHINE_ID_16 || "",
   },
   {
     id: 17,
@@ -181,18 +181,18 @@ export const gifNfts: GifNft[] = [
     rarity: "Epic",
     count: 100,
     collectionMintId: import.meta.env.VITE_COLLECTION_ID_17 || "",
-    candyMachineId: import.meta.env.VITE_CANDY_MACHINE_ID_17 || ""
+    candyMachineId: import.meta.env.VITE_CANDY_MACHINE_ID_17 || "",
   },
 ];
 
 // Helper function to get Candy Machine ID by GIF ID
 export function getCandyMachineIdByGifId(gifId: number): string {
-  const gif = gifNfts.find(gif => gif.id === gifId);
+  const gif = gifNfts.find((gif) => gif.id === gifId);
   return gif?.candyMachineId || import.meta.env.VITE_CANDY_MACHINE_ID || "";
 }
 
 // Helper function to get Collection Mint ID by GIF ID
 export function getCollectionMintIdByGifId(gifId: number): string {
-  const gif = gifNfts.find(gif => gif.id === gifId);
+  const gif = gifNfts.find((gif) => gif.id === gifId);
   return gif?.collectionMintId || import.meta.env.VITE_COLLECTION_ID || "";
 }
