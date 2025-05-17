@@ -11,8 +11,10 @@ import EnhancedTurnIndicator from '../../components/GameComponents/EnhancedTurnI
 import MatchmakingAnimation from '../../components/GameComponents/MatchmakingAnimation/MatchmakingAnimation'
 import GameRoomShare from '../../components/GameComponents/GameRoomShare/GameRoomShare';
 import JoiningGameIndicator from '../../components/GameComponents/JoiningGameIndicator/JoiningGameIndicator';
-import { GameState, GameMessage } from '../../types/gameTypes';
+import { GameState, GameMessage, Board, Player } from '../../types/gameTypes';
 import RematchDialog from '../../components/GameComponents/RematchDialog/RematchDialog';
+import GifTauntFeature from '../../components/GameComponents/GifTauntFeature/GifTauntFeature';
+import BlockchainNotification from '../../components/GameComponents/BlockchainNotification/BlockchainNotification';
 
 import { useWalletStore } from '../../stores/walletStore';
 
@@ -28,6 +30,7 @@ interface MultiplayerGameProps {
     wallet_balance: number;
     id?: number;
     deposit_address?: string;
+    gif_ids?: [number];
   };
 }
 
@@ -53,12 +56,23 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
   const [previousGameId, setPreviousGameId] = useState<string | null>(null);
   const [showRematchDeclinedMessage, setShowRematchDeclinedMessage] = useState<boolean>(false);
   const [showGameAbortedMessage, setShowGameAbortedMessage] = useState<boolean>(false);
+  const [ownedGifs, setOwnedGifs] = useState<Array<{id: number, name: string, url: string, rarity: string, price: number}>>([]);
+  const [incomingGif, setIncomingGif] = useState<{id: number, url: string, playerId: string, playerName: string} | null>(null);
+  const [showTauntButton, setShowTauntButton] = useState<boolean>(false);
+
+  const [blockchainUpdate, setBlockchainUpdate] = useState<{
+    hash: string;
+    type: string;
+    show: boolean;
+  } | null>(null);
 
   // Sound references
   const notificationSound = useRef(new Audio('/assets/sounds/notification.mp3'));
   const startGameSound = useRef(new Audio('/assets/sounds/start_game.wav'));
   // const defeatSound = useRef(new Audio('/assets/sounds/defeatSound.mp3'));
   // const victorySound = useRef(new Audio('/assets/sounds/victorySound.mp3'));
+  // const transactionSound = useRef(new Audio('/assets/sounds/transaction_notification.wav'));
+
 
   const moveTimeoutRef = useRef<number>();
   const lockTimeoutRef = useRef<number>();
@@ -108,6 +122,111 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
     userDataRef.current = userData;
   }, [userData]);
 
+  // Add this effect to fetch owned GIFs from localStorage or API
+useEffect(() => {
+  try {
+    // Add these two free GIFs for every user
+    const freeGifs = [
+      {
+        id: 18,
+        name: "Angry Squidward",
+        price: 0,
+        url: "/assets/gifs/Angry Spongebob Squarepants GIF.gif",
+        rarity: "Epic"
+      },
+      {
+        id: 19,
+        name: "The Booty Shake",
+        price: 0,
+        url: "/assets/gifs/The Simpsons Dance GIF.gif",
+        rarity: "Epic"
+      }
+    ];
+    
+    // Start with the free GIFs that every user gets
+    let userGifs = [...freeGifs];
+    
+    // If user has owned GIFs from backend (userData.gif_ids), add those to their collection
+    if (userData?.gif_ids && userData.gif_ids.length > 0) {
+      // Import GIF data from gifData.ts
+      import('../../data/gifData').then(({ gifNfts }) => {
+        // Find GIFs that match the IDs in userData.gif_ids
+        const ownedGifs = userData?.gif_ids
+          ? userData.gif_ids
+              .map(id => gifNfts.find(gif => gif.id === id))
+              .filter(Boolean) // Remove any undefined entries
+              .map(gif => ({
+                id: gif?.id || 0,
+                name: gif?.name || "",
+                price: gif?.price || 0,
+                url: gif?.url || "",
+                rarity: gif?.rarity || "Common"
+              }))
+          : [];
+          
+        // Combine free GIFs with owned GIFs
+        userGifs = [...userGifs, ...ownedGifs];
+        setOwnedGifs(userGifs);
+      }).catch(error => {
+        console.error("Failed to import GIF data:", error);
+        // If import fails, at least give them the free GIFs
+        setOwnedGifs(userGifs);
+      });
+    } else {
+      // If user doesn't have any purchased GIFs, just set the free ones
+      setOwnedGifs(userGifs);
+    }
+  } catch (error) {
+    console.error("Failed to load owned GIFs:", error);
+    // In case of any error, at least set the free GIFs
+    setOwnedGifs([
+      {
+        id: 18,
+        name: "Angry Squidward",
+        price: 0,
+        url: "/assets/gifs/Angry Spongebob Squarepants GIF.gif",
+        rarity: "Epic"
+      },
+      {
+        id: 19,
+        name: "The Booty Shake",
+        price: 0,
+        url: "/assets/gifs/The Simpsons Dance GIF.gif",
+        rarity: "Epic"
+      }
+    ]);
+  }
+}, [userData?.id, userData?.gif_ids]);
+
+  // // Add this effect to fetch owned GIFs from localStorage or API
+  // useEffect(() => {
+  //   // For demonstration, we'll use GIFs from marketplace as owned GIFs
+  //   // In a real implementation, you would fetch this from an API based on user ownership
+  //   try {
+  //     // This is just a mock implementation - replace with actual API call
+  //     const mockOwnedGifs = [
+  //       {
+  //         id: 1,
+  //         name: "Adult Dance",
+  //         price: 0.15,
+  //         url: "/assets/gifs/Adult Swim Dance GIF.gif",
+  //         rarity: "Rare"
+  //       },
+  //       {
+  //         id: 5,
+  //         name: "Opponent Down",
+  //         price: 0.20,
+  //         url: "/assets/gifs/Celebrate Good Game GIF by Nounish.gif",
+  //         rarity: "Epic"
+  //       }
+  //     ];
+      
+  //     setOwnedGifs(mockOwnedGifs);
+  //   } catch (error) {
+  //     console.error("Failed to load owned GIFs:", error);
+  //   }
+  // }, [userData?.id]);
+
   const [matchmakingParams, setMatchmakingParams] = useState<{
     gridSize: number;
     bombs: number;
@@ -115,11 +234,11 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
   } | null>(null);
 
   // Helper function to count revealed cells
-  const countRevealedCells = useCallback((board: any) => {
+  const countRevealedCells = useCallback((board: Board) => {
     if (!board || !board.grid) return 0;
     let count = 0;
-    board.grid.forEach((row: any) => {
-      row.forEach((cell: any) => {
+    board.grid.forEach((row: ("Hidden" | "Revealed" | "Mined")[]) => {
+      row.forEach((cell: "Hidden" | "Revealed" | "Mined") => {
         if (cell === 'Mined' || cell === 'Revealed') {
           count++;
         }
@@ -168,13 +287,88 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
   
 
   const handleGameMessage = useCallback((message: GameMessage) => {
-    console.log("balanceref in handleGamemessage", balanceRef.current)
+
     if (typeof message === "string") {
       if (message === "Pong") {
         console.log("Received pong from server");
         return;
       }
       return;
+    }
+
+    if ('BlockchainUpdate' in message) {
+      const updateData = message.BlockchainUpdate;
+      
+      // Set the blockchain update state to trigger notification
+      setBlockchainUpdate({
+        hash: updateData.transaction_hash,
+        type: updateData.update_type,
+        show: true
+      });
+      
+      // You could also log this for debugging
+      console.log(`Blockchain update: ${updateData.update_type} - ${updateData.transaction_hash}`);
+    }
+
+    // Add this new handling for Gif messages
+    if ('Gif' in message) {
+      const gifData = message.Gif;
+      const gifId = gifData.gif_id;
+      const senderId = gifData.player_id;
+      
+      // Don't show your own GIFs as incoming
+      // if (senderId === userData?.id?.toString()) {
+      //   return;
+      // }
+      
+      // Find the GIF URL from the GIF ID
+      // This is a mock implementation - you should adjust based on your actual GIF data structure
+      const gifUrls = {
+        1: "/assets/gifs/Adult Swim Dance GIF.gif",
+        2: "/assets/gifs/Angry GIF.gif",
+        3: "/assets/gifs/Animation Smile by Mashed.gif",
+        4: "/assets/gifs/Bear Reaction GIF - The Comedy Bar.gif",
+        5: "/assets/gifs/Celebrate Good Game GIF by Nounish.gif",
+        6: "/assets/gifs/Dick Armstrong GIF by gifnews.gif",
+        7: "/assets/gifs/Excited Shake It GIF by Sherchle.gif",
+        8: "/assets/gifs/Happy Excitement GIF.gif",
+        9: "/assets/gifs/Happy Robot GIF.gif",
+        10: "/assets/gifs/Homer Simpson Reaction GIF.gif",
+        11: "/assets/gifs/Middle Finger GIF.gif",
+        12: "/assets/gifs/Sad Cry SpongeBob GIF.gif",
+        13: "/assets/gifs/Suck It Ha Ha GIF Pudgy Penguins.gif",
+        14: "/assets/gifs/Sexy Funny Face GIF by Globkins.gif",
+        15: "/assets/gifs/Suck It Ha Ha GIF Pudgy Penguins.gif",
+        16: "/assets/gifs/Teenage Mutant Ninja Turtles GIF.gif",
+        17: "/assets/gifs/Valentines Day Love GIF.gif",
+        18: "/assets/gifs/Angry Spongebob Squarepants GIF.gif",
+        19: "/assets/gifs/The Simpsons Dance GIF.gif",
+      };
+      
+      // Find the sender player name
+      let senderName = "Opponent";
+      if (gameState && 'RUNNING' in gameState) {
+        const sender = gameState.RUNNING.players.find(p => p.id?.toString() === senderId);
+        if (sender) {
+          senderName = sender.name;
+        }
+      }
+      
+      // Set the incoming GIF to display
+      setIncomingGif({
+        id: gifId,
+        url: gifUrls[gifId as keyof typeof gifUrls] || "/assets/gifs/default.gif",
+        playerId: senderId || "",
+        playerName: senderName
+      });
+      
+      // Auto-clear the GIF after 5 seconds
+      setTimeout(() => {
+        setIncomingGif(null);
+      }, 5000);
+
+      // Play notification sound
+      notificationSound.current.play().catch(console.error);
     }
   
     if ('GameUpdate' in message) {
@@ -281,7 +475,7 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
           // if (previousTurnIdxRef.current !== currentTurnIdx) {
           // Check if turn has changed or if this is a new/rematch game
           if (previousTurnIdxRef.current !== currentTurnIdx || isNewGameOrRematch) {
-            console.log("Turn changed or new game detected, resetting timer");
+            // console.log("Turn changed or new game detected, resetting timer");
             // For all players: set move timer and exit lock phase
             setMoveEndTime(Date.now() + MOVE_TIMEOUT);
             setIsLockPhase(false);
@@ -329,9 +523,9 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
             }
 
             moveTimeoutRef.current = window.setTimeout(() => {
-              console.log("###### Aborting due to movetimeout")
               setTurnCount((prevCount) => {
                 const abort = prevCount === 0;
+                console.log("###### Aborting due to movetimeout this is the turn count: ", prevCount)
                 sendMessage({
                   Stop: {
                     game_id: newGameState.RUNNING.game_id,
@@ -375,6 +569,7 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
             clearTimeout(waitTimeoutRef.current);
           }
           waitTimeoutRef.current = window.setTimeout(() => {
+            console.log("###### Aborting due to waitTimeOut")
             sendMessage({
               Stop: {
                 game_id: newGameState.WAITING.game_id,
@@ -636,6 +831,17 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
       return () => clearTimeout(timer);
     }
   }, [error]);
+
+  // Add this effect to determine when to show the taunt button
+  useEffect(() => {
+    // Only show taunt button during an active game
+    setShowTauntButton(!!gameState && 'RUNNING' in gameState);
+  }, [gameState]);
+
+  // Add a function to hide the blockchain notification
+  const hideBlockchainNotification = useCallback(() => {
+    setBlockchainUpdate(prev => prev ? { ...prev, show: false } : null);
+  }, []);
 
   const handleMove = useCallback((x: number, y: number) => {
     if (!gameState || !('RUNNING' in gameState)) return;
@@ -1003,6 +1209,23 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
     });
   }, [userData, betAmount, sendMessage, resetGameState]);
 
+  // Add this function to handle sending GIFs
+  const handleSendGif = useCallback((gifId: number) => {
+    if (!gameState || !('RUNNING' in gameState) || !userData?.id) {
+      console.error("Cannot send GIF: Game not running or user not identified");
+      return;
+    }
+    
+    sendMessage({
+      Gif: {
+        game_id: gameState.RUNNING.game_id,
+        player_id: userData.id.toString(),
+        gif_id: gifId
+      }
+    });
+  }, [gameState, userData, sendMessage]);
+
+
   // 3. Make sure the createGameRoom function explicitly sets isCreatingRoom to true
   const createGameRoom = useCallback((gridSize: number, bombs: number, minPlayers: number) => {
     if (!userData?.id) return;
@@ -1080,6 +1303,25 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
         betAmount={betAmount}
         rematchRequest={rematchRequest}
       />
+
+      {showTauntButton && (
+        <GifTauntFeature 
+          onSelectGif={handleSendGif}
+          ownedGifs={ownedGifs}
+          incomingGif={incomingGif}
+          players={gameState && 'RUNNING' in gameState ? (gameState as { RUNNING: { players: Player[] } }).RUNNING.players : []}
+        />
+      )}
+
+      {/* Add Blockchain Notification */}
+      {blockchainUpdate && (
+        <BlockchainNotification
+          transactionHash={blockchainUpdate.hash}
+          updateType={blockchainUpdate.type}
+          show={blockchainUpdate.show}
+          onHide={hideBlockchainNotification}
+        />
+      )}
 
       {ParticlesComponent}
       
@@ -1172,37 +1414,46 @@ const MultiplayerGame: React.FC<MultiplayerGameProps> = ({ userData }) => {
             <span>Connecting to optimal game server...</span>
           </div>
         )}
-
-        {(gameState && ((('FINISHED' in gameState) || ('ABORTED' in gameState)) && !rematchRequest)) && (
-          <div className="flex gap-3 w-full mt-6">
-            {/* Rematch Button (only show for FINISHED state, not ABORTED, and only if playerHasSufficientFunds) */}
-            {'FINISHED' in gameState && playerHasSufficientFunds && (
-              <button
-                onClick={handleRequestRematch}
-                disabled={isRequestingRematch}
-                className={`flex-1 py-3 rounded-lg font-medium transition-all duration-200 ${
-                  isRequestingRematch
-                    ? 'bg-zinc-700 text-zinc-400 cursor-not-allowed'
-                    : 'bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 border border-emerald-500/30'
-                }`}
-              >
-                {isRequestingRematch ? 'Requesting Rematch...' : 'Rematch'}
-              </button>
+        {gameState && (('FINISHED' in gameState || 'ABORTED' in gameState) && !rematchRequest) && (
+          <>
+            {showTauntButton && (
+              <GifTauntFeature 
+                onSelectGif={handleSendGif}
+                ownedGifs={ownedGifs}
+                incomingGif={incomingGif}
+                players={gameState && 'RUNNING' in gameState ? (gameState as { RUNNING: { players: Player[] } }).RUNNING.players : []}
+              />
             )}
-            {/* Back to Lobby Button remains unchanged */}
-            {'FINISHED' in gameState && (
-              <button
-                onClick={() => {
-                  resetGameState();
-                  didJoinGameRef.current = false;
-                  navigate('/multiplayer', { replace: true });
-                }}
-                className="flex-1 py-3 px-6 rounded-lg font-medium transition-all duration-200 bg-zinc-500/10 text-zinc-400 hover:bg-zinc-500/20 border border-zinc-500/30"
-              >
-                Back to Lobby
-              </button>
-            )}
-          </div>
+            <div className="flex gap-3 w-full mt-6">
+              {/* Rematch Button (only show for FINISHED state, not ABORTED, and only if playerHasSufficientFunds) */}
+              {'FINISHED' in gameState && playerHasSufficientFunds && (
+                <button
+                  onClick={handleRequestRematch}
+                  disabled={isRequestingRematch}
+                  className={`flex-1 py-3 rounded-lg font-medium transition-all duration-200 ${
+                    isRequestingRematch
+                      ? 'bg-zinc-700 text-zinc-400 cursor-not-allowed'
+                      : 'bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 border border-emerald-500/30'
+                  }`}
+                >
+                  {isRequestingRematch ? 'Requesting Rematch...' : 'Rematch'}
+                </button>
+              )}
+              {/* Back to Lobby Button remains unchanged */}
+              {'FINISHED' in gameState && (
+                <button
+                  onClick={() => {
+                    resetGameState();
+                    didJoinGameRef.current = false;
+                    navigate('/multiplayer', { replace: true });
+                  }}
+                  className="flex-1 py-3 px-6 rounded-lg font-medium transition-all duration-200 bg-zinc-500/10 text-zinc-400 hover:bg-zinc-500/20 border border-zinc-500/30"
+                >
+                  Back to Lobby
+                </button>
+              )}
+            </div>
+          </>
         )}
       </div>
     </div>

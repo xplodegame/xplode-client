@@ -1,26 +1,22 @@
 // src/config/chains.ts
-import { Chain } from "wagmi/chains";
+import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
+import { clusterApiUrl } from '@solana/web3.js';
 
-export const monadNetwork: Chain = {
-  id: 10143, // Replace with correct Monad chain ID
-  name: 'Monad',
+export const solanaNetwork = {
+  id: WalletAdapterNetwork.Devnet, // or WalletAdapterNetwork.Devnet for testnet
+  name: 'Solana',
   nativeCurrency: {
-    name: 'Monad Testnet',
-    symbol: 'MON',
-    decimals: 18,
+    name: 'Solana',
+    symbol: 'SOL',
+    decimals: 9,
   },
   rpcUrls: {
-    default: {
-      http: ['https://testnet-rpc.monad.xyz/'], // Replace with appropriate Monad RPC URL
-    },
-    public: {
-      http: ['https://testnet-rpc.monad.xyz/'], // Replace with appropriate Monad RPC URL
-    },
+    default: clusterApiUrl(WalletAdapterNetwork.Devnet), // or WalletAdapterNetwork.Devnet for testnet
   },
   blockExplorers: {
     default: {
-      name: 'Monad Explorer',
-      url: 'https://testnet.monadexplorer.com/', // Replace with Monad explorer URL
+      name: 'Solana Explorer',
+      url: 'https://explorer.solana.com',
     },
   },
 };

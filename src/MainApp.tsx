@@ -4,23 +4,25 @@ import { usePrivy } from '@privy-io/react-auth';
 import Navbar from './components/Navbar/Navbar';
 import MultiplayerGame from './pages/MultiplayerGame/MultiplayerGame';
 import Leaderboard from './pages/Leaderboard/Leaderboard';
+import CosmicGifMarketplace from './pages/MarketPlace/MarketPlace.tsx';
+import ProfilePage from './pages/Profile/ProfilePage';
 import CosmicUsernameModal from './components/GameComponents/CosmicUsernameModal/CosmicUsernameModal';
 import Home from './pages/Home/Home';
 import './index.css';
 import { useWalletStore } from './stores/walletStore';
-import { WagmiProvider, http } from 'wagmi';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import '@rainbow-me/rainbowkit/styles.css';
-import { createConfig } from 'wagmi';
-import { monadNetwork } from './chains';
-import {useWallets} from '@privy-io/react-auth';
+import {useSolanaWallets} from '@privy-io/react-auth';
+import { ConnectionProvider } from '@solana/wallet-adapter-react';
+import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
+import { clusterApiUrl } from '@solana/web3.js';
+import NFTGallery from './pages/NFTGallery/NFTGallery';
 
-const config = createConfig({
-  chains: [monadNetwork],
-  transports: {
-    [monadNetwork.id]: http('https://testnet-rpc.monad.xyz/'),
-  },
-});
+
+// Configure Solana connection
+const solanaNetwork = WalletAdapterNetwork.Mainnet; // Or use WalletAdapterNetwork.Devnet for testing
+const endpoint = import.meta.env.VITE_SOLANA_RPC_URL || clusterApiUrl(solanaNetwork);
+
 
 const queryClient = new QueryClient();
 
@@ -31,6 +33,7 @@ interface UserData {
   name: string;
   wallet_balance: number;
   deposit_address?: string;
+  gif_ids?: [number];
 }
 
 // Original ProtectedRoute without modifications
@@ -98,7 +101,7 @@ const MainApp: React.FC = () => {
   const [isUsernameModalOpen, setIsUsernameModalOpen] = useState(false);
   
   const setBalance = useWalletStore((state) => state.setBalance);
-  const {wallets} = useWallets();
+  const {wallets} = useSolanaWallets();
 
   useEffect(() => {
     if (authenticated && wallets.length === 0) {
@@ -118,7 +121,10 @@ const MainApp: React.FC = () => {
         privy_id: user.id,
         email: "exampl@gmail.com",
         name: "", // Start with empty name
+        currency: "SOL"
       };
+
+      // console.log("seding this data to the user details endpoint: ", newUserData)
   
       let retryCount = 0;
       const maxRetries = 3;
@@ -139,6 +145,7 @@ const MainApp: React.FC = () => {
           }
   
           const userDetailsData = await userDetailsResponse.json();
+          // console.log("this is the backend response", userDetailsData)
           // console.log(`Attempt ${retryCount + 1} - User details response:`, userDetailsData);
           
           // Check if all required fields are present
@@ -165,7 +172,8 @@ const MainApp: React.FC = () => {
             id: userDetailsData.id,
             wallet_balance: userDetailsData.balance,
             deposit_address: userDetailsData.wallet_address || "",
-            name: userDetailsData.name || ""
+            name: userDetailsData.name || "",
+            gif_ids: userDetailsData.gif_ids || []
           };
   
           // Store userData in localStorage for persistence
@@ -198,7 +206,7 @@ const MainApp: React.FC = () => {
     };
   
     fetchUserData();
-  }, [authenticated, user, wallets, setBalance]);
+  }, [authenticated, user, wallets[0]?.address, setBalance]);
 
   // Handle username setting
   const handleUsernameSet = async (username: string) => {
@@ -266,12 +274,13 @@ const MainApp: React.FC = () => {
 
   return (
     <Router>
-      <WagmiProvider config={config}>
+      <ConnectionProvider endpoint={endpoint}>
         <QueryClientProvider client={queryClient}>
             <div className="bg-gray-900 min-h-screen">
               <Navbar userData={userData} />
               <Routes>
                 <Route path="/" element={<Home />} />
+                {/* <Route path="/marketplace" element={<CosmicGifMarketplace />} /> */}
                 <Route
                   path="/multiplayer"
                   element={
@@ -318,13 +327,57 @@ const MainApp: React.FC = () => {
                     </ProtectedRoute>
                   }
                 />
+                <Route
+                  path="/marketplace"
+                  element={
+                    <ProtectedRoute>
+                      <UsernameRequiredWrapper
+                        userData={userData}
+                        isUsernameModalOpen={isUsernameModalOpen}
+                        setIsUsernameModalOpen={setIsUsernameModalOpen}
+                        handleUsernameSet={handleUsernameSet}
+                      >
+                        <CosmicGifMarketplace />
+                      </UsernameRequiredWrapper>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                path="/nfts"
+                element={
+                  <ProtectedRoute>
+                    <UsernameRequiredWrapper
+                      userData={userData}
+                      isUsernameModalOpen={isUsernameModalOpen}
+                      setIsUsernameModalOpen={setIsUsernameModalOpen}
+                      handleUsernameSet={handleUsernameSet}
+                    >
+                      <NFTGallery />
+                    </UsernameRequiredWrapper>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/profile"
+                element={
+                  <ProtectedRoute>
+                    <UsernameRequiredWrapper
+                      userData={userData}
+                      isUsernameModalOpen={isUsernameModalOpen}
+                      setIsUsernameModalOpen={setIsUsernameModalOpen}
+                      handleUsernameSet={handleUsernameSet}
+                    >
+                      <ProfilePage />
+                    </UsernameRequiredWrapper>
+                  </ProtectedRoute>
+                }
+              />
               </Routes>
               <div id="modal-root" />
             </div>
         </QueryClientProvider>
-      </WagmiProvider>
+      </ConnectionProvider>
     </Router>
   );
 };
-
 export default MainApp;

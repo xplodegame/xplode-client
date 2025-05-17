@@ -30,3 +30,242 @@
 .neon-text {
     text-shadow: 0 0 10px rgba(74, 222, 128, 0.5);
   }
+
+  /* You can add this to your CSS or implement it in your styling approach */
+.game-board-container {
+  position: relative;
+  z-index: 10;
+}
+
+.taunt-button {
+  position: fixed;
+  left: 1rem;
+  bottom: 4rem;
+  z-index: 30;
+}
+
+.incoming-gif-container {
+  position: fixed;
+  top: 6rem;
+  right: 1rem;
+  z-index: 40;
+  max-width: 220px;
+}
+
+/* Add to your global CSS */
+@keyframes gradient-x {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.animate-gradient-x {
+  animation: gradient-x 3s linear infinite;
+  background-size: 200% 200%;
+}
+
+.animate-spin-slow {
+  animation: spin-slow 8s linear infinite;
+}
+
+/* Add to your global CSS */
+.scanline-effect {
+  background: linear-gradient(
+    to bottom,
+    transparent 50%,
+    rgba(16, 185, 129, 0.1) 50%
+  );
+  background-size: 100% 4px;
+  z-index: 20;
+  pointer-events: none;
+}
+
+.hologram-flicker {
+  animation: hologram-flicker 5s infinite;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(16, 185, 129, 0.3);
+  border-radius: 4px;
+}
+
+@keyframes hologram-flicker {
+  0% { opacity: 0.7; }
+  5% { opacity: 0.9; }
+  10% { opacity: 0.7; }
+  15% { opacity: 0.8; }
+  70% { opacity: 0.7; }
+  73% { opacity: 0.9; }
+  76% { opacity: 0.7; }
+  100% { opacity: 0.7; }
+}
+
+/* Add to your global CSS */
+.mystical-sigil {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 800 800'%3E%3Cg fill-opacity='0.2'%3E%3Ccircle fill='%2310B981' cx='400' cy='400' r='350'/%3E%3Ccircle fill='none' stroke='%2310B981' stroke-width='2' stroke-opacity='0.3' cx='400' cy='400' r='300'/%3E%3Ccircle fill='none' stroke='%2310B981' stroke-width='2' stroke-opacity='0.3' cx='400' cy='400' r='250'/%3E%3Cpath stroke='%2310B981' stroke-width='2' stroke-opacity='0.3' fill='none' d='M400,100 l0,600 M100,400 l600,0 M250,250 l300,300 M250,550 l300,-300'/%3E%3Cpath stroke='%2310B981' stroke-width='2' stroke-opacity='0.1' fill='none' d='M360,360 l80,80 M360,440 l80,-80'/%3E%3C/g%3E%3C/svg%3E");
+  opacity: 0.6;
+  animation: rotate-slow 120s linear infinite;
+}
+
+.digital-interference {
+  background: linear-gradient(
+    to bottom,
+    rgba(16, 185, 129, 0) 0%,
+    rgba(16, 185, 129, 0.05) 50%,
+    rgba(16, 185, 129, 0) 100%
+  );
+  background-size: 100% 4px;
+  animation: scan 5s linear infinite;
+}
+
+.scanline-effect {
+  background: linear-gradient(
+    to bottom,
+    transparent 50%,
+    rgba(16, 185, 129, 0.1) 50%
+  );
+  background-size: 100% 4px;
+  z-index: 20;
+  pointer-events: none;
+}
+
+@keyframes scan {
+  0% { background-position: 0 -100vh; }
+  100% { background-position: 0 100vh; }
+}
+
+@keyframes rotate-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Add to your global CSS */
+.perspective {
+  perspective: 1000px;
+}
+
+.preserve-3d {
+  transform-style: preserve-3d;
+  transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.quantum-frame {
+  box-shadow: 0 0 15px rgba(16, 185, 129, 0.5) inset;
+  background: linear-gradient(45deg, transparent 20%, rgba(16, 185, 129, 0.1) 40%, rgba(16, 185, 129, 0.2) 50%, rgba(16, 185, 129, 0.1) 60%, transparent 80%);
+  animation: quantum-scan 3s linear infinite;
+}
+
+.quantum-highlight {
+  box-shadow: 0 0 30px rgba(16, 185, 129, 0.4);
+  animation: pulse-glow 2s infinite alternate;
+}
+
+.quantum-button {
+  position: relative;
+  overflow: hidden;
+}
+
+.quantum-button::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(45deg, transparent, rgba(16, 185, 129, 0.3), transparent);
+  transform: rotate(45deg);
+  animation: shine 2s infinite;
+}
+
+.quantum-particles {
+  background-image: 
+    radial-gradient(rgba(16, 185, 129, 0.3) 1px, transparent 1px),
+    radial-gradient(rgba(16, 185, 129, 0.2) 1px, transparent 1px);
+  background-size: 20px 20px;
+  background-position: 0 0, 10px 10px;
+  animation: float 20s linear infinite;
+}
+
+.scanline-effect {
+  background: linear-gradient(
+    to bottom,
+    transparent 50%,
+    rgba(16, 185, 129, 0.1) 50%
+  );
+  background-size: 100% 4px;
+  z-index: 20;
+  pointer-events: none;
+}
+
+.emerald-glow {
+  box-shadow: 0 0 15px rgba(16, 185, 129, 0.7) inset;
+}
+
+.blue-glow {
+  box-shadow: 0 0 15px rgba(59, 130, 246, 0.7) inset;
+}
+
+.purple-glow {
+  box-shadow: 0 0 15px rgba(139, 92, 246, 0.7) inset;
+}
+
+.yellow-glow {
+  box-shadow: 0 0 15px rgba(234, 179, 8, 0.7) inset;
+}
+
+.red-glow {
+  box-shadow: 0 0 15px rgba(239, 68, 68, 0.7) inset;
+}
+
+@keyframes quantum-scan {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes pulse-glow {
+  0% { box-shadow: 0 0 30px rgba(16, 185, 129, 0.4); }
+  100% { box-shadow: 0 0 40px rgba(16, 185, 129, 0.7); }
+}
+
+@keyframes shine {
+  0% { left: -100%; }
+  20% { left: 100%; }
+  100% { left: 100%; }
+}
+
+@keyframes float {
+  0% {
+    background-position: 0 0, 10px 10px;
+  }
+  100% {
+    background-position: 100px 100px, 110px 110px;
+  }
+}
+
+/* Add to your global CSS */
+.blockchain-pulse {
+  background: radial-gradient(
+    circle at 50% 50%,
+    rgba(16, 185, 129, 0.1) 0%,
+    rgba(16, 185, 129, 0) 70%
+  );
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.2; }
+  50% { opacity: 0.5; }
+}

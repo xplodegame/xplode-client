@@ -62,18 +62,18 @@ export default function Statistics() {
   const stats = [
     {
       icon: Zap,
-      value: '10,000+',
-      label: 'Quantum Transactions/Sec',
+      value: '65,000+',
+      label: 'Warp Transactions/Sec',
     },
     {
       icon: Server,
-      value: '2.5s',
-      label: 'Spacetime Block Cycle',
+      value: '~400ms',
+      label: 'Realtime Block Finality',
     },
     {
       icon: Cpu,
-      value: 'Zero',
-      label: 'Interstellar Gas Fees',
+      value: '<$0.001',
+      label: 'Minimal Cosmic Fees',
     },
   ];
 

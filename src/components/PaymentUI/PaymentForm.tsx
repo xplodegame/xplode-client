@@ -1,9 +1,9 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { debounce } from 'lodash';
 
 interface PaymentFormProps {
-  monadAmount: string;
+  solanaAmount: string;
   onAmountChange: (value: string) => void;
   onSubmit: () => void;
   processingPayment: boolean;
@@ -11,19 +11,28 @@ interface PaymentFormProps {
 }
 
 export const PaymentForm: React.FC<PaymentFormProps> = ({
-  monadAmount,
+  solanaAmount,
   onAmountChange,
   onSubmit,
   processingPayment,
   isWalletConnected,
 }) => {
   // Local state for immediate updates
-  const [localAmount, setLocalAmount] = useState(monadAmount);
+  const [localAmount, setLocalAmount] = useState(solanaAmount || "");
+
+  // Update local state when prop changes
+  useEffect(() => {
+    if (solanaAmount !== undefined) {
+      setLocalAmount(solanaAmount);
+    }
+  }, [solanaAmount]);
 
   // Debounce the parent state update
   const debouncedAmountChange = useCallback(
     debounce((value: string) => {
-      onAmountChange(value);
+      if (typeof onAmountChange === 'function') {
+        onAmountChange(value);
+      }
     }, 300),
     [onAmountChange]
   );
@@ -38,13 +47,13 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
   return (
     <div className="space-y-4">
       <div>
-        <label htmlFor="monadAmount" className="block text-emerald-400 text-sm font-medium mb-2">
-          Amount (MONAD)
+        <label htmlFor="solanaAmount" className="block text-emerald-400 text-sm font-medium mb-2">
+          Amount (SOL)
         </label>
         <div className="relative">
           <input
             type="number"
-            id="monadAmount"
+            id="solanaAmount"
             value={localAmount}
             onChange={handleInputChange}
             placeholder="0.00"

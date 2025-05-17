@@ -19,8 +19,6 @@ const RematchDialog: React.FC<RematchDialogProps> = ({
   userData,
   onAccept,
   onDecline,
-  isRequesting,
-  onRequestRematch,
   rematchRequest,
   playerHasSufficientFunds,
   betAmount,

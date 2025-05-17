@@ -140,7 +140,7 @@ export default function Hero() {
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-500/20 to-emerald-500/10 border border-emerald-500/20 backdrop-blur-sm"
               >
                 <Diamond className="w-4 h-4 text-emerald-400" />
-                <span className="text-emerald-400 text-sm font-medium">Cosmic Rewards on Monad</span>
+                <span className="text-emerald-400 text-sm font-medium">Cosmic Rewards on Solana</span>
               </motion.div>
               
               <h1 className="text-7xl font-bold tracking-tight">

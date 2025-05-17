@@ -1,11 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { usePrivy } from '@privy-io/react-auth';
-import { GamepadIcon, Users, User, Menu, X, Diamond, Trophy, ChevronDown } from 'lucide-react';
+import { GamepadIcon, Users, User,  Menu, X, Diamond, Trophy, Store, ChevronDown } from 'lucide-react';
 import { WalletDropdown } from '../PaymentUI/WalletDropdown';
 import { motion, AnimatePresence } from 'framer-motion';
 import { WalletConnectButton } from './WalletConnectButton';
-import { useWallets } from '@privy-io/react-auth';
+import { useSolanaWallets } from '@privy-io/react-auth';
+import { LogOut } from 'lucide-react';
 
 interface NavbarProps {
   userData?: { 
@@ -24,7 +25,7 @@ const Navbar: React.FC<NavbarProps> = ({ userData }) => {
   const [isGameHubOpen, setIsGameHubOpen] = useState(false);
   const gameHubRef = useRef<HTMLDivElement>(null);
   const { authenticated, login, logout } = usePrivy();
-  const { wallets } = useWallets();
+  const { wallets } = useSolanaWallets();
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
   const toggleGameHub = () => setIsGameHubOpen(!isGameHubOpen);
@@ -146,6 +147,38 @@ const Navbar: React.FC<NavbarProps> = ({ userData }) => {
                               )}
                             </Link>
 
+                            <Link
+                              to="/marketplace"
+                              onClick={() => setIsGameHubOpen(false)}
+                              className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200
+                                        ${isActiveRoute('/marketplace') ? 'bg-emerald-500/20 text-emerald-300' : 'hover:bg-emerald-500/10 text-emerald-400'}`}
+                            >
+                              <Store size={18} />
+                              <span>Marketplace</span>
+                              {isActiveRoute('/marketplace') && (
+                                <motion.span 
+                                  layoutId="navbar-pill"
+                                  className="ml-auto h-2 w-2 rounded-full bg-emerald-400" 
+                                />
+                              )}
+                            </Link>
+
+                            <Link
+                              to="/profile"
+                              onClick={() => setIsGameHubOpen(false)}
+                              className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200
+                                        ${isActiveRoute('/profile') ? 'bg-emerald-500/20 text-emerald-300' : 'hover:bg-emerald-500/10 text-emerald-400'}`}
+                            >
+                              <User size={18} />
+                              <span>Profile</span>
+                              {isActiveRoute('/profile') && (
+                                <motion.span 
+                                  layoutId="navbar-pill"
+                                  className="ml-auto h-2 w-2 rounded-full bg-emerald-400" 
+                                />
+                              )}
+                            </Link>
+
                             {/* Sign Out Button */}
                             {authenticated && (
                               <button
@@ -156,7 +189,7 @@ const Navbar: React.FC<NavbarProps> = ({ userData }) => {
                                 className="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200
                                         hover:bg-emerald-500/10 text-emerald-400"
                               >
-                                <User size={18} />
+                                <LogOut size={18} />
                                 <span>Sign Out</span>
                               </button>
                             )}

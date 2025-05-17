@@ -61,7 +61,7 @@ const MatchmakingAnimation: React.FC<MatchmakingAnimationProps> = ({ gridSize, b
                 <Coins className="w-4 h-4 text-emerald-400" />
                 <span className="text-zinc-300">Bet</span>
               </div>
-              <span className="text-emerald-400">{betAmount.toFixed(3)} MON</span>
+              <span className="text-emerald-400">{betAmount.toFixed(3)} SOL</span>
             </div>
           </div>
           

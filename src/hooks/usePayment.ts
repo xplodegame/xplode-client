@@ -1,14 +1,16 @@
 import { useState } from "react";
-import { useMonadPayment } from "./useMonadPayment";
+import { useSolanaPayment } from "./useSolanaPayment";
 import { useWithdraw } from "./useWithdraw";
 import { useWalletStore } from "../stores/walletStore";
 
 interface UsePaymentProps {
   userId?: number;
+  tx_type?: string;
+  gif_id?: number;
 }
 
 export const usePayment = ({ userId }: UsePaymentProps) => {
-  const [monadAmount, setMonadAmount] = useState("");
+  const [solanaAmount, setSolanaAmount] = useState("");
   const setBalance = useWalletStore((state) => state.setBalance);
 
   const {
@@ -17,11 +19,11 @@ export const usePayment = ({ userId }: UsePaymentProps) => {
     initiatePayment,
     cancelPayment,
     isWalletConnected,
-  } = useMonadPayment({
+  } = useSolanaPayment({
     userId,
     onPaymentComplete: (balance) => {
       setBalance(balance); // Update global store
-      setMonadAmount("");
+      setSolanaAmount("");
     },
     onPaymentFailed: (error) => {
       console.error("Payment failed:", error);
@@ -39,7 +41,7 @@ export const usePayment = ({ userId }: UsePaymentProps) => {
   });
 
   const handlePayment = async () => {
-    if (!monadAmount || Number(monadAmount) <= 0) {
+    if (!solanaAmount || Number(solanaAmount) <= 0) {
       alert("Please enter a valid amount");
       return;
     }
@@ -50,12 +52,12 @@ export const usePayment = ({ userId }: UsePaymentProps) => {
     }
 
     try {
-      await initiatePayment(monadAmount);
+      await initiatePayment(solanaAmount);
     } catch (error) {
       console.error("Error initiating payment:", error);
-      if (error instanceof Error) {
-        alert(`Error: ${error.message}`);
-      }
+      // if (error instanceof Error) {
+      //   alert(`Error: ${error.message}`);
+      // }
     }
   };
 
@@ -64,9 +66,9 @@ export const usePayment = ({ userId }: UsePaymentProps) => {
       await initiateWithdraw(amount, withdrawAddress);
     } catch (error) {
       console.error("Error initiating withdrawal:", error);
-      if (error instanceof Error) {
-        alert(`Error: ${error.message}`);
-      }
+      // if (error instanceof Error) {
+      //   alert(`Error: ${error.message}`);
+      // }
     }
   };
 
@@ -75,8 +77,8 @@ export const usePayment = ({ userId }: UsePaymentProps) => {
   };
 
   return {
-    monadAmount,
-    setMonadAmount,
+    solanaAmount,
+    setSolanaAmount,
     handleCancelPayment,
     handlePayment,
     handleWithdraw,
