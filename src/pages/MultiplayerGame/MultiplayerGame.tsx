@@ -287,7 +287,7 @@ useEffect(() => {
   
 
   const handleGameMessage = useCallback((message: GameMessage) => {
-    // console.log("balanceref in handleGamemessage", balanceRef.current)
+
     if (typeof message === "string") {
       if (message === "Pong") {
         console.log("Received pong from server");
@@ -1414,7 +1414,6 @@ useEffect(() => {
             <span>Connecting to optimal game server...</span>
           </div>
         )}
-
         {gameState && (('FINISHED' in gameState || 'ABORTED' in gameState) && !rematchRequest) && (
           <>
             {showTauntButton && (
