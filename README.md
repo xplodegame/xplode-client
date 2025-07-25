@@ -1,16 +1,18 @@
 # 💥 Xplode Client — The On-Chain Battlefield Interface
+<div align="center">
 
 ![Xplode Game](https://img.shields.io/badge/Game-Xplode-blue?style=for-the-badge)
-![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
-![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)
-![TailwindCSS](https://img.shields.io/badge/Tailwind-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)
+![Rust](https://img.shields.io/badge/Rust-000000?style=for-the-badge&logo=rust&logoColor=white)
 ![Solana](https://img.shields.io/badge/Solana-9945FF?style=for-the-badge&logo=solana&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)
+![Redis](https://img.shields.io/badge/Redis-DC382D?style=for-the-badge&logo=redis&logoColor=white)
 
 [🎮 Play Now](https://playxplode.xyz) | [🐦 Follow Us](https://x.com/xplode_game)
 
+</div>
+
 > “No house. No mercy. Just mind games.”  
 > — Welcome to **Xplode**, the most strategic onchain PvP game you’ll ever play.
-
 ---
 
 ## 🎮 What is Xplode?
