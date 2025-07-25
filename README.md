@@ -1,7 +1,5 @@
 # 💥 Xplode Client — The On-Chain Battlefield Interface
 
-<div align="center">
-
 ![Xplode Game](https://img.shields.io/badge/Game-Xplode-blue?style=for-the-badge)
 ![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
 ![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)
@@ -20,23 +18,18 @@
 [Xplode](https://playxplode.xyz) is a real-time, on-chain PvP strategy game inspired by **Minesweeper**, reimagined as a **high-stakes, grid-based battle royale**. Every move is public. Every decision counts. No gas. No house edge. Just pure outplay.
 
 ### Why it’s 🔥:
-- ⚡ **Built on [Solana](https://solana.com)** – ultra-fast, ultra-cheap
-- 🔗 **Fully On-Chain** – turns, locks, wins, all recorded on-chain
-- 🎯 **Zero House Edge** – it’s player vs player, winner takes all
-- 🚀 **Live Now** – [playxplode.xyz](https://playxplode.xyz)
+- ⚡ **Built on [Solana](https://solana.com)** – ultra-fast, ultra-cheap  
+- 🔗 **Fully On-Chain** – turns, locks, wins, all recorded on-chain  
+- 🎯 **Zero House Edge** – it’s player vs player, winner takes all  
+- 🚀 **Live Now** – [playxplode.xyz](https://playxplode.xyz)  
 
 ---
 
 ## 🚀 See It in Action: Blazing-Fast On-Chain Gameplay
-
 <div align="center">
   <video src="https://github.com/user-attachments/assets/a7422acc-77e1-43f4-b99e-f58c62d5ead0" autoplay muted controls width="700">
     Your browser does not support the video tag.
   </video>
-  <br>
-  <a href="https://youtu.be/nCQNYAVkEmM" target="_blank">
-    ▶️ Watch this sneak peek on YouTube
-  </a>
 </div>
 
 ---
@@ -45,12 +38,12 @@
 
 > Think you’re just revealing tiles? Think again.
 
-- 💎 **Strategic Grid Battles** – Reveal diamonds, avoid bombs.
-- ⏱️ **Blazing Turn Timers** – 30s move phase · 5s lock phase.
-- 🔒 **Locking System** – Block your opponent’s plays (2 locks per player).
-- 🧠 **Mind Over Luck** – Outsmart, don’t just outguess.
-- 🎭 **NFT-Based Taunts** – Use on-chain emotes to flex mid-game.
-- 👥 **Custom Lobbies** – Invite your friends or battle randoms.
+- 💎 **Strategic Grid Battles** – Reveal diamonds, avoid bombs.  
+- ⏱️ **Blazing Turn Timers** – 30s move phase · 5s lock phase.  
+- 🔒 **Locking System** – Block your opponent’s plays (2 locks per player).  
+- 🧠 **Mind Over Luck** – Outsmart, don’t just outguess.  
+- 🎭 **NFT-Based Taunts** – Use on-chain emotes to flex mid-game.  
+- 👥 **Custom Lobbies** – Invite your friends or battle randoms.  
 
 ---
 
